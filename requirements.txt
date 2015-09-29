@@ -1,0 +1,5 @@
+tornado == 4.2.1
+beautifulsoup4 == 4.4.0
+futures == 3.0.3
+colorama == 0.3.3
+requests == 2.7.0
