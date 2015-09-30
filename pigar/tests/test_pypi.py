@@ -6,6 +6,7 @@ import unittest
 import os
 
 from ..pypi import _extract_html
+from ..unpack import unpack_html
 
 
 class ExtractHtmlTest(unittest.TestCase):
@@ -16,3 +17,13 @@ class ExtractHtmlTest(unittest.TestCase):
         with open(path) as f:
             names = _extract_html(f.read())
         self.assertListEqual(names, 'a b c d e f g'.split())
+
+
+class UnpackHtmlTest(unittest.TestCase):
+
+    def test_unpack_html(self):
+        if not isinstance(u'', type('')):
+            data = 'abc'
+        else:
+            data = bytes('cde', 'utf-8')
+        self.assertEqual(unpack_html(data), data.decode('utf-8'))
