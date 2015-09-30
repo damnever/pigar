@@ -23,6 +23,7 @@ from .log import logger
 
 
 PYPI_URL = 'https://pypi.python.org/'
+PKG_URL = 'https://pypi.python.org/pypi/{0}'
 PKGS_URL = 'https://pypi.python.org/simple/'
 PKG_INFO_URL = 'https://pypi.python.org/pypi/{0}/json'
 ACCEPTABLE_EXT = ('.whl', '.egg', '.tar.gz', '.tar.bz2', '.zip')
@@ -89,10 +90,12 @@ def extract_pkg_info(pkg_name, just_version=False):
     if just_version:
         if not data['releases'] or not data['urls']:
             return 'unknown'
-        #  latest = max(
-        #      [[int(n if n.isdigit() else [c for c in n if c.isdigit()][0])
-        #        for n in v.split('.')] for v in releases.keys()])
-        latest = data['info']['version']
+        latest = data['info'].get('version', None)
+        if not latest:
+            latest = max(
+                [[int(n if n.isdigit() else [c for c in n if c.isdigit()][0])
+                  for n in v.split('.')] for v in data['releases'].keys()])
+            latest = '.'.join(str(n) for n in latest)
         return latest
 
     # If `just_version` is False,
@@ -150,7 +153,7 @@ class Extractor(object):
 
             self.wait_complete()
             if self._canceled:
-                logger.warning('Canceling ...^... Please wait!!!')
+                logger.warning('** Canceling ...^... Please wait **')
                 executor.shutdown()
         logger.info('Extracting packages done')
 
