@@ -97,7 +97,8 @@ def generate_reqs(save_path, project_path):
         pyver = 'Python 3' if sys.version_info[0] == 2 else 'Python 2'
         msg = 'Is there modules "{0}" '.format(Color.RED(', '.join(guess)))
         msg += 'come from other Python version(i.e. {0})[y/n]? '.format(pyver)
-        print(msg, end='')
+        sys.stdout.write(msg)
+        sys.stdout.flush()
         answer = sys.stdin.readline()
         answer = answer.strip().lower()
         if answer not in ('y', 'yes'):

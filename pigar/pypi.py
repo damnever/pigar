@@ -83,17 +83,17 @@ def extract_pkg_info(pkg_name, just_version=False):
     if not data:  # 404
         logger.warning('Package "{0}" no longer available.'.format(pkg_name))
         return
-    data = json.loads(data)
+    data = json.loads(data.decode('utf-8'))
 
     # If `just_version` is True, just return version.
     if just_version:
-        releases = data['releases']
-        if not releases:
-            return ''
-        latest = max(
-            [[int(n if n.isdigit() else [c for c in n if c.isdigit()][0])
-              for n in v.split('.')] for v in releases.keys()])
-        return '.'.join([str(n) for n in latest])
+        if not data['releases'] or not data['urls']:
+            return 'unknown'
+        #  latest = max(
+        #      [[int(n if n.isdigit() else [c for c in n if c.isdigit()][0])
+        #        for n in v.split('.')] for v in releases.keys()])
+        latest = data['info']['version']
+        return latest
 
     # If `just_version` is False,
     # need extracting names which can be imported.
@@ -150,7 +150,7 @@ class Extractor(object):
 
             self.wait_complete()
             if self._canceled:
-                logger.warning('Canceling ...^...')
+                logger.warning('Canceling ...^... Please wait!!!')
                 executor.shutdown()
         logger.info('Extracting packages done')
 

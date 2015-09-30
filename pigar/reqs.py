@@ -9,6 +9,10 @@ import importlib
 import imp
 import ast
 import doctest
+try:
+    from types import FileType  # py2
+except ImportError:
+    from io import IOBase as FileType  # py3
 
 from .utils import Color
 from .log import logger
@@ -71,6 +75,7 @@ class ImportChecker(ast.NodeVisitor):
     def visit_Exec(self, node):
         """
         Check `expression` of `exec(expression[, globals[, locals]])`.
+        **Just available in python 2.**
         """
         self._str_codes.add(node.body.s)
 
@@ -81,8 +86,12 @@ class ImportChecker(ast.NodeVisitor):
         # Built-in functions
         value = node.value
         if isinstance(value, ast.Call):
-            if hasattr(value.func, 'id') and value.func.id == 'eval':
-                self._str_codes.add(node.value.args[0].s)
+            if hasattr(value.func, 'id'):
+                if value.func.id == 'eval':
+                    self._str_codes.add(node.value.args[0].s)
+                # **`exec` function in Python 3.**
+                elif value.func.id == 'exec':
+                    self._str_codes.add(node.value.args[0].s)
 
     def visit_FunctionDef(self, node):
         """
@@ -142,6 +151,7 @@ def is_stdlib(name):
         return _CHECKED[name]
 
     exist = True
+    module_info = ('', '', '')
     try:
         module_info = imp.find_module(name)
     except ImportError:
@@ -152,8 +162,11 @@ def is_stdlib(name):
             sys.modules.pop(name)
         except ImportError:
             exist = False
-        exist = False
-    if exist and 'site-packages' in module_info[1]:
+    # Testcase: ResourceWarning
+    if isinstance(module_info[0], FileType):
+        module_info[0].close()
+    if exist and (module_info[1] is not None and
+                  'site-packages' in module_info[1]):
         exist = False
     _CHECKED[name] = exist
     return exist

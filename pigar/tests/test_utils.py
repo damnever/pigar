@@ -75,7 +75,7 @@ class ParseReqsTests(unittest.TestCase):
 
     def test_parse_reqs(self):
         path = os.path.join(os.path.dirname(__file__),
-                            './fake_requirements.txt')
+                            './fake_reqs.txt')
         target = {'a': '4.1.4', 'b': '2.3.0', 'c': ''}
         reqs = parse_reqs(path)
         self.assertDictEqual(reqs, target)

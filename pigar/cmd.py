@@ -41,7 +41,7 @@ def parse_args(args=None):
         metavar='PATH',
         nargs='?',
         type=path_check,
-        const=os.path.abspath('./'),
+        const=os.getcwd(),
         help='check requirements latest version. If file path not given, '
         'search *requirements.txt in current directory, if not found, '
         'generate file requirements.txt, exit when action done')
@@ -58,14 +58,14 @@ def parse_args(args=None):
         dest='save_path',
         nargs=1,
         type=path_check,
-        default=[os.path.abspath('./requirements.txt')],
+        default=[os.path.join(os.getcwd(), 'requirements.txt')],
         help='save requirements in given file path, *used for* default action')
     parser.add_argument(
         '-P',  # '--projectpath',
         dest='project_path',
         nargs=1,
         type=projectpath_check,
-        default=[os.path.abspath('./')],
+        default=[os.getcwd()],
         help='project path, which is directory, *used for* default action')
     if args is None:
         args = parser.parse_args()

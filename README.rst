@@ -30,7 +30,7 @@ What pigar can do?
 Installation
 ------------
 
-Available in Python: 2.7.x, 3.3.x, 3.4.x::
+Available in Python: 2.7.x, 3.x::
 
     [sudo] pip install pyprg
 

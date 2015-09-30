@@ -1,4 +1,8 @@
 include pigar/.db.sqlite3
-recursive-inlcude pigar/tests *.txt *.py
 include README.rst
 include makefile
+include pigar/tests/fake_simple_html.txt
+include pigar/tests/fake_top_level.txt
+inlcude pigar/tests/fake_reqs.txt
+include pigar/tests/imports_example/example1.py
+include pigar/tests/imports_example/example2.py

@@ -10,12 +10,12 @@ import string
 try:
     # Py2
     try:
-        from cStringIO import StringIO
+        from cStringIO import StringIO as BytesIO
     except ImportError:
-        from StringIO import StringIO
+        from StringIO import StringIO as BytesIO
 except ImportError:
     # Py3
-    from io import StringIO
+    from io import BytesIO
 
 
 class Archive(object):
@@ -113,7 +113,7 @@ class Archive(object):
 
 def top_level(url, data):
     """Read top level names from compressed file."""
-    sb = StringIO(data)
+    sb = BytesIO(data)
     txt = None
     with Archive(url, sb) as archive:
         file = None
@@ -122,7 +122,7 @@ def top_level(url, data):
                 file = name
                 break
         if file:
-            txt = archive.read(file)
+            txt = archive.read(file).decode('utf-8')
     sb.close()
     return [name.replace('/', '.') for name in txt.splitlines()] if txt else []
 
@@ -130,7 +130,7 @@ def top_level(url, data):
 def unpack_html(data):
     """Unpack web page, Content-Encoding: gzip."""
     try:
-        sb = StringIO(data)
+        sb = BytesIO(data)
         gz = gzip.GzipFile(fileobj=sb)
         data = gz.read()
     except Exception:
@@ -138,4 +138,4 @@ def unpack_html(data):
     finally:
         gz.close()
         sb.close()
-    return data
+    return data.decode('utf-8')

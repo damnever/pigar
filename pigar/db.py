@@ -3,9 +3,12 @@
 from __future__ import print_function, division, absolute_import
 
 import os
-import string
 import sqlite3
 import contextlib
+try:
+    from string import lowercase  # py2
+except ImportError:
+    from string import ascii_lowercase as lowercase  # py3
 
 from .utils import Dict
 
@@ -101,7 +104,7 @@ class Database(object):
     def _name_table(self, initial, prefix=_TABLE_PREFIX,
                     other=_TABLE_OTHER_SUFFIX):
         initial = initial.lower()
-        if initial not in string.lowercase:
+        if initial not in lowercase:
             initial = other
         return prefix.format(initial)
 
@@ -117,7 +120,7 @@ class Database(object):
             )'''.format(self._package_table())
             self._execute(cursor, sql)
 
-            for initial in (list(string.lowercase) + [other]):
+            for initial in (list(lowercase) + [other]):
                 table = self._name_table(initial)
                 sql = '''CREATE TABLE {0} (
                     id INTEGER PRIMARY KEY,

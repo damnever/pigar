@@ -7,6 +7,7 @@ import sys
 import unittest
 
 from ..__main__ import extract_reqs
+from ..reqs import is_stdlib
 
 
 class ReqsTests(unittest.TestCase):
@@ -29,10 +30,19 @@ class ReqsTests(unittest.TestCase):
         reqs, guess = extract_reqs(self._path, self._installed_packages)
         self.assertDictEqual(reqs, dict(self._installed_packages.values()))
         # Assume 'foobar' is Py3 builtin package, no need install.
-        self.assertListEqual(['__builtins__', 'Queue', 'foobar'], guess)
+        self.assertListEqual(
+            sorted(guess),
+            sorted(['Queue', '__builtin__', 'foobar', 'urlparse']))
 
     @unittest.skipIf(sys.version_info[0] != 2, 'Not python 2.x')
     def test_py2_reqs(self):
         reqs, guess = extract_reqs(self._path, self._installed_packages)
         self.assertDictEqual(reqs, dict(self._installed_packages.values()))
-        self.assertListEqual(['builtins'], guess)
+        self.assertListEqual(guess, ['builtins'])
+
+
+class StdlibTest(unittest.TestCase):
+
+    def test_stdlib(self):
+        self.assertTrue(is_stdlib('os'))
+        self.assertTrue(is_stdlib('sys'))
