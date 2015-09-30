@@ -47,7 +47,7 @@ def search_names(names, installed_pkgs):
             if rows:
                 for row in rows:
                     version = extract_pkg_info(row.package, True)
-                    results[name].append(row.package, version, 'pypi')
+                    results[name].append((row.package, version, 'pypi'))
             else:
                 not_found.append(name)
     return results, not_found
@@ -90,7 +90,9 @@ def extract_pkg_info(pkg_name, just_version=False):
         releases = data['releases']
         if not releases:
             return ''
-        latest = max([[int(n) for n in v.split('.')] for v in releases.keys()])
+        latest = max(
+            [[int(n if n.isdigit() else [c for c in n if c.isdigit()][0])
+              for n in v.split('.')] for v in releases.keys()])
         return '.'.join([str(n) for n in latest])
 
     # If `just_version` is False,

@@ -1,0 +1,4 @@
+include pigar/.db.sqlite3
+recursive-inlcude pigar/tests *.txt *.py
+include README.rst
+include makefile

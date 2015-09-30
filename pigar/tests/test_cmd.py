@@ -21,7 +21,7 @@ class CmdTests(unittest.TestCase):
         del self._default_args
 
     def test_default(self):
-        self.assertListEqual(list(parse_args()), self._default_args)
+        self.assertListEqual(list(parse_args([])), self._default_args)
 
     def test_update(self):
         target = self._default_args

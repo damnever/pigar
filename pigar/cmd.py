@@ -8,7 +8,7 @@ import argparse
 from ._version import version
 
 
-def parse_args(args=[]):
+def parse_args(args=None):
     parser = argparse.ArgumentParser(
         prog='pigar',
         #  usage='%(prog)s [options]',
@@ -67,7 +67,10 @@ def parse_args(args=[]):
         type=projectpath_check,
         default=[os.path.abspath('./')],
         help='project path, which is directory, *used for* default action')
-    args = parser.parse_args(args=args)
+    if args is None:
+        args = parser.parse_args()
+    else:
+        args = parser.parse_args(args=args)
     return (args.log_level[0], args.update_db, args.check_path,
             args.search_names, args.save_path[0], args.project_path[0])
 
