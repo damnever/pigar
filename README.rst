@@ -14,7 +14,7 @@ What pigar can do?
     # Generate requirements for given directory in given file.
     $ pigar -p ../dev-requirements.txt -P ../
 
-- If you do not know the import name belong to which package, such as ``bs4`` come from ``beautifulsoup4``, ``MySQLdb`` come from ``MySQL_Python``, search it:::
+- If you do not know the import name belong to which package, such as may ``bs4`` come from ``beautifulsoup4``, ``MySQLdb`` may come from ``MySQL_Python``, search it:::
 
     $ pigar -s bs4 MySQLdb
 
@@ -32,7 +32,7 @@ Installation
 
 Available in Python: 2.7.x, 3.x::
 
-    [sudo] pip install pyprg
+    [sudo] pip install pigar
 
 Usage
 -----
@@ -64,16 +64,10 @@ Usage
 	  -P PROJECT_PATH     project path, which is directory, *used for* default
 	                      action
 
-FAQ
+More
 ---
 
-My exercise... ``pipreqs`` use regular expression and write all standard module names to a file, this project use AST and a little trick.
-
-Also, the project can consider all kinds of complicated situations, see [testcase]().
-
-You do not want to install this package in pip2, and use it to gather python3 project requirements, such as Ubuntu 14.04(default python version is 2, but also has python3). Use virtual environment is recommended.
-
-The version 2 and 3 compliant code, the program will ask you some module whether is belong to python2 or python3, depend on your current python version.
+Hope `pigar <https://github.com/Damnever/pigar>`_ is useful to you.
 
 LISENSE
 -------
