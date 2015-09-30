@@ -57,7 +57,7 @@ def check_reqs_latest_version(check_path, installed_pkgs=_installed_pkgs):
             if fnmatch.fnmatch(fn, '*requirements.txt'):
                 files.append(os.path.abspath(fn))
         # If not found in directory, generate requirements.
-        if not reqs:
+        if not files:
             logger.warning('Requirements file not found, '
                            'generate requirements ...')
             save_path = os.path.join(check_path, 'requirements.txt')
