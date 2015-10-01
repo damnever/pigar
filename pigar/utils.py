@@ -80,11 +80,3 @@ def parse_reqs(fpath):
                 d = m.groupdict()
                 reqs[d['pkg'].strip()] = d['version'].strip()
     return reqs
-
-
-if __name__ == '__main__':
-    rows = [
-        ['tornado', '3.0.0', '4.0.1'],
-        ['django', '1.5.0.1', '1.8']
-    ]
-    print_table(rows)

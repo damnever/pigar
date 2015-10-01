@@ -52,12 +52,3 @@ class _LogFormatter(logging.Formatter):
 
         formated = self._fmt % record.__dict__
         return formated.replace('\n', '\n    ')
-
-
-if __name__ == '__main__':
-    enable_pretty_logging()
-    logger.info('good')
-    try:
-        1 / 0
-    except ZeroDivisionError:
-        logger.error("error", exc_info=True)

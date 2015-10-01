@@ -139,12 +139,3 @@ def database():
     db = Database()
     yield db
     db.close()
-
-
-if __name__ == '__main__':
-    with database() as db:
-        db.insert_package('ddd')
-        row = db.query_package('ddd')
-        db.insert_name('xxx', row.id)
-        row = db.query_all('xxx')
-        print(row)
