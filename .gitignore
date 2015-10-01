@@ -2,3 +2,4 @@
 *.py[cod]
 __pycache__/
 *-info/
+count.py

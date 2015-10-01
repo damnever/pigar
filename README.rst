@@ -65,7 +65,7 @@ Usage
 	                      action
 
 More
----
+----
 
 Hope `pigar <https://github.com/Damnever/pigar>`_ is useful to you.
 
