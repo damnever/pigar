@@ -29,7 +29,7 @@ setup(
     author_email='dxc.wolf@gmail.com',
     license='BSD License',
     classifiers=[
-        'Development Status :: 5 - Production/Stable',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'Topic :: Utilities',
         'License :: OSI Approved :: BSD License',
