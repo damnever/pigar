@@ -14,7 +14,7 @@ What pigar can do?
     # Generate requirements for given directory in given file.
     $ pigar -p ../dev-requirements.txt -P ../
 
-- If you do not know the import name belong to which package, such as ``bs4`` may come from ``beautifulsoup4``, ``MySQLdb`` may come from ``MySQL_Python``, search it :::
+- If you do not know the import name belong to which package, such as ``bs4`` may come from ``beautifulsoup4``, ``MySQLdb`` may come from ``MySQL_Python``, search it: ::
 
     $ pigar -s bs4 MySQLdb
 
