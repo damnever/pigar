@@ -2,12 +2,22 @@
 # -*- coding: utf-8 -*-
 
 import sys
-from codecs import open
+import re
+import codecs
 
 from setuptools import setup
 
 
-with open('README.rst', encoding='utf-8') as f:
+version = ''
+with open('pigar/_version.py', 'r') as f:
+    version = re.search(r'__version__\s*=\s*[\'"]([^\'"]*)[\'"]',
+                        f.read(), re.M).group(1)
+
+if not version:
+    raise RuntimeError('Cannot find version information')
+
+
+with codecs.open('README.rst', encoding='utf-8') as f:
     long_description = f.read()
 
 install_requires = ['colorama']
@@ -17,7 +27,7 @@ if sys.version_info < (3, 2):
 
 setup(
     name='pigar',
-    version='0.5.0',
+    version=version,
     description='Python requirements tool -- pigar',
     long_description=long_description,
     url='https://github.com/Damnever/pigar',
