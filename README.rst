@@ -72,4 +72,4 @@ Hope `pigar <https://github.com/Damnever/pigar>`_ is useful to you.
 LISENSE
 -------
 
-`The BSD 3-Clause License <./LICENSE>`_
+`The BSD 3-Clause License <https://github.com/Damnever/pigar/blob/master/LICENSE>`_
