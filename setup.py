@@ -1,17 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import codecs
-import os.path
 import sys
+from codecs import open
 
 from setuptools import setup
 
 
-cur_dir = os.path.abspath(os.path.dirname(__file__))
-
-
-with codecs.open(os.path.join(cur_dir, 'README.rst'), encoding='utf-8') as f:
+with open('README.rst', encoding='utf-8') as f:
     long_description = f.read()
 
 install_requires = ['colorama']

@@ -1,7 +1,7 @@
 Python requirements tool -- pigar
 =================================
 
-----
+
 
 What pigar can do?
 ------------------
