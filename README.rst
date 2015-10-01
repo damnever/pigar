@@ -6,7 +6,7 @@ Python requirements tool -- pigar
 What pigar can do?
 ------------------
 
-- Generate requirements for project, ``pigar`` can consider all kinds of complicated situations.::
+- Generate requirements for project, ``pigar`` can consider all kinds of complicated situations. ::
 
     # Generate requirements.txt for current directory.
     $ pigar
@@ -14,11 +14,11 @@ What pigar can do?
     # Generate requirements for given directory in given file.
     $ pigar -p ../dev-requirements.txt -P ../
 
-- If you do not know the import name belong to which package, such as may ``bs4`` come from ``beautifulsoup4``, ``MySQLdb`` may come from ``MySQL_Python``, search it:::
+- If you do not know the import name belong to which package, such as ``bs4`` may come from ``beautifulsoup4``, ``MySQLdb`` may come from ``MySQL_Python``, search it:::
 
     $ pigar -s bs4 MySQLdb
 
-- Check requirements latest version, just do:::
+- Check requirements latest version, just do: ::
 
     # Specific a requirements file.
     $ pigar -c ./requirements.txt
@@ -30,7 +30,7 @@ What pigar can do?
 Installation
 ------------
 
-Available in Python: 2.7.x, 3.x::
+Available in Python: 2.7.x, 3.x ::
 
     [sudo] pip install pigar
 
