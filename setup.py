@@ -33,7 +33,7 @@ setup(
     url='https://github.com/Damnever/pigar',
     author='Damnever',
     author_email='dxc.wolf@gmail.com',
-    license='BSD License',
+    license='The BSD 3-Clause License',
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',

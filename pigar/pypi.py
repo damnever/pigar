@@ -212,8 +212,6 @@ def _extract_html(html):
     names = list()
 
     class MyParser(HTMLParser):
-        _link = None
-
         def handle_starttag(self, tag, attrs):
             if tag == 'a':
                 attrs = dict(attrs)
