@@ -6,7 +6,7 @@ Python requirements tool -- pigar
 What pigar can do?
 ------------------
 
-- Generate requirements for project, ``pigar`` can consider all kinds of complicated situations. ::
+- Generate requirements for project, ``pigar`` can consider all kinds of complicated situations. In this project, `py2_requirements.txt <https://github.com/Damnever/pigar/blob/master/py2_requirements.txt>`_ and `py3_requirements.txt <https://github.com/Damnever/pigar/blob/master/py3_requirements.txt>`_ for different python versions ::
 
     # Generate requirements.txt for current directory.
     $ pigar
@@ -40,30 +40,30 @@ Usage
 
 ::
 
-	usage: pigar [-h] [-v] [-u] [-s NAME [NAME ...]] [-c [PATH]] [-l LOG_LEVEL]
-	             [-p SAVE_PATH] [-P PROJECT_PATH]
+    usage: pigar [-h] [-v] [-u] [-s NAME [NAME ...]] [-c [PATH]] [-l LOG_LEVEL]
+                 [-p SAVE_PATH] [-P PROJECT_PATH]
 
-	Python requirements tool -- pigar, it will do only one thing at each time.
-	Default action is generate requirements.txt in current directory.
+    Python requirements tool -- pigar, it will do only one thing at each time.
+    Default action is generate requirements.txt in current directory.
 
-	optional arguments:
-	  -h, --help          show this help message and exit
-	  -v, --version       show pigar version information and exit
-	  -u, --update        update database, use it when pigar failed you, exit when
-	                      action done
-	  -s NAME [NAME ...]  search package name by import name, use it if you do not
-	                      know import name come from which package, exit when
-	                      action done
-	  -c [PATH]           check requirements latest version. If file path not
-	                      given, search *requirements.txt in current directory, if
-	                      not found, generate file requirements.txt, exit when
-	                      action done
-	  -l LOG_LEVEL        Show given level log messages, argument can be (ERROR,
-	                      WARNING, INFO, DEBUG), case-insensitive
-	  -p SAVE_PATH        save requirements in given file path, *used for* default
-	                      action
-	  -P PROJECT_PATH     project path, which is directory, *used for* default
-	                      action
+    optional arguments:
+      -h, --help          show this help message and exit
+      -v, --version       show pigar version information and exit
+      -u, --update        update database, use it when pigar failed you, exit when
+                          action done
+      -s NAME [NAME ...]  search package name by import name, use it if you do not
+                          know import name come from which package, exit when
+                          action done
+      -c [PATH]           check requirements latest version. If file path not
+                          given, search *requirements.txt in current directory, if
+                          not found, generate file requirements.txt, exit when
+                          action done
+      -l LOG_LEVEL        Show given level log messages, argument can be (ERROR,
+                          WARNING, INFO, DEBUG), case-insensitive
+      -p SAVE_PATH        save requirements in given file path, *used for* default
+                          action
+      -P PROJECT_PATH     project path, which is directory, *used for* default
+                          action
 
 More
 ----
