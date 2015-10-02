@@ -3,6 +3,7 @@
 from __future__ import print_function, division, absolute_import
 
 import re
+import sys
 try:
     import colorama
 except ImportError:
@@ -25,9 +26,9 @@ class Dict(dict):
             raise AttributeError('"{0}"'.format(name))
 
 
-# Color functions.
+# Color functions, win8 ...
 _NONE = lambda text: text
-if colorama:
+if colorama and not sys.platform.startswith('win'):
     _GREEN = lambda text: colorama.Fore.GREEN + text + colorama.Fore.RESET
     _YELLOW = lambda text: colorama.Fore.YELLOW + text + colorama.Fore.RESET
     _RED = lambda text: colorama.Fore.RED + text + colorama.Fore.RESET
