@@ -83,7 +83,7 @@ def extract_pkg_info(pkg_name, just_version=False):
     data = download(PKG_INFO_URL.format(pkg_name))
     if not data:  # 404
         logger.warning('Package "{0}" no longer available.'.format(pkg_name))
-        return
+        return ''
     data = json.loads(data.decode('utf-8'))
 
     # If `just_version` is True, just return version.
