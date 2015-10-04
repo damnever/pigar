@@ -6,7 +6,11 @@ Python requirements tool -- pigar
 What pigar can do?
 ------------------
 
-- Generate requirements for project, ``pigar`` can consider all kinds of complicated situations. In this project, `py2_requirements.txt <https://github.com/Damnever/pigar/blob/master/py2_requirements.txt>`_ and `py3_requirements.txt <https://github.com/Damnever/pigar/blob/master/py3_requirements.txt>`_ for different python versions ::
+- Generate requirements for project, ``pigar`` can consider all kinds of 
+  complicated situations. In this project, 
+  `py2_requirements.txt <https://github.com/Damnever/pigar/blob/master/py2_requirements.txt>`_ 
+  and `py3_requirements.txt <https://github.com/Damnever/pigar/blob/master/py3_requirements.txt>`_ 
+  for different python versions ::
 
     # Generate requirements.txt for current directory.
     $ pigar
@@ -14,7 +18,9 @@ What pigar can do?
     # Generate requirements for given directory in given file.
     $ pigar -p ../dev-requirements.txt -P ../
 
-- If you do not know the import name belong to which package, such as ``bs4`` may come from ``beautifulsoup4``, ``MySQLdb`` may come from ``MySQL_Python``, search it: ::
+- If you do not know the import name belong to which package, such as ``bs4`` 
+  may come from ``beautifulsoup4``, ``MySQLdb`` may come from ``MySQL_Python``, 
+  search it: ::
 
     $ pigar -s bs4 MySQLdb
 
@@ -67,6 +73,18 @@ Usage
 
 More
 ----
+
+Why pigar?
+^^^^^^^^^^
+
+- If you do not use virtual environment, then you can not get project requirements right 
+  by ``pip freeze``, and you should never think about checking it out through your eyes...
+
+- Also, `pigar <https://github.com/Damnever/pigar>`_ is more effective than 
+  `pipreqs <https://github.com/pipreqs>`_, ``pipreqs`` can not consider difference between 
+  different Python versions.
+
+You can read source code to learn more.
 
 Hope `pigar <https://github.com/Damnever/pigar>`_ is useful to you.
 
