@@ -72,7 +72,7 @@ Usage
 More
 ----
 
-``pigar`` do not use regular expersion such a violence way, it use AST, that is a better method to extracting imported names from arguments of ``exec``/``eval``, doctest of docstring, etc.
+``pigar`` do not use regular expression such a violence way, it use AST, that is a better method to extracting imported names from arguments of ``exec``/``eval``, doctest of docstring, etc.
 
 Also, ``pigar`` can consider difference between differen Python versions. For example, you can find ``concurrent.futures`` from Python 3.2 standart library, but you will need install ``futures`` before 3.2 version in Python to get ``concurrent.futures``.
 
