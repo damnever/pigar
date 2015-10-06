@@ -180,8 +180,9 @@ def get_installed_pkgs_detail():
     mapping = dict()
     search_path = None
     for path in sys.path:
-        if 'site-packages' in path:
+        if path.rstrip('/').endswith('site-packages') and os.path.isdir(path):
             search_path = path
+            break
 
     for file in os.listdir(search_path):
         if fnmatch.fnmatch(file, '*-info'):
