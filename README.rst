@@ -1,9 +1,11 @@
 Python requirements tool -- pigar
 =================================
 
-.. image:: https://travis-ci.org/Damnever/pigar.svg?style=flat-square   :target: https://travis-ci.org/Damnever/pigar
+.. image:: https://img.shields.io/travis/Damnever/pigar.svg?style=flat-square
+   :target: https://travis-ci.org/Damnever/pigar
 
-.. image:: https://img.shields.io/pypi/v/pigar.svg?style=flat-square   :target: https://pypi.python.org/pypi/pigar
+.. image:: https://img.shields.io/pypi/v/pigar.svg?style=flat-square
+   :target: https://pypi.python.org/pypi/pigar
 
 
 What pigar can do?
