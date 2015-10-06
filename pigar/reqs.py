@@ -186,10 +186,12 @@ def get_installed_pkgs_detail():
 
     for file in os.listdir(search_path):
         if fnmatch.fnmatch(file, '*-info'):
+            top_level = os.path.join(search_path, file, 'top_level.txt')
+            if not os.path.isfile(top_level):
+                continue
             pkg_name, version = file.split('-')[:2]
             if version.endswith('dist'):
                 version = version.rsplit('.', 1)[0]
-            top_level = os.path.join(search_path, file, 'top_level.txt')
             with open(top_level, 'r') as f:
                 for line in f:
                     mapping[line.strip()] = (pkg_name, version)
