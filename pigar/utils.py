@@ -81,3 +81,70 @@ def parse_reqs(fpath):
                 d = m.groupdict()
                 reqs[d['pkg'].strip()] = d['version'].strip()
     return reqs
+
+
+def cmp_to_key(cmp_func):
+    """Convert a cmp=fcuntion into a key=function."""
+    class K(object):
+        def __init__(self, obj, *args):
+            self.obj = obj
+
+        def __lt__(self, other):
+            return cmp_func(self.obj, other.obj) < 0
+
+        def __gt__(self, other):
+            return cmp_func(self.obj, other.obj) > 0
+
+        def __eq__(self, other):
+            return cmp_func(self.obj, other.obj) == 0
+
+    return K
+
+
+def compare_version(version1, version2):
+    """Compare version number, such as 1.1.1 and 1.1b2.0."""
+    v1, v2 = list(), list()
+
+    for item in version1.split('.'):
+        if item.isdigit():
+            v1.append(int(item))
+        else:
+            v1.extend([i for i in _group_alnum(item)])
+    for item in version2.split('.'):
+        if item.isdigit():
+            v2.append(int(item))
+        else:
+            v2.extend([i for i in _group_alnum(item)])
+
+    while v1 and v2:
+        item1, item2 = v1.pop(0), v2.pop(0)
+        if item1 > item2:
+            return 1
+        elif item1 < item2:
+            return -1
+
+    if v1:
+        return 1
+    elif v2:
+        return -1
+    return 0
+
+
+def _group_alnum(s):
+    tmp = list()
+    flag = 1 if s[0].isdigit() else 0
+    for c in s:
+        if c.isdigit():
+            if flag == 0:
+                yield ''.join(tmp)
+                tmp = list()
+                flag = 1
+            tmp.append(c)
+        elif c.isalpha():
+            if flag == 1:
+                yield int(''.join(tmp))
+                tmp = list()
+                flag = 0
+            tmp.append(c)
+    last = ''.join(tmp)
+    yield (int(last) if flag else last)

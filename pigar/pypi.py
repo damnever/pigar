@@ -20,6 +20,7 @@ import concurrent.futures
 from .db import database
 from .unpack import top_level, unpack_html
 from .log import logger
+from .utils import compare_version, cmp_to_key
 
 
 PYPI_URL = 'https://pypi.python.org/'
@@ -83,7 +84,7 @@ def extract_pkg_info(pkg_name, just_version=False):
     data = download(PKG_INFO_URL.format(pkg_name))
     if not data:  # 404
         logger.warning('Package "{0}" no longer available.'.format(pkg_name))
-        return ''
+        return 'unknown'
     data = json.loads(data.decode('utf-8'))
 
     # If `just_version` is True, just return version.
@@ -92,10 +93,8 @@ def extract_pkg_info(pkg_name, just_version=False):
             return 'unknown'
         latest = data['info'].get('version', None)
         if not latest:
-            latest = max(
-                [[int(n if n.isdigit() else [c for c in n if c.isdigit()][0])
-                  for n in v.split('.')] for v in data['releases'].keys()])
-            latest = '.'.join(str(n) for n in latest)
+            latest = sorted(data['releases'], key=cmp_to_key(compare_version))
+            latest = latest[-1]
         return latest
 
     # If `just_version` is False,
