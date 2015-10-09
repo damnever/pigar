@@ -48,7 +48,7 @@ def search_names(names, installed_pkgs):
                 rows = db.query_all(name)
             if rows:
                 for row in rows:
-                    version = extract_pkg_info(row.package, True)
+                    version = extract_pkg_version(row.package)
                     results[name].append((row.package, version, 'pypi'))
             else:
                 not_found.append(name)
@@ -79,29 +79,14 @@ def update_db():
     extractor.extract(extract_pkg_info)
 
 
-def extract_pkg_info(pkg_name, just_version=False):
+def extract_pkg_info(pkg_name):
     """Extract package information from PYPI."""
-    data = download(PKG_INFO_URL.format(pkg_name))
-    if not data:  # 404
-        logger.warning('Package "{0}" no longer available.'.format(pkg_name))
-        return 'unknown'
-    data = json.loads(data.decode('utf-8'))
-
-    # If `just_version` is True, just return version.
-    if just_version:
-        if not data['releases'] or not data['urls']:
-            return 'unknown'
-        latest = data['info'].get('version', None)
-        if not latest:
-            latest = sorted(data['releases'], key=cmp_to_key(compare_version))
-            latest = latest[-1]
-        return latest
-
-    # If `just_version` is False,
-    # need extracting names which can be imported.
+    data = _pkg_json_info(pkg_name)
+    # Extracting names which can be imported.
     if not data or not data['urls']:
         logger.warning('Package "{0}" no longer available.'.format(pkg_name))
         return
+
     urls = [item['url'] for item in data['urls']
             if item['filename'].endswith(ACCEPTABLE_EXT)]
     # Does not has satisfied compressed package.
@@ -123,6 +108,26 @@ def extract_pkg_info(pkg_name, just_version=False):
         for top in top_levels:
             top = top or pkg_name  # empty top_level.txt
             db.insert_name(top, package.id)
+
+
+def extract_pkg_version(pkg_name):
+    """Extract package latest version from PYPI."""
+    data = _pkg_json_info(pkg_name)
+    if not data or not data['releases'] or not data['urls']:
+        return 'unknown'
+    latest = data['info'].get('version', None)
+    if not latest:
+        latest = sorted(data['releases'], key=cmp_to_key(compare_version))
+        latest = latest[-1]
+    return latest
+
+
+def _pkg_json_info(pkg_name):
+    data = download(PKG_INFO_URL.format(pkg_name))
+    if not data:  # 404
+        return None
+    data = json.loads(data.decode('utf-8'))
+    return data
 
 
 class Extractor(object):
