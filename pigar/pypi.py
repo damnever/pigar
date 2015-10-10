@@ -57,7 +57,7 @@ def search_names(names, installed_pkgs):
 
 def check_latest_version(package):
     """Check package latest version in pypi."""
-    version = extract_pkg_info(package, True)
+    version = extract_pkg_version(package)
     return version
 
 

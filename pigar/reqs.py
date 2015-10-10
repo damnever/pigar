@@ -14,7 +14,6 @@ try:
 except ImportError:
     from io import IOBase as FileType  # py3
 
-from .utils import Color
 from .log import logger
 
 
@@ -38,7 +37,7 @@ def project_import_modules(path):
             with open(fpath, 'r') as f:
                 modules.extend(file_import_modules(f.read()))
 
-    logger.info('Finish extracting in project: {0}'.format(path), Color.GREEN)
+    logger.info('Finish extracting in project: {0}'.format(path))
     return modules, local_mods
 
 
