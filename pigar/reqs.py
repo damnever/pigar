@@ -96,7 +96,7 @@ class ImportChecker(ast.NodeVisitor):
         """
         Check docstring of function, if docstring is used for doctest.
         """
-        docstring = _parse_docstring(node)
+        docstring = self._parse_docstring(node)
         if docstring:
             self._str_codes.add(docstring)
         # Do not ignore other node.
@@ -107,7 +107,7 @@ class ImportChecker(ast.NodeVisitor):
         """
         Check docstring of class, if docstring is used for doctest.
         """
-        docstring = _parse_docstring(node)
+        docstring = self._parse_docstring(node)
         if docstring:
             self._str_codes.add(docstring)
         # Do not ignore other node!
@@ -126,15 +126,15 @@ class ImportChecker(ast.NodeVisitor):
     def str_codes(self):
         return list(self._str_codes)
 
-
-def _parse_docstring(node):
-    """Extract code from docstring."""
-    docstring = ast.get_docstring(node)
-    if docstring:
-        parser = doctest.DocTestParser()
-        examples = parser.get_doctest(docstring, {}, None, None, None).examples
-        return ''.join([example.source for example in examples])
-    return None
+    @staticmethod
+    def _parse_docstring(node):
+        """Extract code from docstring."""
+        docstring = ast.get_docstring(node)
+        if docstring:
+            parser = doctest.DocTestParser()
+            examples = parser.get_doctest(docstring, {}, None, None, None).examples
+            return ''.join([example.source for example in examples])
+        return None
 
 
 # #
