@@ -43,21 +43,23 @@ def project_import_modules(path):
 
 def file_import_modules(data):
     """Get single file all imported modules."""
-    def _recursion(ic, str_code):
-        modules = set()
+    modules = set()
+    str_codes = set([data])
+    ic = ImportChecker()
+
+    while str_codes:
         ic.clear()
+        str_code = str_codes.pop()
         try:
             parsed = ast.parse(str_code)
             ic.visit(parsed)
-        # Ignore SyntaxError in Python code
+        # Ignore SyntaxError in Python code.
         except SyntaxError:
             pass
         modules |= set(ic.modules)
-        for str_code in ic.str_codes:
-            modules |= _recursion(ic, str_code)
-        return modules
-    ic = ImportChecker()
-    return list(_recursion(ic, data))
+        str_codes |= set(ic.str_codes)
+
+    return list(modules)
 
 
 class ImportChecker(ast.NodeVisitor):
