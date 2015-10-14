@@ -93,10 +93,12 @@ class ImportChecker(ast.NodeVisitor):
         value = node.value
         if isinstance(value, ast.Call):
             if hasattr(value.func, 'id'):
-                if value.func.id == 'eval':
+                if (value.func.id == 'eval' and
+                        hasattr(node.value.args[0], 's')):
                     self._str_codes.add(node.value.args[0].s)
                 # **`exec` function in Python 3.**
-                elif value.func.id == 'exec':
+                elif (value.func.id == 'exec' and
+                        hasattr(node.value.args[0], 's')):
                     self._str_codes.add(node.value.args[0].s)
 
     def visit_FunctionDef(self, node):
@@ -139,8 +141,14 @@ class ImportChecker(ast.NodeVisitor):
         docstring = ast.get_docstring(node)
         if docstring:
             parser = doctest.DocTestParser()
-            examples = parser.get_doctest(docstring, {}, None, None, None).examples
-            return ''.join([example.source for example in examples])
+            try:
+                dt = parser.get_doctest(docstring, {}, None, None, None)
+            except ValueError:
+                # >>> 'abc'
+                pass
+            else:
+                examples = dt.examples
+                return '\n'.join([example.source for example in examples])
         return None
 
 
