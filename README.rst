@@ -1,4 +1,4 @@
-Python requirements tool -- pigar
+Python project requirements tool -- pigar
 =================================
 
 .. image:: https://img.shields.io/travis/Damnever/pigar.svg?style=flat-square
@@ -39,6 +39,10 @@ Installation
 Available in Python: 2.7.x, 3.x ::
 
     [sudo] pip install pigar
+
+Get newest code from GitHub ::
+
+	pip install git+https://github.com/Damnever/pigar.git@[master or other branch] --upgrade
 
 Usage
 -----
