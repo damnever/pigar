@@ -96,7 +96,8 @@ def generate_reqs(save_path, project_path):
     if guess:
         pyver = 'Python 3' if sys.version_info[0] == 2 else 'Python 2'
         msg = 'Is there modules "{0}" '.format(Color.RED(', '.join(guess)))
-        msg += 'come from other Python version(i.e. {0})[y/n]? '.format(pyver)
+        msg += ('come from other Python version(i.e. {0}) '
+                'or extension[y/n]? ').format(pyver)
         sys.stdout.write(msg)
         sys.stdout.flush()
         answer = sys.stdin.readline()
@@ -137,7 +138,7 @@ def extract_reqs(path, installed_pkgs=_installed_pkgs):
     logger.info('Extracting third-part module ...')
     for module in modules:
         logger.info('Checking module: {0}'.format(module))
-        if module.startswith('.'):
+        if not module or module.startswith('.'):
             continue
         is_local = False
         for mod in local_mods:

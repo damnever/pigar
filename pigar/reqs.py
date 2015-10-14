@@ -46,8 +46,12 @@ def file_import_modules(data):
     def _recursion(ic, str_code):
         modules = set()
         ic.clear()
-        parsed = ast.parse(str_code)
-        ic.visit(parsed)
+        try:
+            parsed = ast.parse(str_code)
+            ic.visit(parsed)
+        # Ignore SyntaxError in Python code
+        except SyntaxError:
+            pass
         modules |= set(ic.modules)
         for str_code in ic.str_codes:
             modules |= _recursion(ic, str_code)
@@ -76,7 +80,8 @@ class ImportChecker(ast.NodeVisitor):
         Check `expression` of `exec(expression[, globals[, locals]])`.
         **Just available in python 2.**
         """
-        self._str_codes.add(node.body.s)
+        if hasattr(node.body, 's'):
+            self._str_codes.add(node.body.s)
 
     def visit_Expr(self, node):
         """
