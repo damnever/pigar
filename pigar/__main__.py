@@ -116,7 +116,9 @@ def generate_reqs(save_path, project_path):
     logger.info('Writing requirements to "{0}"'.format(save_path))
     with open(save_path, 'w+') as f:
         for k, v in reqs.items():
-            if v:
+            if k == '-e':
+                f.write('{0} {1}\n'.format(k, v))
+            elif v:
                 f.write('{0} == {1}\n'.format(k, v))
             else:
                 f.write('{0}\n'.format(k))

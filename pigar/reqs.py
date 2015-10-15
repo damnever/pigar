@@ -15,6 +15,7 @@ except ImportError:
     from io import IOBase as FileType  # py3
 
 from .log import logger
+from .utils import parse_git_config
 
 
 def project_import_modules(path):
@@ -176,11 +177,10 @@ def is_stdlib(name):
     return exist
 
 
-# #
-# Get mapping for import top level name
-# and install package name with version.
-# #
 def get_installed_pkgs_detail():
+    """Get mapping for import top level name
+    and install package name with version.
+    """
     mapping = dict()
     search_path = None
     for path in sys.path:
@@ -193,6 +193,7 @@ def get_installed_pkgs_detail():
         return mapping
 
     for file in os.listdir(search_path):
+        # Install from PYPI.
         if fnmatch.fnmatch(file, '*-info'):
             top_level = os.path.join(search_path, file, 'top_level.txt')
             if not os.path.isfile(top_level):
@@ -203,4 +204,52 @@ def get_installed_pkgs_detail():
             with open(top_level, 'r') as f:
                 for line in f:
                     mapping[line.strip()] = (pkg_name, version)
+
+        # Install from local and available in GitHub.
+        elif fnmatch.fnmatch(file, '*-link'):
+            link = os.path.join(search_path, file)
+            if not os.path.isfile(link):
+                continue
+            # Link path.
+            with open(link, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if line != '.':
+                        dev_dir = line
+            if not dev_dir:
+                continue
+            # Egg info path.
+            info_dir = [_file for _file in os.listdir(dev_dir)
+                        if _file.endswith('egg-info')]
+            if not info_dir:
+                continue
+            info_dir = info_dir[0]
+            top_level = os.path.join(dev_dir, info_dir, 'top_level.txt')
+            # Check whether it can be imported.
+            if not os.path.isfile(top_level):
+                continue
+
+            # Check .git dir.
+            git_path = os.path.join(dev_dir, '.git')
+            if os.path.isdir(git_path):
+                config = parse_git_config(git_path)
+                url = config.get('remote "origin"', {}).get('url')
+                if not url:
+                    continue
+                branch = 'branch "master"'
+                if branch not in config:
+                    for section in config:
+                        if 'branch' in section:
+                            branch = section
+                            break
+                if not branch:
+                    continue
+                branch = branch.split()[1][1:-1]
+
+                pkg_name = info_dir.split('.egg')[0]
+                git_url = 'git+{0}@{1}#egg={2}'.format(url, branch, pkg_name)
+                with open(top_level, 'r') as f:
+                    for line in f:
+                        mapping[line.strip()] = ('-e', git_url)
+
     return mapping

@@ -2,6 +2,7 @@
 
 from __future__ import print_function, division, absolute_import
 
+import os
 import re
 import sys
 try:
@@ -148,3 +149,20 @@ def _group_alnum(s):
             tmp.append(c)
     last = ''.join(tmp)
     yield (int(last) if flag else last)
+
+
+def parse_git_config(path):
+    """Parse git config file."""
+    config = dict()
+    section = None
+
+    with open(os.path.join(path, 'config'), 'r') as f:
+        for line in f:
+            line = line.strip()
+            if line.startswith('['):
+                section = line[1: -1].strip()
+                config[section] = dict()
+            elif section:
+                key, value = line.replace(' ', '').split('=')
+                config[section][key] = value
+    return config
