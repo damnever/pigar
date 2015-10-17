@@ -67,7 +67,6 @@ class ImportChecker(ast.NodeVisitor):
     def __init__(self, *args, **kwargs):
         self._modules = set()
         self._str_codes = set()
-        self._seen_nodes = set()
         super(ImportChecker, self).__init__(*args, **kwargs)
 
     def visit_Import(self, node):
@@ -109,9 +108,6 @@ class ImportChecker(ast.NodeVisitor):
         docstring = self._parse_docstring(node)
         if docstring:
             self._str_codes.add(docstring)
-        # Do not ignore other node.
-        for _node in node.body:
-            self.visit(_node)
 
     def visit_ClassDef(self, node):
         """
@@ -120,31 +116,12 @@ class ImportChecker(ast.NodeVisitor):
         docstring = self._parse_docstring(node)
         if docstring:
             self._str_codes.add(docstring)
-        # Do not ignore other node!
-        for _node in node.body:
-            self.visit(_node)
 
     def visit(self, node):
-        """Visit a node, and do not visit a seen node."""
-        if node in self._seen_nodes:
-            return
-        self._seen_nodes.add(node)
-        method = 'visit_' + node.__class__.__name__
-        visitor = getattr(self, method, self.generic_visit)
-        return visitor(node)
-
-    def clear(self):
-        self._seen_nodes = set()
-        self._modules = set()
-        self._str_codes = set()
-
-    @property
-    def modules(self):
-        return list(self._modules)
-
-    @property
-    def str_codes(self):
-        return list(self._str_codes)
+        """Visit a node, no recursively."""
+        for node in ast.walk(node):
+            method = 'visit_' + node.__class__.__name__
+            getattr(self, method, lambda x: x)(node)
 
     @staticmethod
     def _parse_docstring(node):
@@ -161,6 +138,18 @@ class ImportChecker(ast.NodeVisitor):
                 examples = dt.examples
                 return '\n'.join([example.source for example in examples])
         return None
+
+    def clear(self):
+        self._modules = set()
+        self._str_codes = set()
+
+    @property
+    def modules(self):
+        return list(self._modules)
+
+    @property
+    def str_codes(self):
+        return list(self._str_codes)
 
 
 # #
