@@ -134,6 +134,7 @@ class ImportChecker(ast.NodeVisitor):
         return visitor(node)
 
     def clear(self):
+        self._seen_nodes = set()
         self._modules = set()
         self._str_codes = set()
 
