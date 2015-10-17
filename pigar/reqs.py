@@ -67,6 +67,7 @@ class ImportChecker(ast.NodeVisitor):
     def __init__(self, *args, **kwargs):
         self._modules = set()
         self._str_codes = set()
+        self._seen_nodes = set()
         super(ImportChecker, self).__init__(*args, **kwargs)
 
     def visit_Import(self, node):
@@ -122,6 +123,15 @@ class ImportChecker(ast.NodeVisitor):
         # Do not ignore other node!
         for _node in node.body:
             self.visit(_node)
+
+    def visit(self, node):
+        """Visit a node, and do not visit a seen node."""
+        if node in self._seen_nodes:
+            return
+        self._seen_nodes.add(node)
+        method = 'visit_' + node.__class__.__name__
+        visitor = getattr(self, method, self.generic_visit)
+        return visitor(node)
 
     def clear(self):
         self._modules = set()
