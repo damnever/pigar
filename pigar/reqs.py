@@ -44,21 +44,23 @@ def project_import_modules(path):
 
 def file_import_modules(data):
     """Get single file all imported modules."""
-    def _recursion(ic, str_code):
-        modules = set()
+    modules = set()
+    str_codes = set([data])
+    ic = ImportChecker()
+
+    while str_codes:
         ic.clear()
+        str_code = str_codes.pop()
         try:
             parsed = ast.parse(str_code)
             ic.visit(parsed)
-        # Ignore SyntaxError in Python code
+        # Ignore SyntaxError in Python code.
         except SyntaxError:
             pass
         modules |= set(ic.modules)
-        for str_code in ic.str_codes:
-            modules |= _recursion(ic, str_code)
-        return modules
-    ic = ImportChecker()
-    return list(_recursion(ic, data))
+        str_codes |= set(ic.str_codes)
+
+    return list(modules)
 
 
 class ImportChecker(ast.NodeVisitor):
@@ -92,10 +94,12 @@ class ImportChecker(ast.NodeVisitor):
         value = node.value
         if isinstance(value, ast.Call):
             if hasattr(value.func, 'id'):
-                if value.func.id == 'eval':
+                if (value.func.id == 'eval' and
+                        hasattr(node.value.args[0], 's')):
                     self._str_codes.add(node.value.args[0].s)
                 # **`exec` function in Python 3.**
-                elif value.func.id == 'exec':
+                elif (value.func.id == 'exec' and
+                        hasattr(node.value.args[0], 's')):
                     self._str_codes.add(node.value.args[0].s)
 
     def visit_FunctionDef(self, node):
@@ -105,9 +109,6 @@ class ImportChecker(ast.NodeVisitor):
         docstring = self._parse_docstring(node)
         if docstring:
             self._str_codes.add(docstring)
-        # Do not ignore other node.
-        for _node in node.body:
-            self.visit(_node)
 
     def visit_ClassDef(self, node):
         """
@@ -116,9 +117,28 @@ class ImportChecker(ast.NodeVisitor):
         docstring = self._parse_docstring(node)
         if docstring:
             self._str_codes.add(docstring)
-        # Do not ignore other node!
-        for _node in node.body:
-            self.visit(_node)
+
+    def visit(self, node):
+        """Visit a node, no recursively."""
+        for node in ast.walk(node):
+            method = 'visit_' + node.__class__.__name__
+            getattr(self, method, lambda x: x)(node)
+
+    @staticmethod
+    def _parse_docstring(node):
+        """Extract code from docstring."""
+        docstring = ast.get_docstring(node)
+        if docstring:
+            parser = doctest.DocTestParser()
+            try:
+                dt = parser.get_doctest(docstring, {}, None, None, None)
+            except ValueError:
+                # >>> 'abc'
+                pass
+            else:
+                examples = dt.examples
+                return '\n'.join([example.source for example in examples])
+        return None
 
     def clear(self):
         self._modules = set()
@@ -131,16 +151,6 @@ class ImportChecker(ast.NodeVisitor):
     @property
     def str_codes(self):
         return list(self._str_codes)
-
-    @staticmethod
-    def _parse_docstring(node):
-        """Extract code from docstring."""
-        docstring = ast.get_docstring(node)
-        if docstring:
-            parser = doctest.DocTestParser()
-            examples = parser.get_doctest(docstring, {}, None, None, None).examples
-            return ''.join([example.source for example in examples])
-        return None
 
 
 # #
