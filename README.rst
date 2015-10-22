@@ -1,5 +1,5 @@
 Python project requirements tool -- pigar
-=================================
+=========================================
 
 .. image:: https://img.shields.io/travis/Damnever/pigar.svg?style=flat-square
    :target: https://travis-ci.org/Damnever/pigar
