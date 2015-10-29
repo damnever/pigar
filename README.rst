@@ -19,6 +19,12 @@ What pigar can do?
     # Generate requirements for given directory in given file.
     $ pigar -p ../dev-requirements.txt -P ../
 
+  `pigar` will list all files which referenced the package, for example: ::
+
+    # project/foo.py: 2,3
+    # project/bar/baz.py: 2,7,8,9
+    foobar == 3.3.3
+
 - If you do not know the import name belong to which package (more generally, are you crazy for ``Import Error: xxx``?), such as ``bs4`` may come from ``beautifulsoup4``, ``MySQLdb`` may come from ``MySQL_Python``, search it: ::
 
     $ pigar -s bs4 MySQLdb
@@ -36,13 +42,13 @@ What pigar can do?
 Installation
 ------------
 
-Available in Python: 2.7.x, 3.x ::
+Available in Python: 2.7.+, 3.2+ ::
 
     [sudo] pip install pigar
 
 Get newest code from GitHub ::
 
-	pip install git+https://github.com/Damnever/pigar.git@[master or other branch] --upgrade
+  pip install git+https://github.com/Damnever/pigar.git@[master or other branch] --upgrade
 
 Usage
 -----
@@ -50,7 +56,7 @@ Usage
 ::
 
     usage: pigar [-h] [-v] [-u] [-s NAME [NAME ...]] [-c [PATH]] [-l LOG_LEVEL]
-                 [-p SAVE_PATH] [-P PROJECT_PATH]
+             [-i DIR [DIR ...]] [-p SAVE_PATH] [-P PROJECT_PATH]
 
     Python requirements tool -- pigar, it will do only one thing at each time.
     Default action is generate requirements.txt in current directory.
@@ -69,6 +75,8 @@ Usage
                           action done
       -l LOG_LEVEL        Show given level log messages, argument can be (ERROR,
                           WARNING, INFO, DEBUG), case-insensitive
+      -i DIR [DIR ...]    Given a list of directory to ignore, relative directory,
+                          *used for* -c and default action
       -p SAVE_PATH        save requirements in given file path, *used for* default
                           action
       -P PROJECT_PATH     project path, which is directory, *used for* default
