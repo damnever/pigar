@@ -54,6 +54,15 @@ def parse_args(args=None):
         help='Show given level log messages, argument can be '
         '(ERROR, WARNING, INFO, DEBUG), case-insensitive')
     parser.add_argument(
+        '-i',  # '--ignore'
+        dest='ignores',
+        nargs='+',
+        metavar='DIR',
+        default=[],
+        type=ignore_dirs_check,
+        help='Given a list of directory to ignore, relative directory, '
+        '*used for* -c and default action')
+    parser.add_argument(
         '-p',  # '--path',
         dest='save_path',
         nargs=1,
@@ -71,8 +80,9 @@ def parse_args(args=None):
         args = parser.parse_args()
     else:
         args = parser.parse_args(args=args)
-    return (args.log_level[0], args.update_db, args.check_path,
-            args.search_names, args.save_path[0], args.project_path[0])
+    return (args.log_level[0], args.update_db,
+            args.check_path, args.search_names,
+            args.ignores, args.save_path[0], args.project_path[0])
 
 
 def log_level_check(level):
@@ -81,6 +91,14 @@ def log_level_check(level):
         return level
     raise argparse.ArgumentTypeError(
         '"{0}" not in "{1}"'.format(level, ', '.join(levels)))
+
+
+def ignore_dirs_check(d):
+    cur_dir = os.getcwd()
+    ignore = os.path.join(cur_dir, d[:-1] if d.endswith('/') else d)
+    if not os.path.isdir(ignore):
+        raise argparse.ArgumentTypeError('"{0}" is not directory.'.format(d))
+    return ignore
 
 
 def path_check(path):

@@ -33,7 +33,6 @@ ACCEPTABLE_EXT = ('.whl', '.egg', '.tar.gz', '.tar.bz2', '.zip')
 def search_names(names, installed_pkgs):
     """Search package information by names(import in Python code).
     """
-    logger.info('Starting search names ...')
     results = collections.defaultdict(list)
     not_found = list()
     for name in names:

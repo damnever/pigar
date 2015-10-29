@@ -26,6 +26,9 @@ class Dict(dict):
         except KeyError:
             raise AttributeError('"{0}"'.format(name))
 
+    def __setattr__(self, name, value):
+        self[name] = value
+
 
 # Color functions, win8 ...
 _NONE = lambda text: text

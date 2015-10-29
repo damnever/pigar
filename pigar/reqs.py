@@ -9,6 +9,7 @@ import importlib
 import imp
 import ast
 import doctest
+import collections
 try:
     from types import FileType  # py2
 except ImportError:
@@ -16,16 +17,20 @@ except ImportError:
 
 from .log import logger
 from .utils import parse_git_config
+from .modules import ImportedModules
 
 
-def project_import_modules(path):
+def project_import_modules(project_path, ignores):
     """Get entire project all imported modules."""
-    modules = list()
+    modules = ImportedModules()
     local_mods = list()
+    cur_dir = os.getcwd()
+    if not ignores:
+        ignores = [os.path.join(project_path, d) for d in ['.git']]
 
-    logger.info('Extracting project: {0}'.format(path))
-    for dirpath, dirnames, files in os.walk(path):
-        if '.git' in dirpath:
+    logger.info('Extracting project: {0}'.format(project_path))
+    for dirpath, dirnames, files in os.walk(project_path):
+        if dirpath.startswith(tuple(ignores)):
             continue
         logger.info('Extracting directory: {0}'.format(dirpath))
         files = [fn for fn in files if fn[-3:] == '.py']
@@ -34,49 +39,53 @@ def project_import_modules(path):
             local_mods.append(os.path.basename(dirpath))
         for file in files:
             fpath = os.path.join(dirpath, file)
+            fake_path = fpath.split(cur_dir)[1][1:]
             logger.info('Extracting file: {0}'.format(fpath))
             with open(fpath, 'r') as f:
-                modules.extend(file_import_modules(f.read()))
+                modules |= file_import_modules(fake_path, f.read())
 
-    logger.info('Finish extracting in project: {0}'.format(path))
+    logger.info('Finish extracting in project: {0}'.format(project_path))
     return modules, local_mods
 
 
-def file_import_modules(data):
+def file_import_modules(fpath, fdata):
     """Get single file all imported modules."""
-    modules = set()
-    str_codes = set([data])
-    ic = ImportChecker()
+    modules = ImportedModules()
+    str_codes = collections.deque([(fdata, 1)])
 
     while str_codes:
-        ic.clear()
-        str_code = str_codes.pop()
+        str_code, lineno = str_codes.popleft()
+        ic = ImportChecker(fpath, lineno)
         try:
             parsed = ast.parse(str_code)
             ic.visit(parsed)
         # Ignore SyntaxError in Python code.
         except SyntaxError:
             pass
-        modules |= set(ic.modules)
-        str_codes |= set(ic.str_codes)
+        modules |= ic.modules
+        str_codes.extend(ic.str_codes)
+        del ic
 
-    return list(modules)
+    return modules
 
 
-class ImportChecker(ast.NodeVisitor):
+class ImportChecker(object):
 
-    def __init__(self, *args, **kwargs):
-        self._modules = set()
-        self._str_codes = set()
-        super(ImportChecker, self).__init__(*args, **kwargs)
+    def __init__(self, fpath, lineno):
+        self._fpath = fpath
+        self._lineno = lineno - 1
+        self._modules = ImportedModules()
+        self._str_codes = collections.deque()
 
     def visit_Import(self, node):
         """As we know: `import a [as b]`."""
-        self._modules |= {alias.name for alias in node.names}
+        lineno = node.lineno + self._lineno
+        for alias in node.names:
+            self._modules.add(alias.name, self._fpath, lineno)
 
     def visit_ImportFrom(self, node):
         """As we know: `from a import b [as c]`."""
-        self._modules.add(node.module)
+        self._modules.add(node.module, self._fpath, node.lineno + self._lineno)
 
     def visit_Exec(self, node):
         """
@@ -84,7 +93,7 @@ class ImportChecker(ast.NodeVisitor):
         **Just available in python 2.**
         """
         if hasattr(node.body, 's'):
-            self._str_codes.add(node.body.s)
+            self._str_codes.append((node.body.s, node.lineno + self._lineno))
 
     def visit_Expr(self, node):
         """
@@ -96,11 +105,13 @@ class ImportChecker(ast.NodeVisitor):
             if hasattr(value.func, 'id'):
                 if (value.func.id == 'eval' and
                         hasattr(node.value.args[0], 's')):
-                    self._str_codes.add(node.value.args[0].s)
+                    self._str_codes.append(
+                        (node.value.args[0].s, node.lineno + self._lineno))
                 # **`exec` function in Python 3.**
                 elif (value.func.id == 'exec' and
                         hasattr(node.value.args[0], 's')):
-                    self._str_codes.add(node.value.args[0].s)
+                    self._str_codes.append(
+                        (node.value.args[0].s, node.lineno + self._lineno))
 
     def visit_FunctionDef(self, node):
         """
@@ -108,7 +119,7 @@ class ImportChecker(ast.NodeVisitor):
         """
         docstring = self._parse_docstring(node)
         if docstring:
-            self._str_codes.add(docstring)
+            self._str_codes.append((docstring, node.lineno + self._lineno + 2))
 
     def visit_ClassDef(self, node):
         """
@@ -116,7 +127,7 @@ class ImportChecker(ast.NodeVisitor):
         """
         docstring = self._parse_docstring(node)
         if docstring:
-            self._str_codes.add(docstring)
+            self._str_codes.append((docstring, node.lineno + self._lineno + 2))
 
     def visit(self, node):
         """Visit a node, no recursively."""
@@ -140,17 +151,13 @@ class ImportChecker(ast.NodeVisitor):
                 return '\n'.join([example.source for example in examples])
         return None
 
-    def clear(self):
-        self._modules = set()
-        self._str_codes = set()
-
     @property
     def modules(self):
-        return list(self._modules)
+        return self._modules
 
     @property
     def str_codes(self):
-        return list(self._str_codes)
+        return self._str_codes
 
 
 # #
