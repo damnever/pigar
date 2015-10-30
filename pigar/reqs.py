@@ -188,7 +188,8 @@ def is_stdlib(name):
     if isinstance(module_info[0], FileType):
         module_info[0].close()
     if exist and (module_info[1] is not None and
-                  'site-packages' in module_info[1]):
+                  ('site-packages' in module_info[1] or
+                   'dist-packages' in module_info[1])):
         exist = False
     _CHECKED[name] = exist
     return exist
