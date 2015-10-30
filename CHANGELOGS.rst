@@ -1,10 +1,10 @@
 Change Logs
 ===========
 
-Version 0.6.0 (2015.10.29)
+Version 0.6.0 (2015.10.30)
 --------------------------
 
-- Enhancement: issue #7, show imported module come from which file.
+- Enhancement: issue #7, show imported module come from which files.
 - Consider package installed via Git.
 - Add command "-i", used to ignore a list of directory.
 
