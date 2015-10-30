@@ -20,7 +20,7 @@ import concurrent.futures
 from .db import database
 from .unpack import top_level, unpack_html
 from .log import logger
-from .utils import compare_version, cmp_to_key
+from .utils import Color, compare_version, cmp_to_key
 
 
 PYPI_URL = 'https://pypi.python.org/'
@@ -33,7 +33,6 @@ ACCEPTABLE_EXT = ('.whl', '.egg', '.tar.gz', '.tar.bz2', '.zip')
 def search_names(names, installed_pkgs):
     """Search package information by names(import in Python code).
     """
-    logger.info('Starting search names ...')
     results = collections.defaultdict(list)
     not_found = list()
     for name in names:
@@ -63,7 +62,7 @@ def check_latest_version(package):
 
 def update_db():
     """Update database."""
-    logger.info('Starting update database (this will take awhile)...')
+    print(Color.BLUE('Starting update database (this will take awhile)...'))
     logger.info('Crawling "{0}" ...'.format(PKGS_URL))
     data = download(PKGS_URL)
     if not data:
@@ -77,6 +76,7 @@ def update_db():
         pkg_names = list(set(pkg_names) - set(ignore_pkgs))
     extractor = Extractor(pkg_names)
     extractor.extract(extract_pkg_info)
+    print(Color.BLUE('Update database done!'))
 
 
 def extract_pkg_info(pkg_name):

@@ -19,10 +19,15 @@ def foo():
 
 
 class A(object):
-	'''
+	"""
 	>>> import itertools
-	'''
+	"""
 	pass
+
+	def baz(self):
+		"""
+		>>> import baz
+		"""
 
 
 def bar():

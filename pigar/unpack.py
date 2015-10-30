@@ -8,14 +8,12 @@ import zipfile
 import re
 import string
 try:
-    # Py2
-    try:
-        from cStringIO import StringIO as BytesIO
-    except ImportError:
-        from StringIO import StringIO as BytesIO
+    from cStringIO import StringIO as BytesIO  # Py2
 except ImportError:
-    # Py3
-    from io import BytesIO
+    try:
+        from StringIO import StringIO as BytesIO  # Py2
+    except ImportError:
+        from io import BytesIO  # Py3
 
 
 class Archive(object):

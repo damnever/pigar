@@ -15,7 +15,7 @@ class CmdTests(unittest.TestCase):
 
     def setUp(self):
         reqs_path = os.path.join(CUR_DIR, 'requirements.txt')
-        self._default_args = ['error', False, None, [], reqs_path, CUR_DIR]
+        self._default_args = ['error', False, None, [], [], reqs_path, CUR_DIR]
 
     def tearDown(self):
         del self._default_args
@@ -49,14 +49,20 @@ class CmdTests(unittest.TestCase):
         target[0] = args[-1]
         self.assertListEqual(list(parse_args(args)), target)
 
+    def test_ignores(self):
+        args = ['-i', 'pigar']
+        target = self._default_args
+        target[4] = [os.path.join(os.path.join('..', CUR_DIR), args[1])]
+        self.assertListEqual(list(parse_args(args)), target)
+
     def test_save_path(self):
         args = ['-p', os.path.join(os.path.join('..', CUR_DIR), 'test.txt')]
         target = self._default_args
-        target[4] = args[-1]
+        target[5] = args[-1]
         self.assertListEqual(list(parse_args(args)), target)
 
     def test_project_path(self):
         args = ['-P', os.path.join('..', CUR_DIR)]
         target = self._default_args
-        target[5] = args[-1]
+        target[6] = args[-1]
         self.assertListEqual(list(parse_args(args)), target)
