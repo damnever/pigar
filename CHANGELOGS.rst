@@ -4,7 +4,7 @@ Change Logs
 Version 0.6.0 (2015.10.30)
 --------------------------
 
-- Enhancement: issue `#7 <https://github.com/Damnever/pigar/issues/7>`_, show imported module referenced from which files.
+- Enhancement: issue `#7 <https://github.com/Damnever/pigar/issues/7>`_, show imported module come from which files.
 - Consider package installed via Git.
 - Add command "-i", used to ignore a list of directory.
 

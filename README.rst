@@ -19,7 +19,7 @@ What pigar can do?
     # Generate requirements for given directory in given file.
     $ pigar -p ../dev-requirements.txt -P ../
 
-  `pigar` will list all files which referenced the package, for example: ::
+  ``pigar`` will list all files which referenced the package, for example: ::
 
     # project/foo.py: 2,3
     # project/bar/baz.py: 2,7,8,9
