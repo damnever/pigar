@@ -8,17 +8,19 @@ import collections
 class Modules(dict):
     """Modules object will be used to store modules information."""
 
-    def __init__(self, *fields):
+    def __init__(self):
         super(Modules, self).__init__()
 
-    def remove(self, name):
-        del self[name]
+    def remove(self, *names):
+        for name in names:
+            if name in self:
+                self.pop(name)
 
 
 class ImportedModules(Modules):
 
     def __init__(self):
-        super(ImportedModules, self).__init__('file', 'lineno')
+        super(ImportedModules, self).__init__()
 
     def add(self, name, file, lineno):
         if name not in self:
@@ -72,8 +74,6 @@ class _Locations(dict):
                 self.add(file, lineno)
 
     def __iter__(self):
-        it = list()
         for file, linenos in self.items():
-            it.append('{0}: {1}'.format(
+            yield ('{0}: {1}'.format(
                 file, ','.join([str(n) for n in sorted(linenos)])))
-        return iter(it)

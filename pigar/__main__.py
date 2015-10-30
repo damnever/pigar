@@ -94,15 +94,16 @@ def generate_reqs(save_path, project_path, ignores):
     """
     print(Color.BLUE('Starting generate requirements ...'))
     reqs, guess = extract_reqs(project_path, ignores)
+    in_pypi = list()
     answer = 'n'
     if guess:
         pyver = 'Python 3' if sys.version_info[0] == 2 else 'Python 2'
         print(Color.RED('The following modules not in local environment:'))
         for name, detail in guess.items():
             print('  {0} referenced from:\n    {1}'.format(
-                    Color.YELLOW(name), '\n    '.join(detail.comments)))
+                Color.YELLOW(name), '\n    '.join(detail.comments)))
         msg = (Color.RED('Is there modules come from other Python '
-            'version(i.e. {0}) or extension? [y/n] ')).format(pyver)
+               'version(i.e. {0}) or extension? [y/n] ')).format(pyver)
         sys.stdout.write(msg)
         sys.stdout.flush()
         answer = sys.stdin.readline()
@@ -114,6 +115,8 @@ def generate_reqs(save_path, project_path, ignores):
                 with database() as db:
                     rows = db.query_all(name)
                     pkgs = [row.package for row in rows]
+                    if pkgs:
+                        in_pypi.append(name)
                     # If imported name equals to package name.
                     if name in pkgs:
                         idx = pkgs.index(name)
@@ -142,12 +145,12 @@ def generate_reqs(save_path, project_path, ignores):
     print(Color.BLUE('DONE!'))
 
     if guess and answer not in ('y', 'yes'):
-        not_found = guess - reqs
-        if not_found:
+        guess.remove(*in_pypi)
+        if guess:
             print(Color.RED('Following modules not found:'))
-            for name, detail in not_found.items():
+            for name, detail in guess.items():
                 print('  {0} referenced from:\n    {1}'.format(
-                        Color.YELLOW(name), '\n    '.join(detail.comments)))
+                    Color.YELLOW(name), '\n    '.join(detail.comments)))
             print(Color.RED('Maybe you need update database.'))
 
 
