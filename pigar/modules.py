@@ -48,13 +48,6 @@ class ReqsModules(Modules):
         else:
             self[package] = self._Detail(version, locations)
 
-    def __sub__(self, obj):
-        result = self.copy()
-        for name in obj:
-            if name in self:
-                result.pop(name)
-        return result
-
 
 class _Locations(dict):
     """_Locations store code locations(file, linenos)."""
