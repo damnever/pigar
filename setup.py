@@ -20,6 +20,9 @@ if not version:
 with codecs.open('README.rst', encoding='utf-8') as f:
     long_description = f.read()
 
+with codecs.open('CHANGELOGS.rst', encoding='utf-8') as f:
+    change_logs = f.read()
+
 install_requires = ['colorama']
 if sys.version_info < (3, 2):
     install_requires.append('futures')
@@ -29,7 +32,7 @@ setup(
     name='pigar',
     version=version,
     description='Python requirements tool -- pigar',
-    long_description=long_description,
+    long_description=long_description + '\n\n' + change_logs,
     url='https://github.com/Damnever/pigar',
     author='Damnever',
     author_email='dxc.wolf@gmail.com',
