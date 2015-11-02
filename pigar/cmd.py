@@ -86,7 +86,7 @@ def parse_args(args=None):
 
 
 def log_level_check(level):
-    levels = ('ERROR', 'WRANING', 'INFO', 'DEBUG')
+    levels = ('ERROR', 'WARNING', 'INFO', 'DEBUG')
     if level.upper() in levels:
         return level
     raise argparse.ArgumentTypeError(
