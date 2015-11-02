@@ -29,7 +29,7 @@ def project_import_modules(project_path, ignores):
         ignores = [os.path.join(project_path, d) for d in ['.git']]
 
     logger.info('Extracting project: {0}'.format(project_path))
-    for dirpath, dirnames, files in os.walk(project_path):
+    for dirpath, dirnames, files in os.walk(project_path, followlinks=True):
         if dirpath.startswith(tuple(ignores)):
             continue
         logger.info('Extracting directory: {0}'.format(dirpath))
