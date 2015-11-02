@@ -106,10 +106,11 @@ def extract_pkg_info(pkg_name):
     with database() as db:
         with Extractor.write_lock:
             db.insert_package(pkg_name)
-            package = db.query_package(pkg_name)
-            for top in top_levels:
-                top = top or pkg_name  # empty top_level.txt
-                db.insert_name(top, package.id)
+        package = db.query_package(pkg_name)
+        for top in top_levels:
+            top = top or pkg_name  # empty top_level.txt
+        with Extractor.write_lock:
+            db.insert_name(top, package.id)
 
 
 def extract_pkg_version(pkg_name):
