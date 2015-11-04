@@ -173,12 +173,12 @@ def parse_git_config(path):
 
 
 def lines_diff(lines1, lines2):
-    """Show difference between lines with line numbers."""
+    """Show difference between lines."""
     is_diff = False
     diffs = list()
 
     for line in difflib.ndiff(lines1, lines2):
-        if is_diff or line[0] in ('+', '-'):
+        if not is_diff and line[0] in ('+', '-'):
             is_diff = True
         diffs.append(line)
 
