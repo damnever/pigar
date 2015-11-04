@@ -5,6 +5,7 @@ from __future__ import print_function, division, absolute_import
 import os
 import re
 import sys
+import difflib
 try:
     import colorama
 except ImportError:
@@ -169,3 +170,16 @@ def parse_git_config(path):
                 key, value = line.replace(' ', '').split('=')
                 config[section][key] = value
     return config
+
+
+def lines_diff(lines1, lines2):
+    """Show difference between lines with line numbers."""
+    is_diff = False
+    diffs = list()
+
+    for line in difflib.ndiff(lines1, lines2):
+        if is_diff or line[0] in ('+', '-'):
+            is_diff = True
+        diffs.append(line)
+
+    return is_diff, diffs

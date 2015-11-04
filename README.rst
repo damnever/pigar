@@ -11,6 +11,9 @@ Python project requirements tool -- pigar
 What pigar can do?
 ------------------
 
+.. image:: https://github.com/Damnever/pigar/blob/master/pigar-do.gif
+(In GIF, Module ``urlparse`` has been removed in Python3)
+
 - Generate requirements for project, ``pigar`` can consider all kinds of complicated situations. In this project, `py2_requirements.txt <https://github.com/Damnever/pigar/blob/master/py2_requirements.txt>`_ and `py3_requirements.txt <https://github.com/Damnever/pigar/blob/master/py3_requirements.txt>`_ for different python versions ::
 
     # Generate requirements.txt for current directory.
