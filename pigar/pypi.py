@@ -102,6 +102,7 @@ def extract_pkg_info(pkg_name):
             'Maybe package "{0}" is not importable.'.format(pkg_name))
         return
 
+    # Insert into database.
     with database() as db:
         db.insert_package(pkg_name)
         package = db.query_package(pkg_name)
