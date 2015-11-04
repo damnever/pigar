@@ -4,5 +4,5 @@
 # pigar/pypi.py: 19
 futures == 3.0.3
 
-# pigar/utils.py: 9
+# pigar/utils.py: 10
 colorama == 0.3.3
