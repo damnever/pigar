@@ -6,7 +6,6 @@ import sys
 import json
 import signal
 import collections
-import threading
 import multiprocessing
 try:  # py2
     from urllib2 import urlopen, Request, URLError, HTTPError
@@ -104,13 +103,11 @@ def extract_pkg_info(pkg_name):
         return
 
     with database() as db:
-        with Extractor.write_lock:
-            db.insert_package(pkg_name)
+        db.insert_package(pkg_name)
         package = db.query_package(pkg_name)
         for top in top_levels:
             top = top or pkg_name  # empty top_level.txt
-            with Extractor.write_lock:
-                db.insert_name(top, package.id)
+            db.insert_name(top, package.id)
 
 
 def extract_pkg_version(pkg_name):
@@ -138,7 +135,6 @@ class Extractor(object):
 
     Can be used to extract /simple/<pkg_name> or /pypi/<pkg_name>/json.
     """
-    write_lock = threading.Lock()
 
     def __init__(self, names, max_workers=None):
         self._names = names
