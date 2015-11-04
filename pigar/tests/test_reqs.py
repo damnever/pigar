@@ -6,7 +6,7 @@ import os
 import sys
 import unittest
 
-from ..__main__ import extract_reqs
+from ..__main__ import GenerateReqs
 from ..reqs import is_stdlib
 
 
@@ -50,7 +50,7 @@ class ReqsTests(unittest.TestCase):
     @unittest.skipIf(sys.version_info[0] != 3, 'Not python 3.x')
     def test_py3_reqs(self):
         pv = {k: v for k, v in self._installed_packages.values()}
-        reqs, guess = extract_reqs(self._path, [], self._installed_packages)
+        reqs, guess = self._extract_reqs()
         self.assertListEqual(sorted(reqs.keys()), sorted(pv.keys()))
         # Assume 'foobar' is Py3 builtin package, no need install.
         self.assertListEqual(
@@ -63,7 +63,7 @@ class ReqsTests(unittest.TestCase):
     def test_py2_reqs(self):
         self._installed_packages.update({'foobar': ('FooBar', '3.3.3')})
         pv = {k: v for k, v in self._installed_packages.values()}
-        reqs, guess = extract_reqs(self._path, [], self._installed_packages)
+        reqs, guess = self._extract_reqs()
         self.assertListEqual(sorted(reqs.keys()), sorted(pv.keys()))
         self.assertListEqual(guess.keys(), ['builtins'])
         self._check_detail(reqs, pv)
@@ -77,6 +77,10 @@ class ReqsTests(unittest.TestCase):
                 self.assertEqual(detail.version, pv[pkg])
             self.assertListEqual(
                 sorted(detail.comments), sorted(self._module_infos[pkg]))
+
+    def _extract_reqs(self):
+        gr = GenerateReqs('', self._path, [], self._installed_packages)
+        return gr.extract_reqs()
 
 
 class StdlibTest(unittest.TestCase):
