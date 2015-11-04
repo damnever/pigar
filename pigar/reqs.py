@@ -167,8 +167,6 @@ _CHECKED = dict()
 
 
 def is_stdlib(name):
-    if '.' in name:
-        name = name.split('.', 1)[0]
     if name in _CHECKED:
         return _CHECKED[name]
 
