@@ -33,11 +33,11 @@ Futures
 
   If requirements file is overwritten over, ``pigar`` will show difference between old and new.
 
-- If you do not know the import name belong to which package (more generally, are you crazy for ``Import Error: xxx``?), such as ``bs4`` may come from ``beautifulsoup4``, ``MySQLdb`` may come from ``MySQL_Python``, search it: ::
+- If you do not know the import name that belongs to a specific package (more generally, does ``Import Error: xxx`` drive you crazy?), such as ``bs4`` which may come from ``beautifulsoup4`` or ``MySQLdb`` which could come from ``MySQL_Python``, try searching for it: ::
 
     $ pigar -s bs4 MySQLdb
 
-- Check requirements latest version, just do: ::
+- To check requirements for the latest version, just do: ::
 
     # Specific a requirements file.
     $ pigar -c ./requirements.txt
@@ -50,7 +50,7 @@ Futures
 Installation
 ------------
 
-Available in Python: 2.7.+, 3.2+ ::
+Available for Python: 2.7.+, 3.2+ ::
 
     [sudo] pip install pigar
 
@@ -94,15 +94,15 @@ Usage
 More
 ----
 
-``pigar`` do not use regular expression such a violence way, it use AST, that is a better method to extracting imported names from arguments of ``exec``/``eval``, doctest of docstring, etc.
+``pigar`` does not use regular expressions in such a violent way, it uses AST, which is a better method for extracting imported names from arguments of ``exec``/``eval``, doctest of docstring, etc.
 
-Also, ``pigar`` can consider difference between differen Python versions. For example, you can find ``concurrent.futures`` from Python 3.2 standart library, but you will need install ``futures`` before 3.2 version in Python to get ``concurrent.futures``.
+Also, ``pigar`` can detect the difference between differen Python versions. For example, you can find ``concurrent.futures`` from the Python 3.2 standard library, but you will need install ``futures`` in earlier versions of Python to get ``concurrent.futures``.
 
 Finally, you already saw ``Futures``. You can learn more from source code.
 
-Anyway, if you have issue or suggestion, come `here <https://github.com/Damnever/pigar/issues>`_. 
+If you have any issues or suggestions, `please submit an issue on GitHub <https://github.com/Damnever/pigar/issues>`_. 
 
-LISENSE
+LICENSE
 -------
 
 `The BSD 3-Clause License <https://github.com/Damnever/pigar/blob/master/LICENSE>`_
