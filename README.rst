@@ -14,8 +14,8 @@ Python project requirements tool -- pigar
 (In GIF, Module ``urlparse`` has been removed in Python3, ``requests`` has been installed in virtual environment ``pigar-2.7``, not in ``pigar-3.5``)
 
 
-Futures
--------
+Features
+--------
 
 - Generate requirements for project, ``pigar`` can consider all kinds of complicated situations. In this project, `py2_requirements.txt <https://github.com/Damnever/pigar/blob/master/py2_requirements.txt>`_ and `py3_requirements.txt <https://github.com/Damnever/pigar/blob/master/py3_requirements.txt>`_ for different python versions ::
 
@@ -98,7 +98,7 @@ More
 
 Also, ``pigar`` can detect the difference between differen Python versions. For example, you can find ``concurrent.futures`` from the Python 3.2 standard library, but you will need install ``futures`` in earlier versions of Python to get ``concurrent.futures``.
 
-Finally, you already saw ``Futures``. You can learn more from source code.
+Finally, you already saw ``Features``. You can learn more from source code.
 
 If you have any issues or suggestions, `please submit an issue on GitHub <https://github.com/Damnever/pigar/issues>`_. 
 
