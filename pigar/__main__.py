@@ -5,6 +5,7 @@ from __future__ import print_function, division, absolute_import
 import os
 import sys
 import fnmatch
+import codecs
 
 from .cmd import parse_args
 from .reqs import project_import_modules, is_stdlib, get_installed_pkgs_detail
@@ -230,13 +231,13 @@ class GenerateReqs(object):
 
     def _save_old_reqs(self):
         if os.path.isfile(self._save_path):
-            with open(self._save_path, 'rb') as f:
+            with codecs.open(self._save_path, 'rb', 'utf-8') as f:
                 self._old_reqs = f.readlines()
 
     def _reqs_diff(self):
         if not hasattr(self, '_old_reqs'):
             return
-        with open(self._save_path, 'rb') as f:
+        with codecs.open(self._save_path, 'rb', 'utf-8') as f:
             new_reqs = f.readlines()
         is_diff, diffs = lines_diff(self._old_reqs, new_reqs)
         msg = 'Requirements file has been covered, '
