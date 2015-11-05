@@ -17,7 +17,7 @@ if not version:
     raise RuntimeError('Cannot find version information')
 
 
-with codecs.open('README.rst', encoding='utf-8') as f:
+with codecs.open('README-PYPI.rst', encoding='utf-8') as f:
     long_description = f.read()
 
 with codecs.open('CHANGELOGS.rst', encoding='utf-8') as f:
@@ -31,7 +31,8 @@ if sys.version_info < (3, 2):
 setup(
     name='pigar',
     version=version,
-    description='Python requirements tool -- pigar',
+    description=('A fantastic tool to generate requirements for your'
+                 ' Python project, and more than that.'),
     long_description=long_description + '\n\n' + change_logs,
     url='https://github.com/Damnever/pigar',
     author='Damnever',
