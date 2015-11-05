@@ -8,11 +8,12 @@ Python project requirements tool -- pigar
    :target: https://pypi.python.org/pypi/pigar
 
 
-What pigar can do?
-------------------
-
 .. image:: https://github.com/Damnever/pigar/blob/master/pigar-do.gif
-(In GIF, Module ``urlparse`` has been removed in Python3)
+(In GIF, Module ``urlparse`` has been removed in Python3, ``requests`` has been installed in ``pigar-2.7``, not in ``pigar-3.5``)
+
+
+Futures
+-------
 
 - Generate requirements for project, ``pigar`` can consider all kinds of complicated situations. In this project, `py2_requirements.txt <https://github.com/Damnever/pigar/blob/master/py2_requirements.txt>`_ and `py3_requirements.txt <https://github.com/Damnever/pigar/blob/master/py3_requirements.txt>`_ for different python versions ::
 
@@ -27,6 +28,8 @@ What pigar can do?
     # project/foo.py: 2,3
     # project/bar/baz.py: 2,7,8,9
     foobar == 3.3.3
+
+  If requirements file is overwritten over, ``pigar`` will show difference between old and new.
 
 - If you do not know the import name belong to which package (more generally, are you crazy for ``Import Error: xxx``?), such as ``bs4`` may come from ``beautifulsoup4``, ``MySQLdb`` may come from ``MySQL_Python``, search it: ::
 
@@ -93,9 +96,9 @@ More
 
 Also, ``pigar`` can consider difference between differen Python versions. For example, you can find ``concurrent.futures`` from Python 3.2 standart library, but you will need install ``futures`` before 3.2 version in Python to get ``concurrent.futures``.
 
-Finally, you already saw ``What pigar can do?``. You can learn more from source code.
+Finally, you already saw ``Futures``. You can learn more from source code.
 
-Hope `pigar <https://github.com/Damnever/pigar>`_ is useful to you.
+Anyway, if you have issue or suggestion, come `here <https://github.com/Damnever/pigar/issues>`_. 
 
 LISENSE
 -------

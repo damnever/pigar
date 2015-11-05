@@ -1,6 +1,12 @@
 Change Logs
 -----------
 
+Version 0.6.2 (2015.11.5)
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- If requirements file is overwritten over, show difference between old and new.
+- Adjust the structure of the code.
+
 Version 0.6.1 (2015.11.3)
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
