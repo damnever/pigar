@@ -11,7 +11,7 @@ Python project requirements tool -- pigar
 .. image:: https://raw.githubusercontent.com/Damnever/pigar/master/short-view.gif
     :target: https://raw.githubusercontent.com/Damnever/pigar/master/short-view.gif
 
-(In GIF, Module ``urlparse`` has been removed in Python3, ``requests`` has been installed in ``pigar-2.7``, not in ``pigar-3.5``)
+(In GIF, Module ``urlparse`` has been removed in Python3, ``requests`` has been installed in virtual environment ``pigar-2.7``, not in ``pigar-3.5``)
 
 
 Futures
