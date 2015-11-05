@@ -2,13 +2,15 @@ Python project requirements tool -- pigar
 =========================================
 
 .. image:: https://img.shields.io/travis/Damnever/pigar.svg?style=flat-square
-   :target: https://travis-ci.org/Damnever/pigar
+    :target: https://travis-ci.org/Damnever/pigar
 
 .. image:: https://img.shields.io/pypi/v/pigar.svg?style=flat-square
-   :target: https://pypi.python.org/pypi/pigar
+    :target: https://pypi.python.org/pypi/pigar
 
 
-.. image:: https://github.com/Damnever/pigar/blob/master/pigar-do.gif
+.. image:: https://raw.githubusercontent.com/Damnever/pigar/master/short-view.gif
+    :target: https://raw.githubusercontent.com/Damnever/pigar/master/short-view.gif
+
 (In GIF, Module ``urlparse`` has been removed in Python3, ``requests`` has been installed in ``pigar-2.7``, not in ``pigar-3.5``)
 
 
