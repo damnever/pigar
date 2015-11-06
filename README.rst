@@ -1,5 +1,5 @@
-Python project requirements tool -- pigar
-=========================================
+Python project requirements tool – pigar
+========================================
 
 .. image:: https://img.shields.io/travis/Damnever/pigar.svg?style=flat-square
     :target: https://travis-ci.org/Damnever/pigar
@@ -11,13 +11,13 @@ Python project requirements tool -- pigar
 .. image:: https://raw.githubusercontent.com/Damnever/pigar/master/short-view.gif
     :target: https://raw.githubusercontent.com/Damnever/pigar/master/short-view.gif
 
-(In GIF, Module ``urlparse`` has been removed in Python3, ``requests`` has been installed in virtual environment ``pigar-2.7``, not in ``pigar-3.5``)
+(In the GIF, the module ``urlparse`` has been removed in Python3, ``requests`` has been installed in virtual environment ``pigar-2.7``, not in ``pigar-3.5``)
 
 
 Features
 --------
 
-- Generate requirements for project, ``pigar`` can consider all kinds of complicated situations. In this project, `py2_requirements.txt <https://github.com/Damnever/pigar/blob/master/py2_requirements.txt>`_ and `py3_requirements.txt <https://github.com/Damnever/pigar/blob/master/py3_requirements.txt>`_ for different python versions ::
+- When generating requirements for a project, ``pigar`` can consider all kinds of complicated situations. For example, this project has `py2_requirements.txt <https://github.com/Damnever/pigar/blob/master/py2_requirements.txt>`_ and `py3_requirements.txt <https://github.com/Damnever/pigar/blob/master/py3_requirements.txt>`_ for different Python versions: ::
 
     # Generate requirements.txt for current directory.
     $ pigar
@@ -31,7 +31,7 @@ Features
     # project/bar/baz.py: 2,7,8,9
     foobar == 3.3.3
 
-  If requirements file is overwritten over, ``pigar`` will show difference between old and new.
+  If the requirements file is overwritten, ``pigar`` will show the difference between the old and the new.
 
 - If you do not know the import name that belongs to a specific package (more generally, does ``Import Error: xxx`` drive you crazy?), such as ``bs4`` which may come from ``beautifulsoup4`` or ``MySQLdb`` which could come from ``MySQL_Python``, try searching for it: ::
 
@@ -39,22 +39,22 @@ Features
 
 - To check requirements for the latest version, just do: ::
 
-    # Specific a requirements file.
+    # Specify a requirements file.
     $ pigar -c ./requirements.txt
 
-    # Or, you can leave pigar search *requirements.txt in current directory
-    # level by itself, if not found, pigar will generate requirements.txt
-    # for current project then check latest version.
+    # Or, you can let pigar search for *requirements.txt in the current directory
+    # level by itself. If not found, pigar will generate requirements.txt
+    # for the current project, then check for the latest versions.
     $ pigar -c
 
 Installation
 ------------
 
-Available for Python: 2.7.+, 3.2+ ::
+``pigar`` can run on Python 2.7.+ and 3.2+. Install it with ``pip``: ::
 
     [sudo] pip install pigar
 
-Get newest code from GitHub ::
+To get the newest code from GitHub: ::
 
   pip install git+https://github.com/Damnever/pigar.git@[master or other branch] --upgrade
 
@@ -94,11 +94,11 @@ Usage
 More
 ----
 
-``pigar`` does not use regular expressions in such a violent way, it uses AST, which is a better method for extracting imported names from arguments of ``exec``/``eval``, doctest of docstring, etc.
+``pigar`` does not use regular expressions, which would be hacky. Instead, it uses the program’s AST, which is a better method for extracting imported names from arguments of ``exec``/``eval``, doctest of docstring, etc.
 
 Also, ``pigar`` can detect the difference between differen Python versions. For example, you can find ``concurrent.futures`` from the Python 3.2 standard library, but you will need install ``futures`` in earlier versions of Python to get ``concurrent.futures``.
 
-Finally, you already saw ``Features``. You can learn more from source code.
+Finally, you already saw ``Features``. You can learn more from the source code.
 
 If you have any issues or suggestions, `please submit an issue on GitHub <https://github.com/Damnever/pigar/issues>`_. 
 
