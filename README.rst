@@ -64,7 +64,7 @@ Usage
 ::
 
     usage: pigar [-h] [-v] [-u] [-s NAME [NAME ...]] [-c [PATH]] [-l LOG_LEVEL]
-             [-i DIR [DIR ...]] [-p SAVE_PATH] [-P PROJECT_PATH]
+                 [-i DIR [DIR ...]] [-p SAVE_PATH] [-P PROJECT_PATH]
 
     Python requirements tool -- pigar, it will do only one thing at each time.
     Default action is generate requirements.txt in current directory.
@@ -77,13 +77,13 @@ Usage
       -s NAME [NAME ...]  search package name by import name, use it if you do not
                           know import name come from which package, exit when
                           action done
-      -c [PATH]           check requirements latest version. If file path not
-                          given, search *requirements.txt in current directory, if
-                          not found, generate file requirements.txt, exit when
-                          action done
-      -l LOG_LEVEL        Show given level log messages, argument can be (ERROR,
-                          WARNING, INFO, DEBUG), case-insensitive
-      -i DIR [DIR ...]    Given a list of directory to ignore, relative directory,
+      -c [PATH]           check requirements for the latest version. If file path
+                          not given, search *requirements.txt in current
+                          directory, if not found, generate file requirements.txt,
+                          exit when action done
+      -l LOG_LEVEL        show given level log messages, argument can be (ERROR,
+                          WARNING, INFO), case-insensitive
+      -i DIR [DIR ...]    given a list of directory to ignore, relative directory,
                           *used for* -c and default action
       -p SAVE_PATH        save requirements in given file path, *used for* default
                           action
@@ -94,7 +94,7 @@ Usage
 More
 ----
 
-``pigar`` does not use regular expressions, which would be hacky. Instead, it uses the program’s AST, which is a better method for extracting imported names from arguments of ``exec``/``eval``, doctest of docstring, etc.
+``pigar`` does not use regular expressions in such a violent way. Instead, it uses AST, which is a better method for extracting imported names from arguments of ``exec``/``eval``, doctest of docstring, etc.
 
 Also, ``pigar`` can detect the difference between differen Python versions. For example, you can find ``concurrent.futures`` from the Python 3.2 standard library, but you will need install ``futures`` in earlier versions of Python to get ``concurrent.futures``.
 

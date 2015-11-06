@@ -42,8 +42,8 @@ def parse_args(args=None):
         nargs='?',
         type=path_check,
         const=os.getcwd(),
-        help='check requirements latest version. If file path not given, '
-        'search *requirements.txt in current directory, if not found, '
+        help='check requirements for the latest version. If file path not '
+        'given, search *requirements.txt in current directory, if not found, '
         'generate file requirements.txt, exit when action done')
     parser.add_argument(
         '-l',  # '--log_level'
@@ -51,8 +51,8 @@ def parse_args(args=None):
         nargs=1,
         type=log_level_check,
         default=['error'],
-        help='Show given level log messages, argument can be '
-        '(ERROR, WARNING, INFO, DEBUG), case-insensitive')
+        help='show given level log messages, argument can be '
+        '(ERROR, WARNING, INFO), case-insensitive')
     parser.add_argument(
         '-i',  # '--ignore'
         dest='ignores',
@@ -60,7 +60,7 @@ def parse_args(args=None):
         metavar='DIR',
         default=[],
         type=ignore_dirs_check,
-        help='Given a list of directory to ignore, relative directory, '
+        help='given a list of directory to ignore, relative directory, '
         '*used for* -c and default action')
     parser.add_argument(
         '-p',  # '--path',
@@ -86,7 +86,7 @@ def parse_args(args=None):
 
 
 def log_level_check(level):
-    levels = ('ERROR', 'WARNING', 'INFO', 'DEBUG')
+    levels = ('ERROR', 'WARNING', 'INFO')
     if level.upper() in levels:
         return level
     raise argparse.ArgumentTypeError(
