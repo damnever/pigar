@@ -67,6 +67,6 @@ class _Locations(dict):
                 self.add(file, lineno)
 
     def __iter__(self):
-        for file, linenos in self.items():
+        for file, linenos in sorted(self.items()):
             yield ('{0}: {1}'.format(
                 file, ','.join([str(n) for n in sorted(linenos)])))
