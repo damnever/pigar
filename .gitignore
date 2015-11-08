@@ -4,6 +4,5 @@ __pycache__/
 *-info/
 count.py
 insert.py
-README-PYPI.rst
 build/
 dist/
