@@ -33,11 +33,18 @@ def project_import_modules(project_path, ignores):
         if dirpath.startswith(tuple(ignores)):
             continue
         logger.info('Extracting directory: {0}'.format(dirpath))
-        files = [fn for fn in files if fn[-3:] == '.py']
-        local_mods.extend([fn[:-3] for fn in files])
+        py_files = list()
+        for fn in files:
+            # C extension.
+            if fn.endswith('.so'):
+                local_mods.append(fn[:-3])
+            # Normal Python file.
+            if fn.endswith('.py'):
+                local_mods.append(fn[:-3])
+                py_files.append(fn)
         if '__init__.py' in files:
             local_mods.append(os.path.basename(dirpath))
-        for file in files:
+        for file in py_files:
             fpath = os.path.join(dirpath, file)
             fake_path = fpath.split(cur_dir)[1][1:]
             logger.info('Extracting file: {0}'.format(fpath))

@@ -31,16 +31,16 @@ ACCEPTABLE_EXT = ('.whl', '.egg', '.tar.gz', '.tar.bz2', '.zip')
 
 
 def search_names(names, installed_pkgs):
-    """Search package information by names(import in Python code).
+    """Search package information by names(`import XXX`).
     """
     results = collections.defaultdict(list)
     not_found = list()
     for name in names:
         logger.info('Searching package name for "{0}" ...'.format(name))
-        # If exists in local environment, do not check in pypi.
+        # If exists in local environment, do not check on the PyPI.
         if name in installed_pkgs:
             results[name].append(list(installed_pkgs[name]) + ['local'])
-        # Check information in pypi.
+        # Check information on the PyPI.
         else:
             rows = None
             with database() as db:
@@ -48,14 +48,14 @@ def search_names(names, installed_pkgs):
             if rows:
                 for row in rows:
                     version = extract_pkg_version(row.package)
-                    results[name].append((row.package, version, 'pypi'))
+                    results[name].append((row.package, version, 'PyPI'))
             else:
                 not_found.append(name)
     return results, not_found
 
 
 def check_latest_version(package):
-    """Check package latest version in pypi."""
+    """Check package latest version in PyPI."""
     version = extract_pkg_version(package)
     return version
 
@@ -80,7 +80,7 @@ def update_db():
 
 
 def extract_pkg_info(pkg_name):
-    """Extract package information from PYPI."""
+    """Extract package information from PyPI."""
     data = _pkg_json_info(pkg_name)
     # Extracting names which can be imported.
     if not data or not data['urls']:
@@ -89,7 +89,7 @@ def extract_pkg_info(pkg_name):
 
     urls = [item['url'] for item in data['urls']
             if item['filename'].endswith(ACCEPTABLE_EXT)]
-    # Does not has satisfied compressed package.
+    # Has not satisfied compressed package.
     if not urls:
         logger.warning('Package "{0}" can not unpack.'.format(pkg_name))
         return
@@ -112,7 +112,7 @@ def extract_pkg_info(pkg_name):
 
 
 def extract_pkg_version(pkg_name):
-    """Extract package latest version from PYPI."""
+    """Extract package latest version from PyPI."""
     data = _pkg_json_info(pkg_name)
     if not data or not data['releases'] or not data['urls']:
         return 'unknown'
@@ -216,12 +216,12 @@ def _extract_html(html):
     """Extract data from html."""
     names = list()
 
-    class MyParser(HTMLParser):
+    class HrefParser(HTMLParser):
         def handle_starttag(self, tag, attrs):
             if tag == 'a':
                 attrs = dict(attrs)
                 if attrs.get('href', None):
                     names.append(attrs['href'])
 
-    MyParser().feed(html)
+    HrefParser().feed(html)
     return names

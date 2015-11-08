@@ -118,22 +118,25 @@ class GenerateReqs(object):
         reqs, guess = self.extract_reqs()
         in_pypi = list()
         answer = 'n'
+        pyver = None
+
         if guess:
             pyver = 'Python 3' if sys.version_info[0] == 2 else 'Python 2'
-            print(Color.RED('The following modules not in local environment:'))
+            print(Color.RED('The following modules are not found yet:'))
             for name, detail in guess.items():
                 print('  {0} referenced from:\n    {1}'.format(
                     Color.YELLOW(name), '\n    '.join(detail.comments)))
-            msg = (Color.RED('Is there modules come from other Python '
-                   'version(i.e. {0}) or extension? [y/n] ')).format(pyver)
-            sys.stdout.write(msg)
+            msg = ('Some of them may come from other Python version '
+                   '(i.e {0}). Try to search PyPI for the missing '
+                   'modules? [y/N] '.format(pyver))
+            sys.stdout.write(Color.RED(msg))
             sys.stdout.flush()
             answer = sys.stdin.readline()
             answer = answer.strip().lower()
-            if answer not in ('y', 'yes'):
-                print(Color.BLUE('Checking modules in pypi.'))
+            if answer in ('y', 'yes'):
+                print(Color.BLUE('Checking modules on the PyPI...'))
                 for name in guess:
-                    logger.info('Checking {0} in pypi ...'.format(name))
+                    logger.info('Checking {0} on the PyPI ...'.format(name))
                     with database() as db:
                         rows = db.query_all(name)
                         pkgs = [row.package for row in rows]
@@ -152,14 +155,16 @@ class GenerateReqs(object):
         print(Color.BLUE('Generate requirements done!'))
         del reqs
 
-        if guess and answer not in ('y', 'yes'):
+        if guess and answer in ('y', 'yes'):
             guess.remove(*in_pypi)
             if guess:
-                print(Color.RED('Following modules not found:'))
+                print(Color.RED('These modules are not found:'))
                 for name, detail in guess.items():
                     print('  {0} referenced from:\n    {1}'.format(
                         Color.YELLOW(name), '\n    '.join(detail.comments)))
-                print(Color.RED('Maybe you need update database.'))
+                msg = ('Maybe those modules come from other Python version '
+                       '(i.e {0}), or you need update database.'.format(pyver))
+                print(Color.RED(msg))
 
     def extract_reqs(self):
         """Extract requirements from project."""
