@@ -48,7 +48,7 @@ def project_import_modules(project_path, ignores):
             fpath = os.path.join(dirpath, file)
             fake_path = fpath.split(cur_dir)[1][1:]
             logger.info('Extracting file: {0}'.format(fpath))
-            with open(fpath, 'r') as f:
+            with open(fpath, 'rb') as f:
                 modules |= file_import_modules(fake_path, f.read())
 
     logger.info('Finish extracting in project: {0}'.format(project_path))
