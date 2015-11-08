@@ -11,7 +11,7 @@ eval('import foo')
 
 
 exec("import bar", {}, {})
-
+exec("import foobaz")
 
 def foo():
 	import json
