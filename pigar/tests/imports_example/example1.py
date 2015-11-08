@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import os, os.path
+import os
 import sys
 import collections
 
@@ -14,27 +14,25 @@ exec("import bar", {}, {})
 
 
 def foo():
-	import json
-	pass
+    import json
+    pass
 
 
 class A(object):
-	"""
-	>>> import itertools
-	"""
-	pass
-
-	def baz(self):
-		"""
-		>>> import baz
-		"""
+    """
+    >>> import itertools
+    """
+    def baz(self):
+        """
+        >>> import baz
+        """
 
 
 def bar():
-	"""
-	>>> import Queue
-	>>> def test():
-	...     import bisect
-	...     pass
-	"""
-	pass
+    """
+    >>> import Queue
+    >>> def test():
+    ...     import bisect
+    ...     pass
+    """
+    pass

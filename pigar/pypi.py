@@ -191,8 +191,9 @@ _HEADERS = {
     'Accept': '*/*',
     'Accept-Encoding': 'gzip, deflate, sdch',
     'Accept-Language': 'en-US,en;q=0.8,zh-CN;q=0.6,zh;q=0.4',
-    'User-Agent': ('Mozilla/5.0 (X11; Linux x86_64; rv:13.0) AppleWebKit/537.36'
-                   ' (KHTML, like Gecko) Chrome/44.0.2403.157 Safari/537.36'),
+    'User-Agent': ('Mozilla/5.0 (X11; Linux x86_64; rv:13.0) '
+                   'AppleWebKit/537.36 (KHTML, like Gecko) '
+                   'Chrome/44.0.2403.157 Safari/537.36'),
 }
 
 
