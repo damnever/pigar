@@ -27,7 +27,6 @@ class ReqsTests(unittest.TestCase):
             'Foo': ['pigar/tests/imports_example/example1.py: 10'],
             'Bar': ['pigar/tests/imports_example/example1.py: 13'],
             'Baz': ['pigar/tests/imports_example/example1.py: 29'],
-            'foobaz': ['pigar/tests/imports_example/example1.py: 14'],
             'json': ['pigar/tests/imports_example/example1.py: 17'],
             'itertools': ['pigar/tests/imports_example/example1.py: 23'],
             'Queue': ['pigar/tests/imports_example/example1.py: 35'],
@@ -56,7 +55,7 @@ class ReqsTests(unittest.TestCase):
         # Assume 'foobar' is Py3 builtin package, no need install.
         self.assertListEqual(
             sorted(guess.keys()),
-            sorted(['Queue', '__builtin__', 'foobar', 'urlparse', 'foobaz']))
+            sorted(['Queue', '__builtin__', 'foobar', 'urlparse']))
         self._check_detail(reqs, pv)
         self._check_detail(guess, pv, False)
 
@@ -66,7 +65,7 @@ class ReqsTests(unittest.TestCase):
         pv = {k: v for k, v in self._installed_packages.values()}
         reqs, guess = self._extract_reqs()
         self.assertListEqual(sorted(reqs.keys()), sorted(pv.keys()))
-        self.assertListEqual(sorted(guess.keys()), ['builtins', 'foobaz'])
+        self.assertListEqual(guess.keys(), ['builtins'])
         self._check_detail(reqs, pv)
         self._check_detail(guess, pv, False)
 
