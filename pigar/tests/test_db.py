@@ -25,6 +25,7 @@ class DbTests(unittest.TestCase):
         self.assertEqual(row.id, 1)
         self.assertGreaterEqual(self._conn.insert_name('pigar', row.id), 1)
         row = self._conn.query_all('pigar')
-        self.assertDictEqual(dict(row[0]), {'name': 'pigar', 'package': 'pigar'})
+        self.assertDictEqual(dict(row[0]),
+                             {'name': 'pigar', 'package': 'pigar'})
         rows = self._conn.query_package(None)
         self.assertListEqual(rows, ['pigar'])
