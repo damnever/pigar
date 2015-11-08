@@ -101,12 +101,12 @@ class ImportChecker(object):
         """
         if hasattr(node.body, 's'):
             self._str_codes.append(
-                    (getattr(node.body, 's'), node.lineno + self._lineno))
+                (getattr(node.body, 's'), node.lineno + self._lineno))
         # Sometimes exec statement may be called with tuple in py2
         elif hasattr(node.body, 'elts') and len(node.body.elts) >= 1:
             self._str_codes.append(
-                    (getattr(node.body.elts[0], 's'),
-                     node.lineno + self._lineno))
+                (getattr(node.body.elts[0], 's'),
+                    node.lineno + self._lineno))
 
     def visit_Expr(self, node):
         """
