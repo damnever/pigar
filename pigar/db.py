@@ -114,21 +114,23 @@ class Database(object):
     def _create_tables(self, other=_TABLE_OTHER_SUFFIX):
         cursor = self._conn.cursor()
         try:
+            # Create table `table_packages`.
             sql = '''CREATE TABLE {0} (
                 id INTEGER PRIMARY KEY,  -- id will auto increment
                 package VARCHAR NOT NULL UNIQUE
             )'''.format(self._package_table())
             self._execute(cursor, sql)
 
+            # Create `table_[a-z]`.
+            sql = '''CREATE TABLE {0} (
+                id INTEGER PRIMARY KEY,
+                name VARCHAR NOT NULL,
+                pkgid INTEGER NOT NULL
+                -- FOREIGN KEY(pkgid) REFERENCES packages(id)
+            )'''
             for initial in (list(lowercase) + [other]):
                 table = self._name_table(initial)
-                sql = '''CREATE TABLE {0} (
-                    id INTEGER PRIMARY KEY,
-                    name VARCHAR NOT NULL,
-                    pkgid INTEGER NOT NULL
-                    -- FOREIGN KEY(pkgid) REFERENCES packages(id)
-                )'''.format(table)
-                self._execute(cursor, sql)
+                self._execute(cursor, sql.format(table))
         finally:
             cursor.close()
 
