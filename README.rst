@@ -8,8 +8,8 @@ Python project requirements tool – pigar
     :target: https://pypi.python.org/pypi/pigar
 
 
-.. image:: https://raw.githubusercontent.com/Damnever/pigar/master/short-view.gif
-    :target: https://raw.githubusercontent.com/Damnever/pigar/master/short-view.gif
+.. image:: https://raw.githubusercontent.com/Damnever/pigar/master/short-guide.gif
+    :target: https://raw.githubusercontent.com/Damnever/pigar/master/short-guide.gif
 
 (In the GIF, the module ``urlparse`` has been removed in Python3, ``requests`` has been installed in virtual environment ``pigar-2.7``, not in ``pigar-3.5``)
 
