@@ -9,8 +9,9 @@ python:
     - 3.5
 
 install:
-    - pip install colorama
-    - if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then pip install futures; fi
+    - if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then travis_retry pip install -r py2_requirements.txt; fi
+    - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then travis_retry pip install -r py3_requirements.txt; fi
+
 
 script:
     - make test
