@@ -10,7 +10,7 @@ python:
 
 install:
     - pip install colorama
-    - if [[ $TRAVIS_PYTHON_VERSION == '2.7'* ]]; then pip install futures; fi
+    - if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then pip install futures; fi
 
 script:
     - make test
