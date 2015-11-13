@@ -1,6 +1,7 @@
 language: python
 
 python:
+    - "2.7.6"
     - "2.7"
     - "3.2"
     - "3.3"
@@ -11,6 +12,8 @@ install:
     - if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then travis_retry pip install -r py2_requirements.txt; fi
     - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then travis_retry pip install -r py3_requirements.txt; fi
 
-
 script:
     - make test
+
+sudo: required
+dist: trusty
