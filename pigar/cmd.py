@@ -80,9 +80,9 @@ def parse_args(args=None):
         args = parser.parse_args()
     else:
         args = parser.parse_args(args=args)
-    return (args.log_level[0], args.update_db,
-            args.check_path, args.search_names,
-            args.ignores, args.save_path[0], args.project_path[0])
+    return (args.log_level[0], args.update_db, args.check_path,
+            args.search_names, args.ignores, args.save_path[0],
+            args.project_path[0])
 
 
 def log_level_check(level):
