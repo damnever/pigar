@@ -96,7 +96,7 @@ More
 
 ``pigar`` does not use regular expressions in such a violent way. Instead, it uses AST, which is a better method for extracting imported names from arguments of ``exec``/``eval``, doctest of docstring, etc.
 
-Also, ``pigar`` can detect the difference between differen Python versions. For example, you can find ``concurrent.futures`` from the Python 3.2 standard library, but you will need install ``futures`` in earlier versions of Python to get ``concurrent.futures``.
+Also, ``pigar`` can detect the difference between different Python versions. For example, you can find ``concurrent.futures`` from the Python 3.2 standard library, but you will need install ``futures`` in earlier versions of Python to get ``concurrent.futures``.
 
 Finally, you already saw ``Features``. You can learn more from the source code.
 
