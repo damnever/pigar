@@ -27,7 +27,7 @@ def project_import_modules(project_path, ignores):
     cur_dir = os.getcwd()
     ignore_paths = collections.defaultdict(set)
     if not ignores:
-        ignore_paths[project_path] = {'.git'}
+        ignore_paths[project_path].add('.git')
     else:
         for path in ignores:
             parent_dir = os.path.dirname(path)
