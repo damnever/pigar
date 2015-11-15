@@ -50,9 +50,14 @@ class CmdTests(unittest.TestCase):
         self.assertListEqual(list(parse_args(args)), target)
 
     def test_ignores(self):
-        args = ['-i', 'pigar']
         target = self._default_args
-        target[4] = [os.path.join(os.path.join('..', CUR_DIR), args[1])]
+        target[4] = [os.path.join(os.path.join('..', CUR_DIR), 'pigar')]
+
+        args = ['-i', 'pigar']
+        self.assertListEqual(list(parse_args(args)), target)
+        args = ['-i', './pigar']
+        self.assertListEqual(list(parse_args(args)), target)
+        args = ['-i', 'pigar/']
         self.assertListEqual(list(parse_args(args)), target)
 
     def test_save_path(self):
