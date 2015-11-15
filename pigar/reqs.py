@@ -36,8 +36,8 @@ def project_import_modules(project_path, ignores):
     logger.info('Extracting project: {0}'.format(project_path))
     for dirpath, dirnames, files in os.walk(project_path, followlinks=True):
         if dirpath in ignore_paths:
-            dirnames[:] = [d for d in dirnames \
-                    if d not in ignore_paths[dirpath]]
+            dirnames[:] = [d for d in dirnames
+                           if d not in ignore_paths[dirpath]]
         logger.info('Extracting directory: {0}'.format(dirpath))
         py_files = list()
         for fn in files:
