@@ -94,8 +94,7 @@ def log_level_check(level):
 
 
 def ignore_dirs_check(d):
-    cur_dir = os.getcwd()
-    ignore = os.path.join(cur_dir, d[:-1] if d.endswith('/') else d)
+    ignore = os.path.abspath(d)
     if not os.path.isdir(ignore):
         raise argparse.ArgumentTypeError('"{0}" is not directory.'.format(d))
     return ignore

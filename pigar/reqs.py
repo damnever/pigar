@@ -25,13 +25,19 @@ def project_import_modules(project_path, ignores):
     modules = ImportedModules()
     local_mods = list()
     cur_dir = os.getcwd()
+    ignore_paths = collections.defaultdict(set)
     if not ignores:
-        ignores = [os.path.join(project_path, d) for d in ['.git']]
+        ignore_paths[project_path] = {'.git'}
+    else:
+        for path in ignores:
+            parent_dir = os.path.dirname(path)
+            ignore_paths[parent_dir].add(os.path.basename(path))
 
     logger.info('Extracting project: {0}'.format(project_path))
     for dirpath, dirnames, files in os.walk(project_path, followlinks=True):
-        if dirpath.startswith(tuple(ignores)):
-            continue
+        if dirpath in ignore_paths:
+            dirnames[:] = [d for d in dirnames
+                           if d not in ignore_paths[dirpath]]
         logger.info('Extracting directory: {0}'.format(dirpath))
         py_files = list()
         for fn in files:
