@@ -179,9 +179,8 @@ class ImportChecker(object):
         return self._str_codes
 
 
-# #
 # Check whether it is stdlib module.
-# #
+
 def _checked_cache(func):
     checked = dict()
 
