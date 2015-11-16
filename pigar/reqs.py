@@ -10,6 +10,7 @@ import imp
 import ast
 import doctest
 import collections
+import functools
 try:
     from types import FileType  # py2
 except ImportError:
@@ -181,13 +182,20 @@ class ImportChecker(object):
 # #
 # Check whether it is stdlib module.
 # #
-_CHECKED = dict()
+def _checked_cache(func):
+    checked = dict()
+
+    @functools.wraps(func)
+    def _wrapper(name):
+        if name not in checked:
+            checked[name] = func(name)
+        return checked[name]
+
+    return _wrapper
 
 
+@_checked_cache
 def is_stdlib(name):
-    if name in _CHECKED:
-        return _CHECKED[name]
-
     exist = True
     module_info = ('', '', '')
     try:
@@ -207,7 +215,6 @@ def is_stdlib(name):
                   ('site-packages' in module_info[1] or
                    'dist-packages' in module_info[1])):
         exist = False
-    _CHECKED[name] = exist
     return exist
 
 
