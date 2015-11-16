@@ -179,8 +179,6 @@ class ImportChecker(object):
         return self._str_codes
 
 
-# Check whether it is stdlib module.
-
 def _checked_cache(func):
     checked = dict()
 
@@ -195,6 +193,7 @@ def _checked_cache(func):
 
 @_checked_cache
 def is_stdlib(name):
+    """Check whether it is stdlib module."""
     exist = True
     module_info = ('', '', '')
     try:
