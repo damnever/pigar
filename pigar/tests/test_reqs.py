@@ -18,6 +18,9 @@ class ReqsTests(unittest.TestCase):
             'bar': ('Bar', '1.1.1'),
             'baz': ('Baz', '2.2.2'),
             'foobaz': ('FooBaz', '20151110'),
+            'mod': ('Mod', '1.0.0'),
+            'name': ('Name', '1.0.0'),
+            'pkg': ('Pkg', '1.0.0'),
         }
         self._module_infos = {
             'os': ['pigar/tests/imports_example/example1.py: 3'],
@@ -33,6 +36,9 @@ class ReqsTests(unittest.TestCase):
             'Baz': ['pigar/tests/imports_example/example1.py: 30'],
             'Queue': ['pigar/tests/imports_example/example1.py: 36'],
             'bisect': ['pigar/tests/imports_example/example1.py: 38'],
+            'Mod': ['pigar/tests/imports_example/example1.py: 43'],
+            'Name': ['pigar/tests/imports_example/example1.py: 44'],
+            'Pkg': ['pigar/tests/imports_example/example1.py: 45'],
             'urlparse': ['pigar/tests/imports_example/example2.py: 4'],
             'urllib': ['pigar/tests/imports_example/example2.py: 6'],
             '__builtin__': ['pigar/tests/imports_example/example2.py: 8'],
