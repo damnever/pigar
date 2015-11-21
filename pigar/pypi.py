@@ -62,7 +62,7 @@ def check_latest_version(package):
 
 def update_db():
     """Update database."""
-    print(Color.BLUE('Starting update database (this will take awhile)...'))
+    print(Color.BLUE('Starting update database (this will take a while)...'))
     logger.info('Crawling "{0}" ...'.format(PKGS_URL))
     data = download(PKGS_URL)
     if not data:
@@ -139,7 +139,7 @@ class Extractor(object):
 
     def __init__(self, names, max_workers=None):
         self._names = names
-        self._max_workers = max_workers or (multiprocessing.cpu_count() * 5)
+        self._max_workers = max_workers or (multiprocessing.cpu_count() * 4)
         self._futures = dict()
         self._canceled = False
 
