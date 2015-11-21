@@ -7,13 +7,7 @@ import tarfile
 import zipfile
 import re
 import string
-try:
-    from cStringIO import StringIO as BytesIO  # Py2
-except ImportError:
-    try:
-        from StringIO import StringIO as BytesIO  # Py2
-    except ImportError:
-        from io import BytesIO  # Py3
+import io
 
 
 class Archive(object):
@@ -111,7 +105,7 @@ class Archive(object):
 
 def top_level(url, data):
     """Read top level names from compressed file."""
-    sb = BytesIO(data)
+    sb = io.BytesIO(data)
     txt = None
     with Archive(url, sb) as archive:
         file = None
@@ -128,7 +122,7 @@ def top_level(url, data):
 def unpack_html(data):
     """Unpack web page, Content-Encoding: gzip."""
     try:
-        sb = BytesIO(data)
+        sb = io.BytesIO(data)
         gz = gzip.GzipFile(fileobj=sb)
         data = gz.read()
     except Exception:
