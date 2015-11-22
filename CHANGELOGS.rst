@@ -2,11 +2,16 @@ Change Logs
 -----------
 
 
+Version 0.6.6 (2015.11.22)
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Fixed IndexError.
+
+
 Version 0.6.5 (2015.11.22)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Fixed AttributeError.
-- Fixed IndexError.
 - Fixed PEP8 warning.
 
 
