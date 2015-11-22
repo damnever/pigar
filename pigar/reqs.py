@@ -137,21 +137,25 @@ class ImportChecker(object):
                         hasattr(node.value.args[0], 's')):
                     self._str_codes.append(
                         (node.value.args[0].s, node.lineno + self._lineno))
+                # `__import__` function.
                 elif (value.func.id == '__import__' and
+                        len(node.value.args) > 0 and
                         hasattr(node.value.args[0], 's')):
                     self._modules.add(node.value.args[0].s, self._fpath,
                                       node.lineno + self._lineno)
+            # `import_module` function.
             elif getattr(value.func, 'attr', '') == 'import_module':
                 module = getattr(value.func, 'value', None)
                 if (module is not None and
                         getattr(module, 'id', '') == 'importlib'):
                     args = node.value.args
-                    if hasattr(args[0], 's'):
+                    arg_len = len(args)
+                    if arg_len > 0 and hasattr(args[0], 's'):
                         name = args[0].s
                         if not name.startswith('.'):
                             self._modules.add(name, self._fpath,
                                               node.lineno + self._lineno)
-                        elif len(args) == 2 and hasattr(args[1], 's'):
+                        elif arg_len == 2 and hasattr(args[1], 's'):
                             self._modules.add(args[1].s, self._fpath,
                                               node.lineno + self._lineno)
 
