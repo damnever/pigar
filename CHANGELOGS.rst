@@ -7,7 +7,7 @@ Version 0.6.4 (2015.11.22)
 - Removed useless code.
 - Cache modules, to avoid duplication of inspection.
 
-Thank @spacewander for the following contributions:
+Thank `@spacewander <https://github.com/spacewander>`_ for the following contributions:
 
 - Fixed error for Python 2.7.6.
 - Fixed error when using './xxx' as relative path.
