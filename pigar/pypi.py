@@ -2,9 +2,7 @@
 
 from __future__ import print_function, division, absolute_import
 
-import sys
 import json
-import signal
 import collections
 import multiprocessing
 try:  # py2
@@ -81,6 +79,7 @@ def update_db():
 
 def extract_pkg_info(pkg_name):
     """Extract package information from PyPI."""
+    logger.info('Extracting information of package "{0}".'.format(pkg_name))
     data = _pkg_json_info(pkg_name)
     # Extracting names which can be imported.
     if not data or not data['urls']:
@@ -141,13 +140,6 @@ class Extractor(object):
         self._names = names
         self._max_workers = max_workers or (multiprocessing.cpu_count() * 4)
         self._futures = dict()
-        self._canceled = False
-
-        # Register signal SIGINT and ...
-        if sys.stdin.isatty():
-            signal.signal(signal.SIGINT, self._signal_stop)
-        for sig in (signal.SIGABRT, signal.SIGTERM):
-            signal.signal(sig, self._signal_stop)
 
     def extract(self, job):
         """Extract url by package name."""
@@ -156,11 +148,15 @@ class Extractor(object):
             for name in self._names:
                 self._futures[executor.submit(job, name)] = name
 
-            self.wait_complete()
-            if self._canceled:
-                logger.warning('** Canceling ...^... Please wait **')
+            try:
+                self.wait_complete()
+            except KeyboardInterrupt:
+                print(Color.BLUE('** Canceling ...^... Please wait **'))
+                self.cancel()
                 executor.shutdown()
-        logger.info('Extracting packages done')
+                print(Color.BLUE('All tasks canceled!'))
+            else:
+                print(Color.BLUE('Extracting packages done!'))
 
     def wait_complete(self):
         """Wait for futures complete done."""
@@ -170,20 +166,14 @@ class Extractor(object):
             except concurrent.futures.CancelledError:
                 break
             name = self._futures[future]
-            if error is None:
-                logger.info('Extracting "{0}" done'.format(name))
-            else:
+            if error is not None:
                 err_msg = 'Extracting "{0}", got: {1}'.format(name, error)
                 logger.error(err_msg)
 
     def cancel(self):
+        print("+" * 60)
         for future in self._futures:
             future.cancel()
-        self._canceled = True
-
-    def _signal_stop(self, signum, frame):
-        logger.warning('Received signal {0}, stoping ...'.format(signum))
-        self.cancel()
 
 
 # Fake headers, just in case.
