@@ -1,7 +1,7 @@
 Change Logs
 -----------
 
-Version 0.6.4 (2015.11.16)
+Version 0.6.4 (2015.11.22)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Removed useless code.
