@@ -1,6 +1,18 @@
 Change Logs
 -----------
 
+Version 0.6.4 (2015.11.16)
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Removed useless code.
+- Cache modules, to avoid duplication of inspection.
+
+Thank @spacewander for the following contributions:
+
+- Fixed error for Python 2.7.6.
+- Fixed error when using './xxx' as relative path.
+- Support ``importlib.import_module`` and ``__import__``.
+
 Version 0.6.3 (2015.11.09)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -40,7 +52,7 @@ Version 0.5.2-0.5.4 (2015.10.6)
 
 - Fixed issue `#1 <https://github.com/Damnever/pigar/issues/1>`_.
 - Make version compare more effective.
-- Remove useless code.
+- Removed useless code.
 
 Version 0.5.1 (2015.10.01)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
