@@ -36,15 +36,16 @@ class ReqsTests(unittest.TestCase):
             'Baz': ['pigar/tests/imports_example/example1.py: 30'],
             'Queue': ['pigar/tests/imports_example/example1.py: 36'],
             'bisect': ['pigar/tests/imports_example/example1.py: 38'],
-            'Mod': ['pigar/tests/imports_example/example1.py: 43'],
-            'Name': ['pigar/tests/imports_example/example1.py: 44'],
-            'Pkg': ['pigar/tests/imports_example/example1.py: 45'],
+            'Mod': ['pigar/tests/imports_example/example1.py: 44'],
+            'Name': ['pigar/tests/imports_example/example1.py: 46'],
+            'Pkg': ['pigar/tests/imports_example/example1.py: 48'],
             'urlparse': ['pigar/tests/imports_example/example2.py: 4'],
             'urllib': ['pigar/tests/imports_example/example2.py: 6'],
             '__builtin__': ['pigar/tests/imports_example/example2.py: 8'],
             'builtins': ['pigar/tests/imports_example/example2.py: 10'],
             'example1': ['pigar/tests/imports_example/example2.py: 12'],
         }
+        self._try_imports = ['urlparse', 'urllib', '__builtin__', 'builtins']
         if sys.version_info[0] == 2:
             self._installed_packages.update({'foobar': ('FooBar', '3.6.9')})
         self._path = os.path.abspath(
@@ -58,8 +59,10 @@ class ReqsTests(unittest.TestCase):
     @unittest.skipIf(sys.version_info[0] != 3, 'Not python 3.x')
     def test_py3_reqs(self):
         pv = {k: v for k, v in self._installed_packages.values()}
-        reqs, guess = self._extract_reqs()
+        reqs, try_imports, guess = self._extract_reqs()
+
         self.assertListEqual(sorted(reqs.keys()), sorted(pv.keys()))
+        self.assertListEqual(sorted(try_imports), sorted(self._try_imports))
         # Assume 'foobar' is Py3 builtin package, no need install.
         self.assertListEqual(
             sorted(guess.keys()),
@@ -71,7 +74,9 @@ class ReqsTests(unittest.TestCase):
     def test_py2_reqs(self):
         self._installed_packages.update({'foobar': ('FooBar', '3.3.3')})
         pv = {k: v for k, v in self._installed_packages.values()}
-        reqs, guess = self._extract_reqs()
+        reqs, try_imports, guess = self._extract_reqs()
+
+        self.assertListEqual(sorted(try_imports), sorted(self._try_imports))
         self.assertListEqual(sorted(reqs.keys()), sorted(pv.keys()))
         self.assertListEqual(guess.keys(), ['builtins'])
         self._check_detail(reqs, pv)

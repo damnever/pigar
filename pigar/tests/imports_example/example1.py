@@ -40,6 +40,9 @@ def bar():
     """
     pass
 
+
 __import__('mod', globals(), locals())
+
 importlib.import_module('name')
+
 importlib.import_module('.name', 'pkg.subpkg')

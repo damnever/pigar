@@ -16,6 +16,11 @@ from .log import logger, enable_pretty_logging
 from .modules import ReqsModules
 
 
+if sys.version_info[0] < 3:
+    import __builtin__
+    __builtin__.range = __builtin__.xrange
+
+
 class Main(object):
 
     def __init__(self):
@@ -115,8 +120,8 @@ class GenerateReqs(object):
         `save_path`.
         """
         print(Color.BLUE('Starting generate requirements ...'))
-        reqs, guess = self.extract_reqs()
-        in_pypi = list()
+        reqs, try_imports, guess = self.extract_reqs()
+        in_pypi = set()
         answer = 'n'
         pyver = None
 
@@ -127,8 +132,9 @@ class GenerateReqs(object):
                 print('  {0} referenced from:\n    {1}'.format(
                     Color.YELLOW(name), '\n    '.join(detail.comments)))
             msg = ('Some of them may come from other Python version '
-                   '(i.e {0}). Try to search PyPI for the missing '
-                   'modules? [y/N] '.format(pyver))
+                   '(i.e {0}).\nTry to search PyPI for the missing '
+                   'modules and filter some unnecessary modules? [y/N] '
+                   ).format(pyver)
             sys.stdout.write(Color.RED(msg))
             sys.stdout.flush()
             answer = sys.stdin.readline()
@@ -141,7 +147,7 @@ class GenerateReqs(object):
                         rows = db.query_all(name)
                         pkgs = [row.package for row in rows]
                         if pkgs:
-                            in_pypi.append(name)
+                            in_pypi.add(name)
                         for pkg in self._best_matchs(name, pkgs):
                             latest = check_latest_version(pkg)
                             reqs.add(pkg, latest, guess[name].comments)
@@ -156,36 +162,34 @@ class GenerateReqs(object):
         del reqs
 
         if guess and answer in ('y', 'yes'):
-            guess.remove(*in_pypi)
+            guess.remove(*(in_pypi | try_imports))
             if guess:
                 print(Color.RED('These modules are not found:'))
                 for name, detail in guess.items():
                     print('  {0} referenced from:\n    {1}'.format(
                         Color.YELLOW(name), '\n    '.join(detail.comments)))
-                msg = ('Maybe those modules come from other Python version '
-                       '(i.e {0}), or you need update database.'.format(pyver))
-                print(Color.RED(msg))
+                print(Color.RED('Maybe or you need update database.'))
 
     def extract_reqs(self):
         """Extract requirements from project."""
         reqs = ReqsModules()
         guess = ReqsModules()
-        modules, local_mods = project_import_modules(
+        modules, try_imports, local_mods = project_import_modules(
             self._project_path, self._ignores)
 
         # Filtering modules
         candidates = self._filter_modules(modules, local_mods)
 
         logger.info('Check module in local environment.')
-        for (name, raw_name) in candidates:
+        for name in candidates:
             logger.info('Checking module: {0}'.format(name))
             if name in self._installed_pkgs:
                 pkg_name, version = self._installed_pkgs[name]
-                reqs.add(pkg_name, version, modules[raw_name])
+                reqs.add(pkg_name, version, modules[name])
             else:
-                guess.add(name, 0, modules[raw_name])
+                guess.add(name, 0, modules[name])
         logger.info('Finish local environment checking.')
-        return reqs, guess
+        return reqs, try_imports, guess
 
     def _write_reqs(self, reqs):
         print(Color.BLUE('Writing requirements to "{0}"'.format(
@@ -215,22 +219,14 @@ class GenerateReqs(object):
 
         logger.info('Filtering modules ...')
         for module in modules:
-            raw_name = module
             logger.info('Checking module: {0}'.format(module))
             if not module or module.startswith('.'):
                 continue
-            is_local = False
-            for mod in local_mods:
-                if mod == module or module.startswith(mod + '.'):
-                    is_local = True
-                    break
-            if is_local:
+            if module in local_mods:
                 continue
-            if '.' in module:
-                module = module.split('.', 1)[0]
             if is_stdlib(module):
                 continue
-            candidates.add((module, raw_name))
+            candidates.add(module)
 
         return candidates
 

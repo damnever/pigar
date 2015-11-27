@@ -24,6 +24,7 @@ from .modules import ImportedModules
 def project_import_modules(project_path, ignores):
     """Get entire project all imported modules."""
     modules = ImportedModules()
+    try_imports = set()
     local_mods = list()
     cur_dir = os.getcwd()
     ignore_paths = collections.defaultdict(set)
@@ -56,16 +57,19 @@ def project_import_modules(project_path, ignores):
             fake_path = fpath.split(cur_dir)[1][1:]
             logger.info('Extracting file: {0}'.format(fpath))
             with open(fpath, 'rb') as f:
-                modules |= file_import_modules(fake_path, f.read())
+                fmodules, try_ipts = file_import_modules(fake_path, f.read())
+                modules |= fmodules
+                try_imports |= try_ipts
 
     logger.info('Finish extracting in project: {0}'.format(project_path))
-    return modules, local_mods
+    return modules, try_imports, local_mods
 
 
 def file_import_modules(fpath, fdata):
     """Get single file all imported modules."""
     modules = ImportedModules()
     str_codes = collections.deque([(fdata, 1)])
+    try_imports = set()
 
     while str_codes:
         str_code, lineno = str_codes.popleft()
@@ -78,9 +82,10 @@ def file_import_modules(fpath, fdata):
             pass
         modules |= ic.modules
         str_codes.extend(ic.str_codes)
+        try_imports |= ic.try_imports
         del ic
 
-    return modules
+    return modules, try_imports
 
 
 class ImportChecker(object):
@@ -90,16 +95,39 @@ class ImportChecker(object):
         self._lineno = lineno - 1
         self._modules = ImportedModules()
         self._str_codes = collections.deque()
+        self._try_imports = set()
 
-    def visit_Import(self, node):
+    def visit_Import(self, node, try_=False):
         """As we know: `import a [as b]`."""
         lineno = node.lineno + self._lineno
         for alias in node.names:
             self._modules.add(alias.name, self._fpath, lineno)
+            if try_:
+                self._try_imports.add(alias.name)
 
-    def visit_ImportFrom(self, node):
+    def visit_ImportFrom(self, node, try_=False):
         """As we know: `from a import b [as c]`."""
         self._modules.add(node.module, self._fpath, node.lineno + self._lineno)
+        if try_:
+            self._try_imports.add(node.module)
+
+    def visit_TryExcept(self, node):
+        """
+        If modules which imported by `try except` and not found,
+        maybe them come from other Python version.
+        """
+        for ipt in node.body:
+            if ipt.__class__.__name__.startswith('Import'):
+                method = 'visit_' + ipt.__class__.__name__
+                getattr(self, method)(ipt, True)
+        for handler in node.handlers:
+            for ipt in handler.body:
+                if ipt.__class__.__name__.startswith('Import'):
+                    method = 'visit_' + ipt.__class__.__name__
+                    getattr(self, method)(ipt, True)
+
+    # For Python 3.3+
+    visit_Try = visit_TryExcept
 
     def visit_Exec(self, node):
         """
@@ -118,11 +146,11 @@ class ImportChecker(object):
         """
         Check `expression` of `eval(expression[, globals[, locals]])`.
         Check `expression` of `exec(expression[, globals[, locals]])`
-            in python 3.
+        in python 3.
         Check `name` of `__import__(name[, globals[, locals[,
-            fromlist[, level]]]])`.
+        fromlist[, level]]]])`.
         Check `name` or `package` of `importlib.import_module(name,
-            package=None)`.
+        package=None)`.
         """
         # Built-in functions
         value = node.value
@@ -204,6 +232,11 @@ class ImportChecker(object):
     @property
     def str_codes(self):
         return self._str_codes
+
+    @property
+    def try_imports(self):
+        return set((name.split('.')[0] if name and '.' in name else name)
+                   for name in self._try_imports)
 
 
 def _checked_cache(func):
