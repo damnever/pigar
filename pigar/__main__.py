@@ -85,7 +85,7 @@ class Main(object):
         installed_pkgs = {v[0]: v[1] for k, v in self.installed_pkgs.items()}
         for pkg in reqs:
             current = reqs[pkg]
-            # If no version specific in requirements,
+            # If no version specifies in requirements,
             # check in installed packages.
             if current == '' and pkg in installed_pkgs:
                 current = installed_pkgs[pkg]

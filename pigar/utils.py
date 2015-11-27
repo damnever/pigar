@@ -12,9 +12,6 @@ except ImportError:
     colorama = None
 
 
-_PKG_V_RE = re.compile(r'^(?P<pkg>[^><==]+)[><==]{,2}(?P<version>.*)$')
-
-
 class Dict(dict):
     """Convert dict key object to attribute."""
 
@@ -75,13 +72,14 @@ def print_table(rows, headers=['PACKAGE', 'CURRENT', 'LATEST']):
 
 
 def parse_reqs(fpath):
+    pkg_v_re = re.compile(r'^(?P<pkg>[^><==]+)[><==]{,2}(?P<version>.*)$')
     """Parse requirements file."""
     reqs = dict()
     with open(fpath, 'r') as f:
         for line in f:
             if line.startswith('#'):
                 continue
-            m = _PKG_V_RE.match(line.strip())
+            m = pkg_v_re.match(line.strip())
             if m:
                 d = m.groupdict()
                 reqs[d['pkg'].strip()] = d['version'].strip()

@@ -116,7 +116,7 @@ def extract_pkg_version(pkg_name):
     if not data or not data['releases'] or not data['urls']:
         return 'unknown'
     latest = data['info'].get('version', None)
-    if not latest:
+    if latest is None:
         latest = sorted(data['releases'], key=cmp_to_key(compare_version))
         latest = latest[-1]
     return latest
