@@ -23,6 +23,8 @@ class ImportedModules(Modules):
         super(ImportedModules, self).__init__()
 
     def add(self, name, file, lineno):
+        if name is not None and '.' in name and not name.startswith('.'):
+            name = name.split('.')[0]
         if name not in self:
             self[name] = _Locations()
         self[name].add(file, lineno)
@@ -56,7 +58,7 @@ class _Locations(dict):
         super(_Locations, self).__init__()
 
     def add(self, file, lineno):
-        if file in self:
+        if file in self and lineno not in self[file]:
             self[file].append(lineno)
         else:
             self[file] = [lineno]
