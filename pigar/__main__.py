@@ -16,11 +16,6 @@ from .log import logger, enable_pretty_logging
 from .modules import ReqsModules
 
 
-if sys.version_info[0] < 3:
-    import __builtin__
-    __builtin__.range = __builtin__.xrange
-
-
 class Main(object):
 
     def __init__(self):
