@@ -2,6 +2,12 @@ Change Logs
 -----------
 
 
+Version 0.6.7 (2015.12.13)
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- If modules in the ``try...except...`` block, assume they are optional.
+
+
 Version 0.6.6 (2015.11.22)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
