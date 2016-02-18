@@ -281,20 +281,22 @@ def get_installed_pkgs_detail():
     and install package name with version.
     """
     mapping = dict()
-    search_path = None
+
     for path in sys.path:
         if os.path.isdir(path) and path.rstrip('/').endswith(
                 ('site-packages', 'dist-packages')):
-            search_path = path
-            break
+            mapping.update(_search_path(path))
 
-    if search_path is None:
-        return mapping
+    return mapping
 
-    for file in os.listdir(search_path):
+
+def _search_path(path):
+    mapping = dict()
+
+    for file in os.listdir(path):
         # Install from PYPI.
         if fnmatch.fnmatch(file, '*-info'):
-            top_level = os.path.join(search_path, file, 'top_level.txt')
+            top_level = os.path.join(path, file, 'top_level.txt')
             if not os.path.isfile(top_level):
                 continue
             pkg_name, version = file.split('-')[:2]
@@ -306,7 +308,7 @@ def get_installed_pkgs_detail():
 
         # Install from local and available in GitHub.
         elif fnmatch.fnmatch(file, '*-link'):
-            link = os.path.join(search_path, file)
+            link = os.path.join(path, file)
             if not os.path.isfile(link):
                 continue
             # Link path.
@@ -350,5 +352,4 @@ def get_installed_pkgs_detail():
                 with open(top_level, 'r') as f:
                     for line in f:
                         mapping[line.strip()] = ('-e', git_url)
-
     return mapping
