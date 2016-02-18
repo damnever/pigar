@@ -281,6 +281,7 @@ def get_installed_pkgs_detail():
     and install package name with version.
     """
     mapping = dict()
+
     for path in sys.path:
         if os.path.isdir(path) and path.rstrip('/').endswith(
                 ('site-packages', 'dist-packages')):
