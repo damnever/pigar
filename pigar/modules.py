@@ -25,14 +25,20 @@ class ImportedModules(Modules):
     def add(self, name, file, lineno):
         if name is None:
             return
+
+        names = list()
         # Flask extension.
         if name.startswith('flask.ext.'):
-            name = 'flask_' + name.split('.')[2]
+            names.append('flask')
+            names.append('flask_' + name.split('.')[2])
+        # Other.
         elif '.' in name and not name.startswith('.'):
-            name = name.split('.')[0]
-        if name not in self:
-            self[name] = _Locations()
-        self[name].add(file, lineno)
+            names.append(name.split('.')[0])
+
+        for name in names:
+            if name not in self:
+                self[name] = _Locations()
+            self[name].add(file, lineno)
 
     def __or__(self, obj):
         for name, locations in obj.items():
