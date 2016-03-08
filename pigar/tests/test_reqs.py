@@ -66,7 +66,8 @@ class ReqsTests(unittest.TestCase):
         # Assume 'foobar' is Py3 builtin package, no need install.
         self.assertListEqual(
             sorted(guess.keys()),
-            sorted(['Queue', '__builtin__', 'foobar', 'urlparse']))
+            sorted(['Queue', '__builtin__', 'foobar', 'urlparse'])
+        )
         self._check_detail(reqs, pv)
         self._check_detail(guess, pv, False)
 
@@ -83,13 +84,15 @@ class ReqsTests(unittest.TestCase):
         self._check_detail(guess, pv, False)
 
     def _check_detail(self, reqs_mods, pv, version=True):
-        for pkg, detail in reqs_mods.items():
+        for pkg, detail in reqs_mods.sorted_items():
             if version:
                 if pkg not in pv:
                     self.fail('"{0}" not installed'.format(pkg))
                 self.assertEqual(detail.version, pv[pkg])
             self.assertListEqual(
-                sorted(detail.comments), sorted(self._module_infos[pkg]))
+                sorted(detail.comments.sorted_items()),
+                sorted(self._module_infos[pkg])
+            )
 
     def _extract_reqs(self):
         gr = GenerateReqs('', self._path, [], self._installed_packages)
