@@ -23,7 +23,12 @@ class ImportedModules(Modules):
         super(ImportedModules, self).__init__()
 
     def add(self, name, file, lineno):
-        if name is not None and '.' in name and not name.startswith('.'):
+        if name is None:
+            return
+        # Flask extension.
+        if name.startswith('flask.ext.'):
+            name = 'flask_' + name.split('.')[2]
+        elif '.' in name and not name.startswith('.'):
             name = name.split('.')[0]
         if name not in self:
             self[name] = _Locations()
