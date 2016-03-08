@@ -39,13 +39,13 @@ class LocationsTests(unittest.TestCase):
         self.assertListEqual(sorted(loc1.items()),
                              sorted([(k, [v]) for k, v in self._data.items()]))
 
-    def test_iter(self):
+    def test_sorted_items(self):
         loc = _Locations()
         for file, lineno in self._data.items():
             loc.add(file, lineno)
 
         target = ['{0}: {1}'.format(k, v) for k, v in self._data.items()]
-        self.assertListEqual(sorted(loc), sorted(target))
+        self.assertListEqual(loc.sorted_items(), sorted(target))
 
 
 class ImportedModulesTests(unittest.TestCase):
@@ -113,5 +113,5 @@ class ReqsModulesTest(unittest.TestCase):
         loc = _Locations()
         loc.add('foobar.py', 2)
         rm.add('pigar', '9.9.9', loc)
-        self.assertListEqual(sorted(rm['pigar'].comments),
+        self.assertListEqual(rm['pigar'].comments.sorted_items(),
                              sorted(['oo/xx.py: 33', 'foobar.py: 2']))
