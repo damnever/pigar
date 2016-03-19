@@ -79,7 +79,7 @@ class ReqsTests(unittest.TestCase):
 
         self.assertListEqual(sorted(try_imports), sorted(self._try_imports))
         self.assertListEqual(sorted(reqs.keys()), sorted(pv.keys()))
-        self.assertListEqual(guess.keys(), ['builtins'])
+        self.assertListEqual(guess.keys(), ['builtins', 'example1'])
         self._check_detail(reqs, pv)
         self._check_detail(guess, pv, False)
 
