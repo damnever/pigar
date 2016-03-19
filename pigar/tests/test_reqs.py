@@ -66,7 +66,7 @@ class ReqsTests(unittest.TestCase):
         # Assume 'foobar' is Py3 builtin package, no need install.
         self.assertListEqual(
             sorted(guess.keys()),
-            sorted(['Queue', '__builtin__', 'foobar', 'urlparse'])
+            sorted(['Queue', '__builtin__', 'foobar', 'urlparse', 'example1'])
         )
         self._check_detail(reqs, pv)
         self._check_detail(guess, pv, False)
