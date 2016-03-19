@@ -109,6 +109,7 @@ class GenerateReqs(object):
         self._project_path = project_path
         self._ignores = ignores
         self._installed_pkgs = installed_pkgs
+        self._maybe_local_mods = set()
 
     def generate_reqs(self):
         """Generate requirements for `project_path`, save file in
@@ -120,13 +121,13 @@ class GenerateReqs(object):
         answer = 'n'
         pyver = None
 
+        guess.remove(*try_imports)
         if guess:
-            pyver = 'Python 3' if sys.version_info[0] == 2 else 'Python 2'
             print(Color.RED('The following modules are not found yet:'))
             self._invalid_reqs(guess)
-            msg = ('Some of them may come from other Python version '
-                   '(i.e {0}).\nTry to search PyPI for the missing '
-                   'modules and filter some unnecessary modules? [y/N] '
+            msg = ('Some of them may not install in local environment.\n'
+                   'Try to search PyPI for the missing modules and filter'
+                   ' some unnecessary modules? (y/[N]) '
                    ).format(pyver)
             sys.stdout.write(Color.RED(msg))
             sys.stdout.flush()
@@ -141,6 +142,8 @@ class GenerateReqs(object):
                         pkgs = [row.package for row in rows]
                         if pkgs:
                             in_pypi.add(name)
+                            if name in self._maybe_local_mods:
+                                self._maybe_local_mods.remove(name)
                         for pkg in self._best_matchs(name, pkgs):
                             latest = check_latest_version(pkg)
                             reqs.add(pkg, latest, detail.comments)
@@ -155,7 +158,7 @@ class GenerateReqs(object):
         del reqs
 
         if guess and answer in ('y', 'yes'):
-            guess.remove(*(in_pypi | try_imports))
+            guess.remove(*(in_pypi | self._maybe_local_mods))
             if guess:
                 print(Color.RED('These modules are not found:'))
                 self._invalid_reqs(guess)
@@ -167,6 +170,9 @@ class GenerateReqs(object):
         guess = ReqsModules()
         modules, try_imports, local_mods = project_import_modules(
             self._project_path, self._ignores)
+        app_name = os.path.basename(self._project_path)
+        if app_name in local_mods:
+            local_mods.remove(app_name)
 
         # Filtering modules
         candidates = self._filter_modules(modules, local_mods)
@@ -215,7 +221,7 @@ class GenerateReqs(object):
             if not module or module.startswith('.'):
                 continue
             if module in local_mods:
-                continue
+                self._maybe_local_mods.add(module)
             if is_stdlib(module):
                 continue
             candidates.add(module)
