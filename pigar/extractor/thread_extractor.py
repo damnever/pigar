@@ -6,6 +6,8 @@ import concurrent.futures
 
 from .extractor import BaseExtractor
 
+from ..log import logger
+
 
 class ThreadExtractor(BaseExtractor):
     """Extractor use thread pool execute tasks.
@@ -41,4 +43,3 @@ class ThreadExtractor(BaseExtractor):
     def shutdown(self):
         for future in self._futures:
             future.cancel()
-

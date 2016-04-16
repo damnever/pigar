@@ -3,11 +3,14 @@
 from __future__ import print_function, division, absolute_import
 
 import time
+import sys
 
 import greenlet
 from gevent.pool import Pool
 
 from .extractor import BaseExtractor
+from ..log import logger
+from ..utils import Color
 
 
 class GeventExtractor(BaseExtractor):
@@ -52,5 +55,3 @@ class GeventExtractor(BaseExtractor):
                     '** {0} running job exited with exception.'.format(count)
                 )
             )
-
-
