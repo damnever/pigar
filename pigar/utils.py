@@ -29,13 +29,13 @@ class Dict(dict):
 
 
 # Color functions, win8 ...
-_NONE = lambda text: text
+_NONE = lambda text: text  # noqa
 if colorama and not sys.platform.startswith('win'):
-    _GREEN = lambda text: colorama.Fore.GREEN + text + colorama.Fore.RESET
-    _YELLOW = lambda text: colorama.Fore.YELLOW + text + colorama.Fore.RESET
-    _RED = lambda text: colorama.Fore.RED + text + colorama.Fore.RESET
-    _BLUE = lambda text: colorama.Fore.BLUE + text + colorama.Fore.RESET
-    _WHITE = lambda text: colorama.Fore.WHITE + text + colorama.Fore.RESET
+    _GREEN = lambda text: colorama.Fore.GREEN + text + colorama.Fore.RESET  # noqa
+    _YELLOW = lambda text: colorama.Fore.YELLOW + text + colorama.Fore.RESET  # noqa
+    _RED = lambda text: colorama.Fore.RED + text + colorama.Fore.RESET  # noqa
+    _BLUE = lambda text: colorama.Fore.BLUE + text + colorama.Fore.RESET  # noqa
+    _WHITE = lambda text: colorama.Fore.WHITE + text + colorama.Fore.RESET  # noqa
 else:
     _GREEN = _YELLOW = _RED = _BLUE = _WHITE = _NONE
 
