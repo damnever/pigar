@@ -2,13 +2,8 @@
 
 from __future__ import print_function, division, absolute_import
 
-from gevent import monkey; monkey.patch_all()
-
-import sys
-import time
 import json
 import collections
-import multiprocessing
 try:  # py2
     from urllib2 import urlopen, Request, URLError, HTTPError
     from HTMLParser import HTMLParser
@@ -17,14 +12,12 @@ except ImportError:  # py3
     from urllib.error import URLError, HTTPError
     from html.parser import HTMLParser
 
-import greenlet
-from gevent.pool import Pool
-import concurrent.futures
 
 from .db import database
 from .unpack import top_level, unpack_html
 from .log import logger
 from .utils import Color, compare_version, cmp_to_key
+from .extractor import Extractor
 
 
 PYPI_URL = 'https://pypi.python.org/'
@@ -78,7 +71,7 @@ def update_db():
     with database() as db:
         ignore_pkgs = db.query_package(None)
         pkg_names = list(set(pkg_names) - set(ignore_pkgs))
-    extractor = GeventExtractor(pkg_names)
+    extractor = Extractor(pkg_names)
     extractor.run(extract_pkg_info)
     print(Color.BLUE('Operation done!'))
 
@@ -134,117 +127,6 @@ def _pkg_json_info(pkg_name):
         return None
     data = json.loads(data.decode('utf-8'))
     return data
-
-
-class BaseExtractor(object):
-
-    def __init__(self, names, max_workers=None):
-        self._names = names
-        self._max_workers = max_workers or (multiprocessing.cpu_count() * 4)
-
-    def run(self, job):
-        try:
-            self.extract(job)
-            self.wait_complete()
-        except KeyboardInterrupt:
-            print(Color.BLUE('** Shutting down ...'))
-            self.shutdown()
-        else:
-            print(Color.BLUE('^.^ Extracting all packages done!'))
-        finally:
-            self.final()
-
-    def extract(self, job):
-        raise NotImplemented
-
-    def wait_complete(self):
-        raise NotImplemented
-
-    def shutdown(self):
-        raise NotImplemented
-
-    def final(self):
-        pass
-
-
-class ThreadExtractor(BaseExtractor):
-    """Extractor use thread pool execute tasks.
-
-    Can be used to extract /simple/<pkg_name> or /pypi/<pkg_name>/json.
-
-    FIXME: can not deliver SIG_INT to threads in Python 2.
-    """
-
-    def __init__(self, names, max_workers=None):
-        super(self.__class__, self).__init__(names, max_workers)
-        self._futures = dict()
-
-    def extract(self, job):
-        """Extract url by package name."""
-        with concurrent.futures.ThreadPoolExecutor(
-                max_workers=self._max_workers) as executor:
-            for name in self._names:
-                self._futures[executor.submit(job, name)] = name
-
-    def wait_complete(self):
-        """Wait for futures complete done."""
-        for future in concurrent.futures.as_completed(self._futures.keys()):
-            try:
-                error = future.exception()
-            except concurrent.futures.CancelledError:
-                break
-            name = self._futures[future]
-            if error is not None:
-                err_msg = 'Extracting "{0}", got: {1}'.format(name, error)
-                logger.error(err_msg)
-
-    def shutdown(self):
-        for future in self._futures:
-            future.cancel()
-
-
-class GeventExtractor(BaseExtractor):
-
-    def __init__(self, names, max_workers=1000):
-        super(self.__class__, self).__init__(names, max_workers)
-        self._pool = Pool(self._max_workers)
-        self._exited_greenlets = 0
-
-    def extract(self, job):
-        job = self._job_wrapper(job)
-        for name in self._names:
-            if self._pool.full():
-                time.sleep(0.01)
-            else:
-                self._pool.spawn(job, name)
-
-    def _job_wrapper(self, job):
-        def _job(name):
-            result = None
-            try:
-                result = job(name)
-            except greenlet.GreenletExit:
-                self._exited_greenlets += 1
-            except Exception:
-                e = sys.exc_info()[1]
-                logger.error('Extracting "{0}", got: {1}'.format(name, e))
-            return result
-        return _job
-
-    def wait_complete(self):
-        self._pool.join()
-
-    def shutdown(self):
-        self._pool.kill()
-
-    def final(self):
-        count = self._exited_greenlets
-        if count != 0:
-            print(
-                Color.YELLOW(
-                    '** {0} running job exited with exception.'.format(count)
-                )
-            )
 
 
 # Fake headers, just in case.

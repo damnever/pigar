@@ -12,6 +12,9 @@ except ImportError:
     colorama = None
 
 
+PY32 = sys.version_info[:2] == (3, 2)
+
+
 class Dict(dict):
     """Convert dict key object to attribute."""
 
