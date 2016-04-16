@@ -3,3 +3,9 @@
 
 # pigar/utils.py: 10
 colorama == 0.3.3
+
+# pigar/pypi.py: 5,21
+gevent == 1.1.1
+
+# pigar/pypi.py: 20
+greenlet == 0.4.9
