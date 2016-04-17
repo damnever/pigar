@@ -2,7 +2,6 @@
 
 from __future__ import print_function, division, absolute_import
 
-import time
 import sys
 
 import greenlet
@@ -15,7 +14,7 @@ from ..utils import Color
 
 class GeventExtractor(BaseExtractor):
 
-    def __init__(self, names, max_workers=1000):
+    def __init__(self, names, max_workers=222):
         super(self.__class__, self).__init__(names, max_workers)
         self._pool = Pool(self._max_workers)
         self._exited_greenlets = 0
@@ -24,9 +23,8 @@ class GeventExtractor(BaseExtractor):
         job = self._job_wrapper(job)
         for name in self._names:
             if self._pool.full():
-                time.sleep(0.01)
-            else:
-                self._pool.spawn(job, name)
+                self._pool.wait_available()
+            self._pool.spawn(job, name)
 
     def _job_wrapper(self, job):
         def _job(name):
@@ -45,13 +43,13 @@ class GeventExtractor(BaseExtractor):
         self._pool.join()
 
     def shutdown(self):
-        self._pool.kill()
+        self._pool.kill(block=True)
 
     def final(self):
         count = self._exited_greenlets
         if count != 0:
             print(
                 Color.YELLOW(
-                    '** {0} running job exited with exception.'.format(count)
+                    '** {0} running job exited.'.format(count)
                 )
             )

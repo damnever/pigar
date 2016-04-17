@@ -5,11 +5,10 @@ from __future__ import print_function, division, absolute_import
 import json
 import collections
 try:  # py2
-    from urllib2 import urlopen, Request, URLError, HTTPError
+    from urllib2 import urlopen, Request
     from HTMLParser import HTMLParser
 except ImportError:  # py3
     from urllib.request import urlopen, Request
-    from urllib.error import URLError, HTTPError
     from html.parser import HTMLParser
 
 
@@ -61,9 +60,11 @@ def update_db():
     """Update database."""
     print(Color.BLUE('Starting update database (this will take a while)...'))
     logger.info('Crawling "{0}" ...'.format(PKGS_URL))
-    data = download(PKGS_URL)
-    if not data:
-        logger.error('Operation abort ...')
+    try:
+        data = download(PKGS_URL)
+    except Exception:
+        logger.error(exc_info=True)
+        print(Color.RED('Operation abort ...'))
         return
 
     logger.info('Extracting all packages ...')
@@ -142,17 +143,13 @@ _HEADERS = {
 
 def download(url, headers=_HEADERS):
     """Download data from url."""
-    data = ''
+    f = None
     try:
         f = urlopen(Request(url, headers=headers))
-    except HTTPError as e:
-        logger.error('Crawling "{0}", got: {1} {2}'.format(
-            url, e.code, e.reason))
-    except URLError as e:
-        logger.error('Crawling "{0}", got: {1}'.format(url, e.reason))
-    else:
         data = f.read()
-        f.close()
+    finally:
+        if f:
+            f.close()
     return data
 
 
