@@ -6,7 +6,7 @@ import re
 import codecs
 
 
-from setuptools import setup, find_packages
+from setuptools import setup
 
 version = ''
 with open('pigar/_version.py', 'r') as f:
@@ -50,7 +50,7 @@ setup(
         'Programming Language :: Python :: 3.5',
     ],
     keywords='requirements tool',
-    packages=find_packages(exclude=['pigar', 'pigar.*']),
+    packages=['pigar', 'pigar.extractor', 'pigar.tests'],
     install_requires=install_requires,
     include_package_data=True,
     entry_points={
