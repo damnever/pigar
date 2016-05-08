@@ -63,7 +63,7 @@ def update_db():
     try:
         data = download(PKGS_URL)
     except Exception:
-        logger.error(exc_info=True)
+        logger.error("Fetch all packages got: ", exc_info=True)
         print(Color.RED('Operation abort ...'))
         return
 
