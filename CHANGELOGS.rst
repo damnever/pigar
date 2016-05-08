@@ -4,7 +4,7 @@ Change Logs
 Version 0.6.8 (2016.05.08)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-- Suported flask extension.
+- Supported flask extension.
 - Sorted requirements.
 - Use gevent if possible.
 
