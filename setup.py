@@ -23,7 +23,7 @@ with codecs.open('README-PYPI.rst', encoding='utf-8') as f:
 with codecs.open('CHANGELOGS.rst', encoding='utf-8') as f:
     change_logs = f.read()
 
-install_requires = ['colorama']
+install_requires = ['colorama', 'gevent']
 if sys.version_info < (3, 2):
     install_requires.append('futures')
 
