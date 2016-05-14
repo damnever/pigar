@@ -1,6 +1,8 @@
 Change Logs
 -----------
 
+- Fix `#26 <https://github.com/Damnever/pigar/issues/26>`_
+
 Version 0.6.9 (2016.05.08)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
