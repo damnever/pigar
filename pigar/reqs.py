@@ -108,7 +108,7 @@ class ImportChecker(object):
     def visit_ImportFrom(self, node, try_=False):
         """As we know: `from a import b [as c]`."""
         for alias in node.names:
-            name = node.module + '.' + alias.name
+            name = (node.module or '') + '.' + alias.name
             self._modules.add(name, self._fpath, node.lineno + self._lineno)
             if try_:
                 self._try_imports.add(name)
