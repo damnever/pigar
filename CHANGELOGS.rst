@@ -5,13 +5,14 @@ Change Logs
 Version 0.6.10 (2016.06.17)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-- Fix `#26 <https://github.com/Damnever/pigar/issues/26>`_
+- Fixed `#26 <https://github.com/Damnever/pigar/issues/26>`_
+- Fixed relative import issue.
 
 
 Version 0.6.9 (2016.05.08)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-- Fix ImportError.
+- Fixed ImportError.
 
 
 Version 0.6.8 (2016.05.08)
