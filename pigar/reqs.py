@@ -106,9 +106,17 @@ class ImportChecker(object):
                 self._try_imports.add(alias.name)
 
     def visit_ImportFrom(self, node, try_=False):
-        """As we know: `from a import b [as c]`."""
+        """
+        As we know: `from a import b [as c]`. If node.level is not 0,
+        import statement like this `from .a import b`.
+        """
+        mod_name = node.module
+        level = node.level
+        if mod_name is None:
+            level -= 1
+            mod_name = ''
         for alias in node.names:
-            name = (node.module or '') + '.' + alias.name
+            name = level*'.' + mod_name + '.' + alias.name
             self._modules.add(name, self._fpath, node.lineno + self._lineno)
             if try_:
                 self._try_imports.add(name)
