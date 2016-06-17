@@ -5,8 +5,8 @@ import sys
 import re
 import codecs
 
+from setuptools import setup, find_packages
 
-from setuptools import setup
 
 version = ''
 with open('pigar/_version.py', 'r') as f:
@@ -39,7 +39,7 @@ setup(
     author_email='dxc.wolf@gmail.com',
     license='The BSD 3-Clause License',
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Stable',
         'Intended Audience :: Developers',
         'Topic :: Utilities',
         'License :: OSI Approved :: BSD License',
@@ -50,7 +50,7 @@ setup(
         'Programming Language :: Python :: 3.5',
     ],
     keywords='requirements tool',
-    packages=['pigar', 'pigar.extractor', 'pigar.tests'],
+    packages=find_packages(),
     install_requires=install_requires,
     include_package_data=True,
     entry_points={
