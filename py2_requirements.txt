@@ -4,11 +4,12 @@
 # pigar/utils.py: 10
 colorama == 0.3.7
 
-# pigar/pypi.py: 22
+# pigar/extractor/thread_extractor.py: 5
 futures == 3.0.5
 
-# pigar/pypi.py: 5,21
+# pigar/__init__.py: 10
+# pigar/extractor/gevent_extractor.py: 8
 gevent == 1.1.1
 
-# pigar/pypi.py: 20
+# pigar/extractor/gevent_extractor.py: 7
 greenlet == 0.4.9
