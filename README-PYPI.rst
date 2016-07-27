@@ -1,5 +1,5 @@
-.. image:: https://img.shields.io/travis/Damnever/pigar.svg?style=flat-square
-    :target: https://travis-ci.org/Damnever/pigar
+.. image:: https://img.shields.io/travis/damnever/pigar.svg?style=flat-square
+    :target: https://travis-ci.org/damnever/pigar
 
 .. image:: https://img.shields.io/pypi/v/pigar.svg?style=flat-square
     :target: https://pypi.python.org/pypi/pigar
