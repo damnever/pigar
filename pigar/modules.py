@@ -5,6 +5,15 @@ from __future__ import print_function, division, absolute_import
 import collections
 
 
+# FIXME: Just a workaround, not a radical cure..
+_special_cases = {
+    "dogpile.cache": "dogpile.cache",
+    "dogpile.core": "dogpile.core",
+    "ruamel.yaml": "ruamel.yaml",
+    "ruamel.ordereddict": "ruamel.ordereddict",
+}
+
+
 class Modules(dict):
     """Modules object will be used to store modules information."""
 
@@ -22,10 +31,14 @@ class ImportedModules(Modules):
             return
 
         names = list()
+        special_name = '.'.join(name.split('.')[:2])
         # Flask extension.
         if name.startswith('flask.ext.'):
             names.append('flask')
             names.append('flask_' + name.split('.')[2])
+        # Special cases..
+        elif special_name in _special_cases:
+            names.append(_special_cases[special_name])
         # Other.
         elif '.' in name and not name.startswith('.'):
             names.append(name.split('.')[0])
