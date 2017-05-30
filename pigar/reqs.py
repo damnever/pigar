@@ -312,6 +312,9 @@ def _search_path(path):
             pkg_name, version = file.split('-')[:2]
             if version.endswith('dist'):
                 version = version.rsplit('.', 1)[0]
+            # Issue for ubuntu: sudo pip install xxx
+            elif version.endswith('egg'):
+                version = version.rsplit('.', 1)[0]
             with open(top_level, 'r') as f:
                 for line in f:
                     mapping[line.strip()] = (pkg_name, version)
