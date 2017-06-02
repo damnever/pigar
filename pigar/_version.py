@@ -2,5 +2,5 @@
 
 from __future__ import print_function, division, absolute_import
 
-version = __version__ = '0.6.10'
+version = __version__ = '0.7.0'
 version_info = [int(num) for num in version.split('.')]
