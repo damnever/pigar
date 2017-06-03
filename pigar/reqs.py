@@ -307,11 +307,15 @@ def _search_path(path):
         # Install from PYPI.
         if fnmatch.fnmatch(file, '*-info'):
             top_level = os.path.join(path, file, 'top_level.txt')
-            if not os.path.isfile(top_level):
-                continue
             pkg_name, version = file.split('-')[:2]
             if version.endswith('dist'):
                 version = version.rsplit('.', 1)[0]
+            # Issue for ubuntu: sudo pip install xxx
+            elif version.endswith('egg'):
+                version = version.rsplit('.', 1)[0]
+            mapping[pkg_name] = (pkg_name, version)
+            if not os.path.isfile(top_level):
+                continue
             with open(top_level, 'r') as f:
                 for line in f:
                     mapping[line.strip()] = (pkg_name, version)
