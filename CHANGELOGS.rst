@@ -6,10 +6,23 @@ TO-DO
 
 - Use WareHouse? https://pypi.io/
 
+Version 0.7.1 (2017.11.07)
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Fixed `#34 <https://github.com/damnever/pigar/issues/34>`_
+
+
+Version 0.7.0 (2017.07.03)
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Fixed the .egg suffix which caused by sudo pip install ... on Ubuntu.
+- Workaround for special packages, such as `#29 <https://github.com/damnever/pigar/issues/34>`_
+
+
 Version 0.6.10 (2016.06.17)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-- Fixed `#26 <https://github.com/Damnever/pigar/issues/26>`_
+- Fixed `#26 <https://github.com/damnever/pigar/issues/26>`_
 - Fixed relative import issue.
 
 
@@ -65,8 +78,8 @@ Version 0.6.3 (2015.11.09)
 - Sort files, make comments more clearer.
 - Fixed grammar, to make the README clearer. Thank `@roryokane <https://github.com/roryokane>`_ and `@flyingfisch <https://github.com/flyingfisch>`_.
 - Make it work with ``python -m pigar``. Thank `@lilydjwg <https://github.com/lilydjwg>`_.
-- Fixed the pep8 warnings: `#15 <https://github.com/Damnever/pigar/pull/15>`_.
-- Make output more clearer: `#12 <https://github.com/Damnever/pigar/issues/12>`_.
+- Fixed the pep8 warnings: `#15 <https://github.com/damnever/pigar/pull/15>`_.
+- Make output more clearer: `#12 <https://github.com/damnever/pigar/issues/12>`_.
 - Fixed UnicodeDecodeError for Python 3.
 
 
@@ -87,7 +100,7 @@ Version 0.6.1 (2015.11.03)
 Version 0.6.0 (2015.10.30)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-- Enhancement: issue `#7 <https://github.com/Damnever/pigar/issues/7>`_, show imported module come from which files.
+- Enhancement: issue `#7 <https://github.com/damnever/pigar/issues/7>`_, show imported module come from which files.
 - Consider package installed via Git.
 - Add command "-i", used to ignore a list of directory.
 
@@ -95,13 +108,13 @@ Version 0.6.0 (2015.10.30)
 Version 0.5.5 (2015.10.21)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-- Fixed issue `#2 <https://github.com/Damnever/pigar/issues/2>`_ , `#3 <https://github.com/Damnever/pigar/issues/3>`_ , `#4 <https://github.com/Damnever/pigar/issues/4>`_ , `#5 <https://github.com/Damnever/pigar/issues/5>`_.
+- Fixed issue `#2 <https://github.com/damnever/pigar/issues/2>`_ , `#3 <https://github.com/damnever/pigar/issues/3>`_ , `#4 <https://github.com/Damnever/pigar/issues/4>`_ , `#5 <https://github.com/damnever/pigar/issues/5>`_.
 
 
 Version 0.5.2-0.5.4 (2015.10.6)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-- Fixed issue `#1 <https://github.com/Damnever/pigar/issues/1>`_.
+- Fixed issue `#1 <https://github.com/damnever/pigar/issues/1>`_.
 - Make version compare more effective.
 - Removed useless code.
 
