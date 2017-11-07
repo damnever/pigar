@@ -279,9 +279,11 @@ def is_stdlib(name):
     # Testcase: ResourceWarning
     if isinstance(module_info[0], FileType):
         module_info[0].close()
-    if exist and (module_info[1] is not None and
-                  ('site-packages' in module_info[1] or
-                   'dist-packages' in module_info[1])):
+    mpath = module_info[1]
+    if exist and (mpath is not None and
+                  ('site-packages' in mpath or
+                   'dist-packages' in mpath or
+                   ('bin/' in mpath and mpath.endswith('.py')))):
         exist = False
     return exist
 
