@@ -8,8 +8,8 @@ Python project requirements tool – pigar
     :target: https://pypi.python.org/pypi/pigar
 
 
-.. image:: https://raw.githubusercontent.com/Damnever/pigar/master/short-guide.gif
-    :target: https://raw.githubusercontent.com/Damnever/pigar/master/short-guide.gif
+.. image:: https://raw.githubusercontent.com/damnever/pigar/master/short-guide.gif
+    :target: https://raw.githubusercontent.com/damnever/pigar/master/short-guide.gif
 
 (In the GIF, the module ``urlparse`` has been removed in Python3, ``requests`` has been installed in virtual environment ``pigar-2.7``, not in ``pigar-3.5``)
 
@@ -17,7 +17,7 @@ Python project requirements tool – pigar
 Features
 --------
 
-- When generating requirements for a project, ``pigar`` can consider all kinds of complicated situations. For example, this project has `py2_requirements.txt <https://github.com/Damnever/pigar/blob/master/py2_requirements.txt>`_ and `py3_requirements.txt <https://github.com/Damnever/pigar/blob/master/py3_requirements.txt>`_ for different Python versions. ::
+- When generating requirements for a project, ``pigar`` can consider all kinds of complicated situations. For example, this project has `py2_requirements.txt <https://github.com/damnever/pigar/blob/master/py2_requirements.txt>`_ and `py3_requirements.txt <https://github.com/damnever/pigar/blob/master/py3_requirements.txt>`_ for different Python versions. ::
 
     # Generate requirements.txt for current directory.
     $ pigar
@@ -56,7 +56,7 @@ Installation
 
 To get the newest code from GitHub: ::
 
-  pip install git+https://github.com/Damnever/pigar.git@[master or other branch] --upgrade
+  pip install git+https://github.com/damnever/pigar.git@[master or other branch] --upgrade
 
 Usage
 -----
@@ -100,9 +100,9 @@ Also, ``pigar`` can detect the difference between different Python versions. For
 
 Finally, you already saw ``Features``. You can learn more from the source code.
 
-If you have any issues or suggestions, `please submit an issue on GitHub <https://github.com/Damnever/pigar/issues>`_. 
+If you have any issues or suggestions, `please submit an issue on GitHub <https://github.com/damnever/pigar/issues>`_.
 
 LICENSE
 -------
 
-`The BSD 3-Clause License <https://github.com/Damnever/pigar/blob/master/LICENSE>`_
+`The BSD 3-Clause License <https://github.com/damnever/pigar/blob/master/LICENSE>`_

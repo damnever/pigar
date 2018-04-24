@@ -108,7 +108,7 @@ Version 0.6.0 (2015.10.30)
 Version 0.5.5 (2015.10.21)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-- Fixed issue `#2 <https://github.com/damnever/pigar/issues/2>`_ , `#3 <https://github.com/damnever/pigar/issues/3>`_ , `#4 <https://github.com/Damnever/pigar/issues/4>`_ , `#5 <https://github.com/damnever/pigar/issues/5>`_.
+- Fixed issue `#2 <https://github.com/damnever/pigar/issues/2>`_ , `#3 <https://github.com/damnever/pigar/issues/3>`_ , `#4 <https://github.com/damnever/pigar/issues/4>`_ , `#5 <https://github.com/damnever/pigar/issues/5>`_.
 
 
 Version 0.5.2-0.5.4 (2015.10.6)
