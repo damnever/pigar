@@ -14,6 +14,11 @@ except ImportError:
 
 PY32 = sys.version_info[:2] == (3, 2)
 
+if sys.version_info[0] == 3:
+    binary_type = bytes
+else:
+    binary_type = str
+
 
 class Dict(dict):
     """Convert dict key object to attribute."""
