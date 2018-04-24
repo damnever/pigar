@@ -1,10 +1,12 @@
 Change Logs
 -----------
 
-TO-DO
-^^^^^
+Version 0.7.2 (2018.04.24)
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-- Use WareHouse? https://pypi.io/
+- Use https://pypi.io/
+- Fixed `#41 <https://github.com/damnever/pigar/issues/41>`_
+
 
 Version 0.7.1 (2017.11.07)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
