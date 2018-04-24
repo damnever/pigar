@@ -4,7 +4,7 @@ Change Logs
 Version 0.7.2 (2018.04.24)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-- Use https://pypi.io/
+- Use https://pypi.org/
 - Fixed `#41 <https://github.com/damnever/pigar/issues/41>`_
 
 
