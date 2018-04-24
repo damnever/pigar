@@ -34,8 +34,8 @@ setup(
     description=('A fantastic tool to generate requirements for your'
                  ' Python project, and more than that.'),
     long_description=long_description + '\n\n' + change_logs,
-    url='https://github.com/Damnever/pigar',
-    author='Damnever',
+    url='https://github.com/damnever/pigar',
+    author='damnever',
     author_email='dxc.wolf@gmail.com',
     license='The BSD 3-Clause License',
     classifiers=[
