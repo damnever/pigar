@@ -9,6 +9,8 @@ import re
 import string
 import io
 
+from .utils import binary_type
+
 
 class Archive(object):
     """Archive provides a consistent interface for unpacking
@@ -119,15 +121,11 @@ def top_level(url, data):
     return [name.replace('/', '.') for name in txt.splitlines()] if txt else []
 
 
-def unpack_html(data):
+def try_unpack_resp(resp):
     """Unpack web page, Content-Encoding: gzip."""
-    try:
-        sb = io.BytesIO(data)
-        gz = gzip.GzipFile(fileobj=sb)
-        data = gz.read()
-    except Exception:
-        pass
-    finally:
-        gz.close()
-        sb.close()
-    return data.decode('utf-8')
+    data = resp.read()
+    if 'gzip' == resp.info().get('Content-Encoding'):
+        data = gzip.decompress(data)
+    if isinstance(data, binary_type):
+        data = data.decode('utf-8')
+    return data

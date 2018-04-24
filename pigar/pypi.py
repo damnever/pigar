@@ -2,27 +2,30 @@
 
 from __future__ import print_function, division, absolute_import
 
+import gzip
 import json
 import collections
 try:  # py2
     from urllib2 import urlopen, Request
     from HTMLParser import HTMLParser
+    from urlparse import urljoin
 except ImportError:  # py3
     from urllib.request import urlopen, Request
     from html.parser import HTMLParser
+    from urllib.parse import urljoin
 
 
 from .db import database
-from .unpack import top_level, unpack_html
+from .unpack import top_level, try_unpack_resp
 from .log import logger
 from .utils import Color, compare_version, cmp_to_key
 from .extractor import Extractor
 
 
-PYPI_URL = 'https://pypi.python.org/'
-PKG_URL = 'https://pypi.python.org/pypi/{0}'
-PKGS_URL = 'https://pypi.python.org/simple/'
-PKG_INFO_URL = 'https://pypi.python.org/pypi/{0}/json'
+PYPI_URL = 'https://pypi.org'
+PKG_URL = urljoin(PYPI_URL, '/pypi/{0}')
+PKGS_URL = urljoin(PYPI_URL, '/simple/')
+PKG_INFO_URL = urljoin(PYPI_URL, '/pypi/{0}/json')
 ACCEPTABLE_EXT = ('.whl', '.egg', '.tar.gz', '.tar.bz2', '.zip')
 
 
@@ -68,7 +71,7 @@ def update_db():
         return
 
     logger.info('Extracting all packages ...')
-    pkg_names = _extract_html(unpack_html(data))
+    pkg_names = _extract_html(data)
     with database() as db:
         ignore_pkgs = db.query_package(None)
         pkg_names = list(set(pkg_names) - set(ignore_pkgs))
@@ -126,14 +129,14 @@ def _pkg_json_info(pkg_name):
     data = download(PKG_INFO_URL.format(pkg_name))
     if not data:  # 404
         return None
-    data = json.loads(data.decode('utf-8'))
+    data = json.loads(data)
     return data
 
 
 # Fake headers, just in case.
 _HEADERS = {
     'Accept': '*/*',
-    'Accept-Encoding': 'gzip, deflate, sdch',
+    'Accept-Encoding': 'gzip',
     'Accept-Language': 'en-US,en;q=0.8,zh-CN;q=0.6,zh;q=0.4',
     'User-Agent': ('Mozilla/5.0 (X11; Linux x86_64; rv:13.0) '
                    'AppleWebKit/537.36 (KHTML, like Gecko) '
@@ -143,14 +146,11 @@ _HEADERS = {
 
 def download(url, headers=_HEADERS):
     """Download data from url."""
-    f = None
+    resp = urlopen(Request(url, headers=headers))
     try:
-        f = urlopen(Request(url, headers=headers))
-        data = f.read()
+        return try_unpack_resp(resp)
     finally:
-        if f:
-            f.close()
-    return data
+        resp.close()
 
 
 def _extract_html(html):
