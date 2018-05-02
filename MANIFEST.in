@@ -1,5 +1,8 @@
 include pigar/.db.sqlite3
+include CHANGELOGS.rst
 include README.rst
+include README-PYPI.rst
+include LICENSE
 include makefile
 include pigar/tests/fake_simple_html.txt
 include pigar/tests/fake_top_level.txt
