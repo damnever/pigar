@@ -125,7 +125,8 @@ def try_unpack_resp(resp):
     """Unpack web page, Content-Encoding: gzip."""
     data = resp.read()
     if 'gzip' == resp.info().get('Content-Encoding'):
-        data = gzip.decompress(data)
+        with gzip.GzipFile(fileobj=io.BytesIO(data)) as gz:
+            data = gz.read()
     if isinstance(data, binary_type):
         data = data.decode('utf-8')
     return data

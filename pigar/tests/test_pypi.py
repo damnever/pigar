@@ -5,10 +5,10 @@ from __future__ import print_function, division, absolute_import
 import unittest
 import os
 import sys
-import io
 
 from ..pypi import _extract_html
 from ..unpack import try_unpack_resp
+from .helper import _FakeResp
 
 
 class ExtractHtmlTest(unittest.TestCase):
@@ -19,17 +19,6 @@ class ExtractHtmlTest(unittest.TestCase):
         with open(path) as f:
             names = _extract_html(f.read())
         self.assertListEqual(names, 'a b c d e f g'.split())
-
-
-class _FakeResp(object):
-    def __init__(self, data):
-        self._data = data
-
-    def read(self):
-        return self._data
-
-    def info(self):
-        return {}
 
 
 class UnpackHtmlTest(unittest.TestCase):

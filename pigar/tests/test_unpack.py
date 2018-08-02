@@ -8,8 +8,11 @@ import tarfile
 import os
 import shutil
 import tempfile
+import gzip
+import io
 
-from ..unpack import top_level
+from ..unpack import top_level, try_unpack_resp
+from .helper import _FakeResp
 
 
 class TopLevelTests(unittest.TestCase):
@@ -45,3 +48,12 @@ class TopLevelTests(unittest.TestCase):
         with open(tar_path, 'rb') as f:
             self.assertListEqual(
                 top_level(tar_path, f.read()), ['pigar.tests'])
+
+
+class UnpackTest(unittest.TestCase):
+    def test_unpack_resp(self):
+        buf = io.BytesIO()
+        with gzip.GzipFile(fileobj=buf, mode='wb') as f:
+            f.write(b"hello world")
+        resp = _FakeResp(buf.getvalue(), 'gzip')
+        self.assertEqual("hello world", try_unpack_resp(resp))
