@@ -8,6 +8,9 @@ Python project requirements tool – pigar
     :target: https://pypi.python.org/pypi/pigar
 
 
+**NOTE**: `Pipenv <https://packaging.python.org/tutorials/managing-dependencies/#managing-dependencies>`_ or other tools is recommended for improving your development workflow.
+
+
 .. image:: https://raw.githubusercontent.com/damnever/pigar/master/short-guide.gif
     :target: https://raw.githubusercontent.com/damnever/pigar/master/short-guide.gif
 
