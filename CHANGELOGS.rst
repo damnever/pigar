@@ -1,6 +1,14 @@
 Change Logs
 -----------
 
+Version 0.9.0 (2018.08.12)
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Reuse connections.
+- Update database.
+- Fixed `#44 <https://github.com/damnever/pigar/issues/44>`_
+
+
 Version 0.7.2 (2018.04.24)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
