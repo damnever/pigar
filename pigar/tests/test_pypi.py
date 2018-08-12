@@ -4,33 +4,16 @@ from __future__ import print_function, division, absolute_import
 
 import unittest
 import os
-import sys
 
-from ..pypi import _extract_html
-from ..unpack import try_unpack_resp
-from .helper import _FakeResp
+from ..pypi import _extract_pkg_names
 
 
 class ExtractHtmlTest(unittest.TestCase):
 
-    def test_extract_html(self):
+    def test_extract_names(self):
         path = os.path.join(os.path.dirname(__file__),
                             './fake_simple_html.txt')
+        names = []
         with open(path) as f:
-            names = _extract_html(f.read())
+            _extract_pkg_names(f.read(), names.append)
         self.assertListEqual(names, 'a b c d e f g'.split())
-
-
-class UnpackHtmlTest(unittest.TestCase):
-
-    @unittest.skipIf(sys.version_info[0] != 3, 'Not python 3.x')
-    def test_py3_unpack_html(self):
-        data = bytes('cde', 'utf-8')
-        resp = _FakeResp(data)
-        self.assertEqual(try_unpack_resp(resp), data.decode('utf-8'))
-
-    @unittest.skipIf(sys.version_info[0] != 2, 'Not python 2.x')
-    def test_py2_unpack_html(self):
-        data = 'abc'
-        resp = _FakeResp(data)
-        self.assertEqual(try_unpack_resp(resp), data.decode('utf-8'))

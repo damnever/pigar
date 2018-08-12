@@ -119,14 +119,3 @@ def top_level(url, data):
             txt = archive.read(file).decode('utf-8')
     sb.close()
     return [name.replace('/', '.') for name in txt.splitlines()] if txt else []
-
-
-def try_unpack_resp(resp):
-    """Unpack web page, Content-Encoding: gzip."""
-    data = resp.read()
-    if 'gzip' == resp.info().get('Content-Encoding'):
-        with gzip.GzipFile(fileobj=io.BytesIO(data)) as gz:
-            data = gz.read()
-    if isinstance(data, binary_type):
-        data = data.decode('utf-8')
-    return data

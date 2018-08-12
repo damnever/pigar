@@ -25,17 +25,3 @@ class CaptureOutput(list):
         self.extend(self._strio.getvalue().splitlines())
         self._strio.close()
         sys.stdout = self._stdout
-
-
-class _FakeResp(object):
-    def __init__(self, data, enc=None):
-        self._data = data
-        self._enc = enc
-
-    def read(self):
-        return self._data
-
-    def info(self):
-        if self._enc:
-            return {'Content-Encoding': self._enc}
-        return {}

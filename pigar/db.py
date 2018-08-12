@@ -5,12 +5,19 @@ from __future__ import print_function, division, absolute_import
 import os
 import sqlite3
 import contextlib
-try:
-    from string import lowercase  # py2
-except ImportError:
-    from string import ascii_lowercase as lowercase  # py3
+try:  # py2
+    from string import lowercase
+except ImportError:  # py3
+    from string import ascii_lowercase as lowercase
 
 from .utils import Dict
+
+
+# TODO(damnever): insert into db by default.
+# (import_name, package_name)
+_F_PACKAGES = {
+    'yaml': 'PyYAML',
+}
 
 
 class Database(object):
@@ -21,9 +28,8 @@ class Database(object):
     `package_name` is name which be installed by pip, use
     `package` replace in db.
 
-    Split table according to `top_level_name` first letter.
-    such as 'table_a', over and over, `package_name` stored
-    in `table_packages`.
+    Split table by `top_level_name` first letter, such as
+    'table_a', `package_name` stored in `table_packages`.
     """
     _DB = os.path.join(os.path.dirname(__file__), '.db.sqlite3')
     _TABLE_PREFIX = 'table_{0}'
@@ -32,7 +38,7 @@ class Database(object):
 
     def __init__(self, db=_DB):
         exist = os.path.isfile(db)
-        self._conn = sqlite3.connect(db)
+        self._conn = sqlite3.connect(db, timeout=30)  # Avoid lock exception..
         if not exist:
             self._create_tables()
 
@@ -41,15 +47,18 @@ class Database(object):
             self._conn.close()
             self._conn = None
 
-    def insert_name(self, name, pkgid):
-        name_table = self._name_table(name[0])
-        sql = 'INSERT INTO {0} (name, pkgid) VALUES (?, ?)'.format(name_table)
-        return self.insert(sql, name, pkgid)
-
-    def insert_package(self, package):
+    def insert_package_with_imports(self, pkgname, inames):
         package_table = self._package_table()
-        sql = 'INSERT INTO {0} (package) VALUES (?)'.format(package_table)
-        return self.insert(sql, package)
+        sql = 'INSERT OR IGNORE INTO {0} (package) VALUES (?)'.format(
+            package_table)
+        sqls = [(sql, (pkgname,))]
+        sqltpl = '''INSERT OR IGNORE INTO {0} (name, pkgid) VALUES
+        (?, (SELECT id from {1} WHERE package=?))'''
+        for iname in inames:
+            iname = iname or pkgname  # empty top_level.txt
+            sql = sqltpl.format(self._name_table(iname[0]), package_table)
+            sqls.append((sql, (iname, pkgname)))
+        self.insert(sqls)
 
     def query_all(self, name):
         name_table = self._name_table(name[0])
@@ -72,11 +81,17 @@ class Database(object):
         else:
             return [r.package for r in rows]
 
-    def insert(self, sql, *parameters):
+    def insert(self, sqls):
         cursor = self._conn.cursor()
+        conn = self._conn
         try:
-            self._execute(cursor, sql, *parameters)
-            return cursor.lastrowid
+            for (sql, params) in sqls:
+                cursor.execute(sql, params)
+        except sqlite3.OperationalError:
+            conn.rollback()
+            raise
+        else:
+            conn.commit()
         finally:
             cursor.close()
 
@@ -95,7 +110,6 @@ class Database(object):
             result = cursor.execute(sql, parameters)
         except sqlite3.OperationalError:
             conn.rollback()
-            self.close()
             raise
         else:
             conn.commit()
@@ -115,14 +129,14 @@ class Database(object):
         cursor = self._conn.cursor()
         try:
             # Create table `table_packages`.
-            sql = '''CREATE TABLE {0} (
+            sql = '''CREATE TABLE IF NOT EXISTS {0} (
                 id INTEGER PRIMARY KEY,  -- id will auto increment
                 package VARCHAR NOT NULL UNIQUE
             )'''.format(self._package_table())
             self._execute(cursor, sql)
 
             # Create `table_[a-z]`.
-            sql = '''CREATE TABLE {0} (
+            sql = '''CREATE TABLE IF NOT EXISTS {0} (
                 id INTEGER PRIMARY KEY,
                 name VARCHAR NOT NULL,
                 pkgid INTEGER NOT NULL

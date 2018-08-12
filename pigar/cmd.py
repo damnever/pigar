@@ -52,7 +52,7 @@ def parse_args(args=None):
         type=log_level_check,
         default=['error'],
         help='show given level log messages, argument can be '
-        '(ERROR, WARNING, INFO), case-insensitive')
+        '(ERROR, WARNING, INFO, DEBUG), case-insensitive')
     parser.add_argument(
         '-i',  # '--ignore'
         dest='ignores',
@@ -86,7 +86,7 @@ def parse_args(args=None):
 
 
 def log_level_check(level):
-    levels = ('ERROR', 'WARNING', 'INFO')
+    levels = ('ERROR', 'WARNING', 'INFO', 'DEBUG')
     if level.upper() in levels:
         return level
     raise argparse.ArgumentTypeError(

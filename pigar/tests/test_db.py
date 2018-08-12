@@ -9,7 +9,7 @@ import tempfile
 from ..db import Database
 
 
-class DbTests(unittest.TestCase):
+class DBTests(unittest.TestCase):
 
     def setUp(self):
         self._db = os.path.join(tempfile.gettempdir(), 'pigar_test.db')
