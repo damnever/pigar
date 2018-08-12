@@ -20,10 +20,10 @@ class DBTests(unittest.TestCase):
         os.remove(self._db)
 
     def test_db(self):
-        self.assertGreaterEqual(self._conn.insert_package('pigar'), 1)
+        self._conn.insert_package_with_imports('pigar', [])
         row = self._conn.query_package('pigar')
         self.assertEqual(row.id, 1)
-        self.assertGreaterEqual(self._conn.insert_name('pigar', row.id), 1)
+        self._conn.insert_package_with_imports('pigar', ['pigar'])
         row = self._conn.query_all('pigar')
         self.assertDictEqual(dict(row[0]),
                              {'name': 'pigar', 'package': 'pigar'})
