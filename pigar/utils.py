@@ -6,6 +6,7 @@ import os
 import re
 import sys
 import difflib
+
 try:
     import colorama
 except ImportError:
