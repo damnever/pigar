@@ -77,7 +77,7 @@ def parse_args(args=None):
         default=[os.getcwd()],
         help='project path, which is directory, *used for* default action')
     parser.add_argument(
-        '-o', '--comparison-operator',
+        '-o',  # '--comparison-operator',
         dest='comparison_operator',
         nargs=1,
         type=comparison_operator_check,
