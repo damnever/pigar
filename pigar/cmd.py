@@ -76,13 +76,21 @@ def parse_args(args=None):
         type=projectpath_check,
         default=[os.getcwd()],
         help='project path, which is directory, *used for* default action')
+    parser.add_argument(
+        '-o', '--comparison-operator',
+        dest='comparison_operator',
+        nargs=1,
+        type=comparison_operator_check,
+        default=['=='],
+        help='The comparison operator for versions, alternatives: [==, ~=, >=]'
+    )
     if args is None:
         args = parser.parse_args()
     else:
         args = parser.parse_args(args=args)
     return (args.log_level[0], args.update_db, args.check_path,
             args.search_names, args.ignores, args.save_path[0],
-            args.project_path[0])
+            args.project_path[0], args.comparison_operator[0])
 
 
 def log_level_check(level):
@@ -114,4 +122,12 @@ def projectpath_check(path):
     if os.path.isdir(path):
         return path
     msg = '"{0}" is not a valid directory path.'.format(path)
+    raise argparse.ArgumentTypeError(msg)
+
+
+def comparison_operator_check(op, supported_ops=('==', '~=', '>=')):
+    if op in supported_ops:
+        return op
+    msg = 'invalid operator: {0}, supported operators: {1}'.format(
+        op, supported_ops)
     raise argparse.ArgumentTypeError(msg)
