@@ -21,18 +21,20 @@ class Main(object):
     def __init__(self):
         # Parse command arguments.
         (log_level, updatedb, check_path, names, ignores, save_path,
-         project_path) = parse_args()
+         project_path, comparison_operator) = parse_args()
         # Enable logging.
         enable_pretty_logging(log_level=log_level)
         # Just allow do one thing at each time.
         if updatedb:
             self.update_db()
         elif check_path:
-            self.check_reqs_latest_version(check_path, ignores)
+            self.check_reqs_latest_version(
+                check_path, ignores, comparison_operator)
         elif names:
             self.search_package_by_name(names)
         else:
-            self.generate_reqs(save_path, project_path, ignores)
+            self.generate_reqs(save_path, project_path,
+                               ignores, comparison_operator)
 
     @property
     def installed_pkgs(self):
@@ -57,7 +59,8 @@ class Main(object):
             msg += 'Maybe you need update database.'
             print(Color.YELLOW(msg))
 
-    def check_reqs_latest_version(self, check_path, ignores):
+    def check_reqs_latest_version(self, check_path, ignores,
+                                  comparison_operator):
         """Check requirements latest version."""
         print(Color.BLUE('Starting check requirements latest version ...'))
         files = list()
@@ -74,7 +77,8 @@ class Main(object):
                 print(Color.YELLOW('Requirements file not found, '
                                    'generate requirements ...'))
                 save_path = os.path.join(check_path, 'requirements.txt')
-                self.generate_reqs(save_path, check_path, ignores)
+                self.generate_reqs(save_path, check_path,
+                                   ignores, comparison_operator)
                 files.append(save_path)
         else:
             files.append(check_path)
@@ -97,19 +101,23 @@ class Main(object):
         print()
         print_table(pkg_versions)
 
-    def generate_reqs(self, save_path, check_path, ignores):
-        gr = GenerateReqs(save_path, check_path, ignores, self.installed_pkgs)
+    def generate_reqs(self, save_path, check_path,
+                      ignores, comparison_operator):
+        gr = GenerateReqs(save_path, check_path, ignores,
+                          self.installed_pkgs, comparison_operator)
         gr.generate_reqs()
 
 
 class GenerateReqs(object):
 
-    def __init__(self, save_path, project_path, ignores, installed_pkgs):
+    def __init__(self, save_path, project_path, ignores,
+                 installed_pkgs, comparison_operator='=='):
         self._save_path = save_path
         self._project_path = project_path
         self._ignores = ignores
         self._installed_pkgs = installed_pkgs
         self._maybe_local_mods = set()
+        self._comparison_operator = comparison_operator
 
     def generate_reqs(self):
         """Generate requirements for `project_path`, save file in
@@ -136,7 +144,7 @@ class GenerateReqs(object):
             if answer in ('y', 'yes'):
                 print(Color.BLUE('Checking modules on the PyPI...'))
                 for name, detail in guess.sorted_items():
-                    logger.info('Checking {0} on the PyPI ...'.format(name))
+                    logger.info('Checking %s on the PyPI ...', name)
                     with database() as db:
                         rows = db.query_all(name)
                         pkgs = [row.package for row in rows]
@@ -179,7 +187,7 @@ class GenerateReqs(object):
 
         logger.info('Check module in local environment.')
         for name in candidates:
-            logger.info('Checking module: {0}'.format(name))
+            logger.info('Checking module: %s', name)
             if name in self._installed_pkgs:
                 pkg_name, version = self._installed_pkgs[name]
                 reqs.add(pkg_name, version, modules[name])
@@ -201,7 +209,8 @@ class GenerateReqs(object):
                 if k == '-e':
                     f.write('{0} {1}\n'.format(k, v.version))
                 elif v:
-                    f.write('{0} == {1}\n'.format(k, v.version))
+                    f.write('{0} {1} {2}\n'.format(
+                        k, self._comparison_operator, v.version))
                 else:
                     f.write('{0}\n'.format(k))
 
@@ -217,7 +226,7 @@ class GenerateReqs(object):
 
         logger.info('Filtering modules ...')
         for module in modules:
-            logger.info('Checking module: {0}'.format(module))
+            logger.info('Checking module: %s', module)
             if not module or module.startswith('.'):
                 continue
             if module in local_mods:
