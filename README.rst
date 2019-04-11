@@ -68,6 +68,7 @@ Usage
 
     usage: pigar [-h] [-v] [-u] [-s NAME [NAME ...]] [-c [PATH]] [-l LOG_LEVEL]
                  [-i DIR [DIR ...]] [-p SAVE_PATH] [-P PROJECT_PATH]
+                 [-o COMPARISON_OPERATOR]
 
     Python requirements tool -- pigar, it will do only one thing at each time.
     Default action is generate requirements.txt in current directory.
@@ -92,6 +93,9 @@ Usage
                           action
       -P PROJECT_PATH     project path, which is directory, *used for* default
                           action
+      -o COMPARISON_OPERATOR
+                          The comparison operator for versions, alternatives:
+                          [==, ~=, >=]
 
 
 More
