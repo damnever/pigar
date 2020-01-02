@@ -53,9 +53,15 @@ Features
 Installation
 ------------
 
-``pigar`` can run on Python 2.7.+ and 3.2+. Install it with ``pip``: ::
+``pigar`` can run on Python 2.7.+ and 3.2+. 
+
+To install it with ``pip``, use: ::
 
     [sudo] pip install pigar
+
+To install it with ``conda``, use: ::
+
+    conda install -c conda-forge pigar
 
 To get the newest code from GitHub: ::
 
