@@ -71,7 +71,8 @@ class Main(object):
             print(Color.BLUE('Searching file in "{0}" ...'.format(check_path)))
             for fn in os.listdir(check_path):
                 if fnmatch.fnmatch(fn, '*requirements.txt'):
-                    files.append(os.path.abspath(fn))
+                    fnpath = os.path.join(check_path, fn)
+                    files.append(os.path.abspath(fnpath))
             # If not found in directory, generate requirements.
             if not files:
                 print(Color.YELLOW('Requirements file not found, '
