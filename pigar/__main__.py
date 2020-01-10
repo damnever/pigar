@@ -21,7 +21,7 @@ class Main(object):
     def __init__(self):
         # Parse command arguments.
         (log_level, updatedb, check_path, names, ignores, save_path,
-         project_path, comparison_operator) = parse_args()
+         project_path, comparison_operator, minimal) = parse_args()
         # Enable logging.
         enable_pretty_logging(log_level=log_level)
         # Just allow do one thing at each time.
@@ -34,7 +34,8 @@ class Main(object):
             self.search_package_by_name(names)
         else:
             self.generate_reqs(save_path, project_path,
-                               ignores, comparison_operator)
+                               ignores, comparison_operator,
+                               minimal)
 
     @property
     def installed_pkgs(self):
@@ -79,7 +80,8 @@ class Main(object):
                                    'generate requirements ...'))
                 save_path = os.path.join(check_path, 'requirements.txt')
                 self.generate_reqs(save_path, check_path,
-                                   ignores, comparison_operator)
+                                   ignores, comparison_operator,
+                                   minimal)
                 files.append(save_path)
         else:
             files.append(check_path)
@@ -103,22 +105,26 @@ class Main(object):
         print_table(pkg_versions)
 
     def generate_reqs(self, save_path, check_path,
-                      ignores, comparison_operator):
+                      ignores, comparison_operator,
+                      minimal):
         gr = GenerateReqs(save_path, check_path, ignores,
-                          self.installed_pkgs, comparison_operator)
+                          self.installed_pkgs, comparison_operator,
+                          minimal)
         gr.generate_reqs()
 
 
 class GenerateReqs(object):
 
     def __init__(self, save_path, project_path, ignores,
-                 installed_pkgs, comparison_operator='=='):
+                 installed_pkgs, comparison_operator='==',
+                 minimal=False):
         self._save_path = save_path
         self._project_path = project_path
         self._ignores = ignores
         self._installed_pkgs = installed_pkgs
         self._maybe_local_mods = set()
         self._comparison_operator = comparison_operator
+        self._minimal = minimal
 
     def generate_reqs(self):
         """Generate requirements for `project_path`, save file in
@@ -160,7 +166,7 @@ class GenerateReqs(object):
         # Save old requirements file.
         self._save_old_reqs()
         # Write requirements to file.
-        self._write_reqs(reqs)
+        self._write_reqs(reqs, self._minimal)
         # If requirements has been covered, show difference.
         self._reqs_diff()
         print(Color.BLUE('Generate requirements done!'))
@@ -197,7 +203,7 @@ class GenerateReqs(object):
         logger.info('Finish local environment checking.')
         return reqs, try_imports, guess
 
-    def _write_reqs(self, reqs):
+    def _write_reqs(self, reqs, minimal=False):
         print(Color.BLUE('Writing requirements to "{0}"'.format(
             self._save_path)))
         with open(self._save_path, 'w+') as f:
@@ -205,8 +211,9 @@ class GenerateReqs(object):
                     '# https://github.com/damnever/pigar\n')
             for k, v in reqs.sorted_items():
                 f.write('\n')
-                f.write(''.join(['# {0}\n'.format(c)
-                                 for c in v.comments.sorted_items()]))
+                if not minimal:
+                    f.write(''.join(['# {0}\n'.format(c)
+                                     for c in v.comments.sorted_items()]))
                 if k == '-e':
                     f.write('{0} {1}\n'.format(k, v.version))
                 elif v:
