@@ -204,6 +204,7 @@ class GenerateReqs(object):
         return reqs, try_imports, guess
 
     def _write_reqs(self, reqs, minimal=False):
+        """Write requirements to a file"""
         print(Color.BLUE('Writing requirements to "{0}"'.format(
             self._save_path)))
         with open(self._save_path, 'w+') as f:
