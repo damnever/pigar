@@ -82,6 +82,9 @@ def print_table(rows, headers=['PACKAGE', 'CURRENT', 'LATEST']):
 
 def parse_reqs(fpath):
     """Parse requirements file."""
+    print(
+        Color.BLUE("Reading requirements from " + fpath)
+    )
     pkg_v_re = re.compile(r'^(?P<pkg>[^><==]+)[><==]{,2}(?P<version>.*)$')
     referenced_reqs_re = re.compile(r'^-r *(?P<req_f>.*)')
     reqs = dict()
@@ -94,7 +97,8 @@ def parse_reqs(fpath):
                 # Parse referenced requirements file
                 additional_reqs_file = r['req_f']
                 additional_reqs_fpath = os.path.join(
-                    os.path.dirname(fpath), additional_reqs_file)
+                    os.path.dirname(fpath), additional_reqs_file
+                )
                 additional_reqs = parse_reqs(additional_reqs_fpath)
                 # Update dictionary with referenced reqs
                 for pkg, version in additional_reqs.items():
