@@ -88,7 +88,8 @@ def parse_args(args=None):
         '--without-referenced-commits',
         dest='minimal',
         action='store_true',
-        help='omit requirements.txt comments showing the file and line of each import'
+        help='omit requirements.txt comments showing the file and line of '
+             'each import'
     )
     if args is None:
         args = parser.parse_args()
