@@ -85,7 +85,7 @@ def parse_args(args=None):
         help='The comparison operator for versions, alternatives: [==, ~=, >=]'
     )
     parser.add_argument(
-        '--without-referenced-commits',
+        '--without-referenced-comments',
         dest='minimal',
         action='store_true',
         help='omit requirements.txt comments showing the file and line of '
