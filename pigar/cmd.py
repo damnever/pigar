@@ -88,7 +88,7 @@ def parse_args(args=None):
         '--without-referenced-comments',
         dest='minimal',
         action='store_true',
-        help='omit requirements.txt comments showing the file and line of '
+        help='Omit requirements.txt comments showing the file and line of '
              'each import'
     )
     if args is None:
