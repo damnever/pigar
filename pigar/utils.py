@@ -81,12 +81,25 @@ def print_table(rows, headers=['PACKAGE', 'CURRENT', 'LATEST']):
 
 
 def parse_reqs(fpath):
-    pkg_v_re = re.compile(r'^(?P<pkg>[^><==]+)[><==]{,2}(?P<version>.*)$')
     """Parse requirements file."""
+    pkg_v_re = re.compile(r'^(?P<pkg>[^><==]+)[><==]{,2}(?P<version>.*)$')
+    referenced_reqs_re = re.compile(r'^-r *(?P<req_f>.*)')
     reqs = dict()
     with open(fpath, 'r') as f:
         for line in f:
             if line.startswith('#'):
+                continue
+            r = referenced_reqs_re.match(line.strip())
+            if r:
+                # Parse referenced requirements file
+                additional_reqs_file = r['req_f']
+                additional_reqs_fpath = os.path.join(
+                    os.path.dirname(fpath), additional_reqs_file
+                )
+                additional_reqs = parse_reqs(additional_reqs_fpath)
+                # Update dictionary with referenced reqs
+                for pkg, version in additional_reqs.items():
+                    reqs[pkg] = version
                 continue
             m = pkg_v_re.match(line.strip())
             if m:
