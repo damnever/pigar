@@ -50,6 +50,8 @@ def project_import_modules(project_path, ignores):
             if fn.endswith('.py'):
                 local_mods.append(fn[:-3])
                 py_files.append(fn)
+            if fn.endswith('.ipynb'):
+                py_files.append(fn)
         if '__init__.py' in files:
             local_mods.append(os.path.basename(dirpath))
         for file in py_files:
