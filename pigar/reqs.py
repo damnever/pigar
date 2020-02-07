@@ -11,6 +11,7 @@ import ast
 import doctest
 import collections
 import functools
+import json
 try:
     from types import FileType  # py2
 except ImportError:
@@ -72,7 +73,13 @@ def project_import_modules(project_path, ignores):
 
 
 def get_code_from_ipynb(ipynb_text):
-    pass
+    ipynb_dict = json.loads(ipynb_text)
+    code = ""
+    for cell in ipynb_dict["cells"]:
+        if cell["cell_type"] == "code":
+            code += "".join(cell["source"])
+    print(code)
+    return code
 
 
 def file_import_modules(fpath, fdata):
