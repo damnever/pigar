@@ -59,12 +59,20 @@ def project_import_modules(project_path, ignores):
             fake_path = fpath.split(cur_dir)[1][1:]
             logger.info('Extracting file: {0}'.format(fpath))
             with open(fpath, 'rb') as f:
-                fmodules, try_ipts = file_import_modules(fake_path, f.read())
+                if file.endswith(".py"):
+                    code = f.read()
+                if file.endswith(".ipynb"):
+                    code = get_code_from_ipynb(f.read())
+                fmodules, try_ipts = file_import_modules(fake_path, code)
                 modules |= fmodules
                 try_imports |= try_ipts
 
     logger.info('Finish extracting in project: {0}'.format(project_path))
     return modules, try_imports, local_mods
+
+
+def get_code_from_ipynb(ipynb_text):
+    pass
 
 
 def file_import_modules(fpath, fdata):
