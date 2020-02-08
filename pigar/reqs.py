@@ -77,8 +77,8 @@ def get_code_from_ipynb(ipynb_text):
     code = ""
     for cell in ipynb_dict["cells"]:
         if cell["cell_type"] == "code":
-            code += "".join(cell["source"])
-    print(code)
+            lines = cell["source"]
+            code += "".join(lines) + "\n"
     return code
 
 
