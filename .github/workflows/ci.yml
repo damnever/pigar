@@ -1,0 +1,29 @@
+name: PyCI
+on: [push, pull_request]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version:
+          - "2.7"
+          - "3.5"
+          - "3.6"
+          - "3.7"
+          - "3.8"
+    name: Python ${{ matrix.python-version }}
+    steps:
+      - uses: actions/checkout@v1
+      - name: Setup python
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: x64
+      - name: Install Py2.x dependencies
+        if: "startsWith(matrix.python-version, '2')"
+        run: pip install -r py2_requirements.txt
+      - name: Install Py3.x dependencies
+        if: "startsWith(matrix.python-version, '3')"
+        run: pip install -r py3_requirements.txt
+      - name: Run tests
+        run: python -m unittest discover pigar/tests/ -t . -v
