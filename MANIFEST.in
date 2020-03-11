@@ -10,3 +10,6 @@ include pigar/tests/fake_reqs.txt
 include pigar/tests/imports_example/example1.py
 include pigar/tests/imports_example/example2.py
 include pigar/tests/imports_example/example3.py
+include pigar/tests/imports_example/mainfoobar.py
+include pigar/tests/imports_example/subbar/bar.py
+include pigar/tests/imports_example/subfoo/foo.py

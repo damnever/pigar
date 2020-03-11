@@ -7,15 +7,14 @@ import codecs
 
 from setuptools import setup, find_packages
 
-
 version = ''
-with open('pigar/_version.py', 'r') as f:
-    version = re.search(r'__version__\s*=\s*[\'"]([^\'"]*)[\'"]',
-                        f.read(), re.M).group(1)
+with open('pigar/version.py', 'r') as f:
+    version = re.search(
+        r'__version__\s*=\s*[\'"]([^\'"]*)[\'"]', f.read(), re.M
+    ).group(1)
 
 if not version:
     raise RuntimeError('Cannot find version information')
-
 
 with codecs.open('README-PYPI.rst', encoding='utf-8') as f:
     long_description = f.read()
@@ -30,12 +29,13 @@ install_requires = [
 if sys.version_info < (3, 2):
     install_requires.append('futures')
 
-
 setup(
     name='pigar',
     version=version,
-    description=('A fantastic tool to generate requirements for your'
-                 ' Python project, and more than that.'),
+    description=(
+        'A fantastic tool to generate requirements for your'
+        ' Python project, and more than that.'
+    ),
     long_description=long_description + '\n\n' + change_logs,
     url='https://github.com/damnever/pigar',
     author='damnever',
@@ -56,9 +56,7 @@ setup(
     packages=find_packages(),
     install_requires=install_requires,
     include_package_data=True,
-    entry_points={
-        'console_scripts': [
-            'pigar=pigar.__main__:main',
-        ]
-    },
+    entry_points={'console_scripts': [
+        'pigar=pigar.__main__:main',
+    ]},
 )
