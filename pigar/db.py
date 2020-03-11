@@ -10,8 +10,7 @@ try:  # py2
 except ImportError:  # py3
     from string import ascii_lowercase as lowercase
 
-from .utils import Dict
-
+from .helpers import Dict, retry
 
 # TODO(damnever): insert into db by default.
 # (import_name, package_name)
@@ -38,9 +37,17 @@ class Database(object):
 
     def __init__(self, db=_DB):
         exist = os.path.isfile(db)
-        self._conn = sqlite3.connect(db, timeout=30)  # Avoid lock exception..
+        self._db = db
+        self._conn = None
+        self._reconnect()
         if not exist:
             self._create_tables()
+
+    def _reconnect(self):
+        self.close()
+        self._conn = sqlite3.connect(
+            self._db, timeout=15
+        )  # Avoid lock exception..
 
     def close(self):
         if self._conn is not None:
@@ -50,8 +57,9 @@ class Database(object):
     def insert_package_with_imports(self, pkgname, inames):
         package_table = self._package_table()
         sql = 'INSERT OR IGNORE INTO {0} (package) VALUES (?)'.format(
-            package_table)
-        sqls = [(sql, (pkgname,))]
+            package_table
+        )
+        sqls = [(sql, (pkgname, ))]
         sqltpl = '''INSERT OR IGNORE INTO {0} (name, pkgid) VALUES
         (?, (SELECT id from {1} WHERE package=?))'''
         for iname in inames:
@@ -60,6 +68,7 @@ class Database(object):
             sqls.append((sql, (iname, pkgname)))
         self.insert(sqls)
 
+    @retry(sqlite3.OperationalError, count=3)
     def query_all(self, name):
         name_table = self._name_table(name[0])
         package_table = self._package_table()
@@ -68,6 +77,7 @@ class Database(object):
         WHERE name=?'''.format(name_table, package_table)
         return self.query(sql, name)
 
+    @retry(sqlite3.OperationalError, count=3)
     def query_package(self, package):
         package_table = self._package_table()
         if package:
@@ -81,20 +91,25 @@ class Database(object):
         else:
             return [r.package for r in rows]
 
+    @retry(sqlite3.OperationalError, count=5)
     def insert(self, sqls):
         cursor = self._conn.cursor()
         conn = self._conn
         try:
             for (sql, params) in sqls:
                 cursor.execute(sql, params)
-        except sqlite3.OperationalError:
-            conn.rollback()
-            raise
-        else:
-            conn.commit()
-        finally:
             cursor.close()
+            conn.commit()
+        except sqlite3.OperationalError:
+            cursor.close()
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            self._reconnect()
+            raise
 
+    @retry(sqlite3.OperationalError, count=3)
     def query(self, sql, *parameters):
         cursor = self._conn.cursor()
         try:
@@ -108,15 +123,19 @@ class Database(object):
         conn = self._conn
         try:
             result = cursor.execute(sql, parameters)
-        except sqlite3.OperationalError:
-            conn.rollback()
-            raise
-        else:
             conn.commit()
             return result
+        except sqlite3.OperationalError:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            self._reconnect()
+            raise
 
-    def _name_table(self, initial, prefix=_TABLE_PREFIX,
-                    other=_TABLE_OTHER_SUFFIX):
+    def _name_table(
+        self, initial, prefix=_TABLE_PREFIX, other=_TABLE_OTHER_SUFFIX
+    ):
         initial = initial.lower()
         if initial not in lowercase:
             initial = other

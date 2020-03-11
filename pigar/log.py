@@ -5,8 +5,7 @@ from __future__ import print_function, division, absolute_import
 import logging
 import logging.handlers
 
-from .utils import Color
-
+from .helpers import Color
 
 logger = logging.getLogger('pigar')
 
@@ -30,8 +29,13 @@ class _LogFormatter(logging.Formatter):
         logging.ERROR: Color.RED,
     }
 
-    def __init__(self, fmt=FORMAT, datefmt=DATE_FORMAT,
-                 datecolor=DATE_COLOR, levelcolors=LEVEL_COLORS):
+    def __init__(
+        self,
+        fmt=FORMAT,
+        datefmt=DATE_FORMAT,
+        datecolor=DATE_COLOR,
+        levelcolors=LEVEL_COLORS
+    ):
         logging.Formatter.__init__(self, datefmt=datefmt)
         self._fmt = fmt
 

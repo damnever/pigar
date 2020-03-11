@@ -2,21 +2,17 @@
 
 from __future__ import print_function, division, absolute_import
 
-import gzip
 import tarfile
 import zipfile
 import re
 import string
 import io
 
-from .utils import binary_type
-
 
 class Archive(object):
     """Archive provides a consistent interface for unpacking
     compressed file.
     """
-
     def __init__(self, filename, fileobj):
         self._filename = filename
         self._fileobj = fileobj
@@ -93,10 +89,12 @@ class Archive(object):
         self._read = _read
 
     def is_safe(self, filename):
-        return not (filename.startswith(("/", "\\")) or
-                    (len(filename) > 1 and filename[1] == ":" and
-                    filename[0] in string.ascii_letter) or
-                    re.search(r"[.][.][/\\]", filename))
+        return not (
+            filename.startswith(("/", "\\")) or (
+                len(filename) > 1 and filename[1] == ":"
+                and filename[0] in string.ascii_letter
+            ) or re.search(r"[.][.][/\\]", filename)
+        )
 
     def __enter__(self):
         return self
