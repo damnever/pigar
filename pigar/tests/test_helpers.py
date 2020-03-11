@@ -7,13 +7,12 @@ import os
 import random
 
 from .helper import CaptureOutput
-from ..utils import (
-    Dict, print_table, parse_reqs, compare_version, cmp_to_key
+from ..helpers import (
+    Dict, print_table, parse_requirements, compare_version, cmp_to_key
 )
 
 
 class DictTests(unittest.TestCase):
-
     def test_init_with_kwargs(self):
         d = Dict(foo='foo', bar='bar')
         self.assertIn('foo', d)
@@ -41,19 +40,12 @@ class DictTests(unittest.TestCase):
 
 
 class PrintTableTests(unittest.TestCase):
-
     def test_default_headers(self):
-        rows = [
-            ('pigar', '0.5.0', '1.1.1'),
-            ('test', '8.0.0', '2.4.8')
-        ]
+        rows = [('pigar', '0.5.0', '1.1.1'), ('test', '8.0.0', '2.4.8')]
         target = [
-            ' ============================',
-            '  PACKAGE | CURRENT | LATEST',
-            '  --------+---------+-------',
-            '  pigar   | 0.5.0   | 1.1.1 ',
-            '  test    | 8.0.0   | 2.4.8 ',
-            ' ============================'
+            ' ============================', '  PACKAGE | CURRENT | LATEST',
+            '  --------+---------+-------', '  pigar   | 0.5.0   | 1.1.1 ',
+            '  test    | 8.0.0   | 2.4.8 ', ' ============================'
         ]
         with CaptureOutput() as output:
             print_table(rows)
@@ -63,10 +55,8 @@ class PrintTableTests(unittest.TestCase):
         headers = ['PACKAGE', 'VERSION']
         rows = [('pigar', '1.1.1')]
         target = [
-            ' ===================',
-            '  PACKAGE | VERSION',
-            '  --------+--------',
-            '  pigar   | 1.1.1  ',
+            ' ===================', '  PACKAGE | VERSION',
+            '  --------+--------', '  pigar   | 1.1.1  ',
             ' ==================='
         ]
         with CaptureOutput() as output:
@@ -75,17 +65,14 @@ class PrintTableTests(unittest.TestCase):
 
 
 class ParseReqsTest(unittest.TestCase):
-
-    def test_parse_reqs(self):
-        path = os.path.join(os.path.dirname(__file__),
-                            './fake_reqs.txt')
+    def test_parse_requirements(self):
+        path = os.path.join(os.path.dirname(__file__), './fake_reqs.txt')
         target = {'a': '4.1.4', 'b': '2.3.0', 'c': ''}
-        reqs = parse_reqs(path)
+        reqs = parse_requirements(path)
         self.assertDictEqual(reqs, target)
 
 
 class CompareVersionTests(unittest.TestCase):
-
     def test_compare_version(self):
         self.assertEqual(compare_version('1.1.1', '1.2.1'), -1)
         self.assertEqual(compare_version('1.10.1', '1.2.1'), 1)
@@ -100,5 +87,6 @@ class CompareVersionTests(unittest.TestCase):
         target = ['1.1.1', '1.1.1b1', '1.1.1b2', '1.2.1', '1.10.1']
         test = target[:]
         random.shuffle(test)
-        self.assertListEqual(sorted(test, key=cmp_to_key(compare_version)),
-                             target)
+        self.assertListEqual(
+            sorted(test, key=cmp_to_key(compare_version)), target
+        )
