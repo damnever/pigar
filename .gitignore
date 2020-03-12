@@ -6,3 +6,4 @@ count.py
 insert.py
 build/
 dist/
+.venv*

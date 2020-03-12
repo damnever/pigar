@@ -5,18 +5,26 @@ from __future__ import print_function, division, absolute_import
 import unittest
 import os
 
-from ..cmd import parse_args
-
+from ..__main__ import parser
 
 CUR_DIR = os.getcwd()
 
 
-class CmdTests(unittest.TestCase):
+def parse_args(args):
+    args = parser.parse_args(args)
+    return (
+        args.log_level[0], args.update_db, args.check_path, args.search_names,
+        args.ignores, args.save_path[0], args.project_path[0],
+        args.comparison_operator[0], args.ref_comments
+    )
 
+
+class CmdTests(unittest.TestCase):
     def setUp(self):
         reqs_path = os.path.join(CUR_DIR, 'requirements.txt')
-        self._default_args = ['error', False, None, [], [], reqs_path,
-                              CUR_DIR, '==', True]
+        self._default_args = [
+            'error', False, None, [], [], reqs_path, CUR_DIR, '==', True
+        ]
 
     def tearDown(self):
         del self._default_args

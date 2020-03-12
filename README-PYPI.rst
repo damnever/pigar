@@ -1,5 +1,5 @@
-.. image:: https://img.shields.io/travis/damnever/pigar.svg?style=flat-square
-    :target: https://travis-ci.org/damnever/pigar
+.. image:: https://img.shields.io/github/workflow/status/damnever/pigar/PyCI?style=flat-square
+    :target: https://github.com/damnever/pigar
 
 .. image:: https://img.shields.io/pypi/v/pigar.svg?style=flat-square
     :target: https://pypi.python.org/pypi/pigar
@@ -16,7 +16,7 @@ Features
     # Generate requirements for given directory in given file.
     $ pigar -p ../dev-requirements.txt -P ../
 
-  ``pigar`` will list all files which referenced the package, for example: ::
+  ``pigar`` can list all files which referenced the package, for example: ::
 
     # project/foo.py: 2,3
     # project/bar/baz.py: 2,7,8,9
@@ -42,5 +42,3 @@ More
 ----
 
 You can find more information on `GitHub <https://github.com/damnever/pigar>`_ .
-
-

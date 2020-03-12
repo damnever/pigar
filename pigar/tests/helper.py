@@ -15,7 +15,6 @@ except ImportError:
 
 
 class CaptureOutput(list):
-
     def __enter__(self):
         self._stdout = sys.stdout
         sys.stdout = self._strio = StringIO()

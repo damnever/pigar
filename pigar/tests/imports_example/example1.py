@@ -6,12 +6,9 @@ import collections
 
 import foobar
 
-
 eval('import foo')
 
-
 exec("import bar", {}, {})
-
 
 exec("import foobaz")
 
@@ -33,7 +30,7 @@ class A(object):
 
 def bar():
     """
-    >>> import Queue
+    >>> import queue
     >>> def test():
     ...     import bisect
     ...     pass

@@ -1,26 +1,25 @@
-Python project requirements tool – pigar
-========================================
+pigar
+=====
 
-.. image:: https://img.shields.io/travis/damnever/pigar.svg?style=flat-square
-    :target: https://travis-ci.org/damnever/pigar
+.. image:: https://img.shields.io/github/workflow/status/damnever/pigar/PyCI?style=flat-square
+    :target: https://github.com/damnever/pigar/actions
 
 .. image:: https://img.shields.io/pypi/v/pigar.svg?style=flat-square
     :target: https://pypi.python.org/pypi/pigar
 
 
+A tool to generate requirements.txt for your Python project, and more than that.
+
 **NOTE**: `Pipenv <https://packaging.python.org/tutorials/managing-dependencies/#managing-dependencies>`_ or other tools is recommended for improving your development flow.
 
-
-.. image:: https://raw.githubusercontent.com/damnever/pigar/master/short-guide.gif
-    :target: https://raw.githubusercontent.com/damnever/pigar/master/short-guide.gif
-
-(In the GIF, the module ``urlparse`` has been removed in Python3, ``requests`` has been installed in virtual environment ``pigar-2.7``, not in ``pigar-3.5``)
+.. image:: https://raw.githubusercontent.com/damnever/pigar/master/guide.gif
+    :target: https://github.com/damnever/pigar
 
 
 Features
 --------
 
-- When generating requirements for a project, ``pigar`` can consider all kinds of complicated situations. For example, this project has `py2_requirements.txt <https://github.com/damnever/pigar/blob/master/py2_requirements.txt>`_ and `py3_requirements.txt <https://github.com/damnever/pigar/blob/master/py3_requirements.txt>`_ for different Python versions. ::
+- When generating requirements for a project, ``pigar`` can consider all kinds of complicated situations. For example, this project has `py2_requirements.txt <https://github.com/damnever/pigar/blob/master/py2_requirements.txt>`_ and `py3_requirements.txt <https://github.com/damnever/pigar/blob/master/py3_requirements.txt>`_ for different Python versions(see the above GIF). ::
 
     # Generate requirements.txt for current directory.
     $ pigar
@@ -28,7 +27,7 @@ Features
     # Generate requirements for given directory in given file.
     $ pigar -p ../dev-requirements.txt -P ../
 
-  ``pigar`` will list all files which referenced the package, for example: ::
+  ``pigar`` can list all files which referenced the package, for example: ::
 
     # project/foo.py: 2,3
     # project/bar/baz.py: 2,7,8,9
@@ -53,7 +52,7 @@ Features
 Installation
 ------------
 
-``pigar`` can run on Python 2.7.+ and 3.2+. 
+``pigar`` can run on Python 2.7.+ and 3.2+.
 
 To install it with ``pip``, use: ::
 
@@ -72,37 +71,39 @@ Usage
 
 ::
 
-    usage: pigar [-h] [-v] [-u] [-s NAME [NAME ...]] [-c [PATH]] [-l LOG_LEVEL]
-                 [-i DIR [DIR ...]] [-p SAVE_PATH] [-P PROJECT_PATH]
-                 [-o COMPARISON_OPERATOR]
+  usage: pigar [-h] [-v] [-u] [-s NAME [NAME ...]] [-c [PATH]] [-l LOG_LEVEL]
+               [-i DIR [DIR ...]] [-p SAVE_PATH] [-P PROJECT_PATH]
+               [-o COMPARISON_OPERATOR] [--without-referenced-comments]
 
-    Python requirements tool -- pigar, it will do only one thing at each time.
-    Default action is generate requirements.txt in current directory.
+  Python requirements tool -- pigar, it will do only one thing at each time.
+  Default action is generate requirements.txt in current directory.
 
-    optional arguments:
-      -h, --help          show this help message and exit
-      -v, --version       show pigar version information and exit
-      -u, --update        update database, use it when pigar failed you, exit when
-                          action done
-      -s NAME [NAME ...]  search package name by import name, use it if you do not
-                          know import name come from which package, exit when
-                          action done
-      -c [PATH]           check requirements for the latest version. If file path
-                          not given, search *requirements.txt in current
-                          directory, if not found, generate file requirements.txt,
-                          exit when action done
-      -l LOG_LEVEL        show given level log messages, argument can be (ERROR,
-                          WARNING, INFO), case-insensitive
-      -i DIR [DIR ...]    given a list of directory to ignore, relative directory,
-                          *used for* -c and default action
-      -p SAVE_PATH        save requirements in given file path, *used for* default
+  optional arguments:
+    -h, --help            show this help message and exit
+    -v, --version         show pigar version information and exit
+    -u, --update          update database, use it when pigar failed you, exit
+                          when action done
+    -s NAME [NAME ...]    search package name by import name, use it if you do
+                          not know import name come from which package, exit
+                          when action done
+    -c [PATH]             check requirements for the latest version. If file
+                          path not given, search *requirements.txt in current
+                          directory, if not found, generate file
+                          requirements.txt, exit when action done
+    -l LOG_LEVEL          show given level log messages, argument can be (ERROR,
+                          WARNING, INFO, DEBUG), case-insensitive
+    -i DIR [DIR ...]      given a list of directory to ignore, relative
+                          directory, *used for* -c and default action
+    -p SAVE_PATH          save requirements in given file path, *used for*
+                          default action
+    -P PROJECT_PATH       project path, which is directory, *used for* default
                           action
-      -P PROJECT_PATH     project path, which is directory, *used for* default
-                          action
-      -o COMPARISON_OPERATOR
+    -o COMPARISON_OPERATOR
                           The comparison operator for versions, alternatives:
                           [==, ~=, >=]
-
+    --without-referenced-comments
+                          Omit requirements.txt comments showing the file and
+                          line of each import
 
 More
 ----
