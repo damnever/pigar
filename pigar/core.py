@@ -114,7 +114,7 @@ class RequirementsGenerator(object):
                 for pkg in _best_matchs(name, pkgs):
                     try:
                         latest = downloader.download_package(pkg).version()
-                        packages.add(pkg, latest, locs)
+                        packages.add_locs(pkg, latest, locs)
                     except HTTPError as e:
                         logger.error('checking %s failed: %e', pkg, e)
         return in_pypi
