@@ -140,7 +140,9 @@ class ImportsParser(object):
             self._add_rawcode(node.body.s, node.lineno + self._lineno)
         # PR#13: https://github.com/damnever/pigar/pull/13
         # Sometimes exec statement may be called with tuple in Py2.7.6
-        elif hasattr(node.body, 'elts') and len(node.body.elts) >= 1:
+        elif hasattr(node.body, 'elts') and len(
+            node.body.elts
+        ) >= 1 and hasattr(node.body.elts[0], 's'):
             self._add_rawcode(node.body.elts[0].s, node.lineno + self._lineno)
 
     def visit_Expr(self, node):
