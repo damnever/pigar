@@ -2,4 +2,4 @@
 
 from __future__ import print_function, division, absolute_import
 
-version = __version__ = '0.10.0rc0'
+version = __version__ = '0.10.0'

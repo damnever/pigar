@@ -1,5 +1,5 @@
 include pigar/.db.sqlite3
-include CHANGELOG.rst
+include CHANGELOG.md
 include README.md
 include LICENSE
 include makefile
