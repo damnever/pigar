@@ -31,7 +31,7 @@ long_description = """
 You can find more information on `GitHub <https://github.com/damnever/pigar>`_ .
 """  # noqa
 
-with codecs.open('CHANGELOGS.rst', encoding='utf-8') as f:
+with codecs.open('CHANGELOG.rst', encoding='utf-8') as f:
     change_logs = f.read()
 
 install_requires = [
