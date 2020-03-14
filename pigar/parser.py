@@ -81,7 +81,7 @@ def parse_file_imports(fpath, content):
             parser.parse(code, fpath, lineno)
         except SyntaxError as e:
             # Ignore SyntaxError in Python code.
-            logger.debug("parse %s:%d failed: %e", fpath, lineno, e)
+            logger.warn("parse %s:%d failed: %r", fpath, lineno, e)
     return parser.modules
 
 

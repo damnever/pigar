@@ -16,6 +16,8 @@ from .helpers import Dict, retry
 # (import_name, package_name)
 _F_PACKAGES = {
     'yaml': 'PyYAML',
+    'dogpile.cache': 'dogpile.cache',
+    'dogpile.core': 'dogpile.core',
 }
 
 

@@ -373,12 +373,15 @@ def is_user_module(module, user_modules, package_root):
             dir_path = "/"
         if dir_path not in user_modules:
             break
-        mod_path = pathlib.join(dir_path, "/".join(parts))
-        # FIXME(damnever): ignore the current file, but it may not be compiled?
-        if mod_path == cur_mod_path:
-            continue
-        if mod_path in user_modules:
-            return True
+        mod_paths = [pathlib.join(dir_path, "/".join(parts))]
+        if len(dir_path_parts[:i]) > 0 and dir_path_parts[:i][-1] == parts[0]:
+            mod_paths.append(dir_path)
+        for mod_path in mod_paths:
+            # FIXME(damnever): ignore the current file?
+            if mod_path == cur_mod_path:
+                continue
+            if mod_path in user_modules:
+                return True
     return False
 
 
