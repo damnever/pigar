@@ -13,6 +13,8 @@ import os.path as pathlib
 from .log import logger
 from .helpers import parse_git_config, trim_suffix
 
+import nbformat
+
 Module = collections.namedtuple('Module', ['name', 'try_', 'file', 'lineno'])
 
 
@@ -42,18 +44,32 @@ def parse_imports(package_root, ignores=None):
                 has_py = True
                 user_modules.add(fpath[:-3])
             # Normal Python file.
-            if fn.endswith('.py'):
+            elif fn.endswith('.py'):
                 has_py = True
                 user_modules.add(fpath[:-3])
-                imported_modules.extend(parse_file_imports(fpath))
+            code = _read_code(fpath)
+            if code:
+                imported_modules.extend(parse_file_imports(fpath, code))
         if has_py:
             user_modules.add(trim_suffix(dirpath, "/"))
     return imported_modules, user_modules
 
 
-def parse_file_imports(fpath):
-    with open(fpath, 'rb') as f:
-        content = f.read()
+def _read_code(fpath):
+    if fpath.endswith(".ipynb"):
+        nb = nbformat.read(fpath, as_version=4)
+        code = ""
+        for cell in nb.cells:
+            if cell.cell_type == "code":
+                code += cell.source + "\n"
+        return code
+    elif fpath.endswith(".py"):
+        with open(fpath, 'rb') as f:
+            return f.read()
+    return None
+
+
+def parse_file_imports(fpath, content):
     py_codes = collections.deque([(content, 1)])
     parser = ImportsParser(
         lambda code, lineno: py_codes.append((code, lineno))  # noqa

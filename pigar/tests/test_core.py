@@ -20,6 +20,7 @@ class ReqsTests(unittest.TestCase):
             'mod': ('Mod', '1.0.0'),
             'name': ('Name', '1.0.0'),
             'pkg': ('Pkg', '1.0.0'),
+            'notebook': ('Notebook', '0.9.0'),
             'mainfoobar': ('min-foo-bar', '0.10.0rc0'),
         }
         self._path = os.path.abspath(
@@ -37,6 +38,7 @@ class ReqsTests(unittest.TestCase):
             'Mod': ['example1.py: 41'],
             'Name': ['example1.py: 43'],
             'Pkg': ['example1.py: 45'],
+            'Notebook': ['notebook.ipynb: 3'],
             'min-foo-bar': ['mainfoobar.py: 2'],
         }.items():
             paths = []
