@@ -1,6 +1,34 @@
 Change Logs
 -----------
 
+Version 0.10.rc0 (2020.03.14)
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Refactored the main logic, **the interface has been changed**, be careful if you use ``pigar`` as a library.
+- Handle the HTTP error, fixed `#61 <https://github.com/damnever/pigar/issues/61>`_.
+- Ignore local packages quietly, fixed `#47 <https://github.com/damnever/pigar/issues/47>`_, `#58 <https://github.com/damnever/pigar/issues/58>`_ and `#65 <https://github.com/damnever/pigar/issues/65>`_.
+
+Thank `@bganglia <https://github.com/bganglia>`_ for the following contributions:
+
+- Add Jupyter notebook(``.ipynb``) support, refer to `#69 <https://github.com/damnever/pigar/issues/69>`_.
+- Option to turn off filenames and line numbers in requirements.txt, refer to `#65 <https://github.com/damnever/pigar/issues/65>`_.
+- Fix check path, refer to `#64 <https://github.com/damnever/pigar/issues/64>`_.
+- And `more <https://github.com/damnever/pigar/pulls?q=is%3Apr+author%3Abganglia>_`.
+
+
+Version 0.9.2 (2019.04.11)
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Make version comparison operator configurable, fixed `#37 <https://github.com/damnever/pigar/issues/37>`_
+
+
+Version 0.9.1 (2019.02.17)
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Fixed potential security vulnerabilities by updating requests.
+- Fixed `#49 <https://github.com/damnever/pigar/issues/49>`_
+
+
 Version 0.9.0 (2018.08.12)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
