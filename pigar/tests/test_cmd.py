@@ -23,7 +23,7 @@ class CmdTests(unittest.TestCase):
     def setUp(self):
         reqs_path = os.path.join(CUR_DIR, 'requirements.txt')
         self._default_args = [
-            'error', False, None, [], [], reqs_path, CUR_DIR, '==', True
+            'WARNING', False, None, [], [], reqs_path, CUR_DIR, '==', True
         ]
 
     def tearDown(self):
