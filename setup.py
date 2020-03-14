@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys
 import re
 import codecs
 
@@ -16,18 +15,29 @@ with open('pigar/version.py', 'r') as f:
 if not version:
     raise RuntimeError('Cannot find version information')
 
-with codecs.open('README-PYPI.rst', encoding='utf-8') as f:
-    long_description = f.read()
+long_description = """
+.. image:: https://img.shields.io/github/workflow/status/damnever/pigar/PyCI?style=flat-square
+    :target: https://github.com/damnever/pigar
+
+
+- Generating requirements.txt for Python project.
+   - Handling the difference between different Python versions.
+   - Jupyter nodebook (``*.ipynb``) support.
+   - Including the import statements from ``exec``/``eval``, doctest of docstring, etc.
+- Searching packages by import name.
+- Checking the latest versions for Python project.
+
+
+You can find more information on `GitHub <https://github.com/damnever/pigar>`_ .
+"""  # noqa
 
 with codecs.open('CHANGELOGS.rst', encoding='utf-8') as f:
     change_logs = f.read()
 
 install_requires = [
-    'colorama>=0.3.9',
-    'requests>=2.20.0',
+    'colorama>=0.3.9', 'requests>=2.20.0', 'nbformat>=4.4.0',
+    'futures;python_version<"3.2"'
 ]
-if sys.version_info < (3, 2):
-    install_requires.append('futures')
 
 setup(
     name='pigar',
@@ -52,7 +62,7 @@ setup(
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
     ],
-    keywords='requirements tool',
+    keywords='requirements.txt,automation,tool,module-search',
     packages=find_packages(),
     install_requires=install_requires,
     include_package_data=True,
