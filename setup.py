@@ -16,22 +16,21 @@ if not version:
     raise RuntimeError('Cannot find version information')
 
 long_description = """
-.. image:: https://img.shields.io/github/workflow/status/damnever/pigar/PyCI?style=flat-square
-    :target: https://github.com/damnever/pigar
+[![](https://img.shields.io/github/workflow/status/damnever/pigar/PyCI?style=flat-square)](https://github.com/damnever/pigar/actions)
 
 
 - Generating requirements.txt for Python project.
    - Handling the difference between different Python versions.
-   - Jupyter nodebook (``*.ipynb``) support.
-   - Including the import statements from ``exec``/``eval``, doctest of docstring, etc.
+   - Jupyter nodebook (`*.ipynb`) support.
+   - Including the import statements from `exec`/`eval`, doctest of docstring, etc.
 - Searching packages by import name.
 - Checking the latest versions for Python project.
 
 
-You can find more information on `GitHub <https://github.com/damnever/pigar>`_ .
+You can find more information on [GitHub](https://github.com/damnever/pigar).
 """  # noqa
 
-with codecs.open('CHANGELOG.rst', encoding='utf-8') as f:
+with codecs.open('CHANGELOG.md', encoding='utf-8') as f:
     change_logs = f.read()
 
 install_requires = [
@@ -47,6 +46,7 @@ setup(
         ' Python project, and more than that.'
     ),
     long_description=long_description + '\n\n' + change_logs,
+    long_description_content_type="text/markdown",
     url='https://github.com/damnever/pigar',
     author='damnever',
     author_email='dxc.wolf@gmail.com',

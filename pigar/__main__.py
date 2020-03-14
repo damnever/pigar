@@ -102,7 +102,7 @@ parser.add_argument(
     dest='log_level',
     nargs=1,
     type=_log_level_check,
-    default=['error'],
+    default=['WARNING'],
     help='show given level log messages, argument can be '
     '(ERROR, WARNING, INFO, DEBUG), case-insensitive'
 )
