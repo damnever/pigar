@@ -43,7 +43,9 @@ class RequirementsGenerator(object):
         save_path,
         ignores=None,
         cmp_operator="==",
-        ref_comments=False
+        ref_comments=False,
+        answer_yes=False,
+        answer_no=False,
     ):
         self._package_root = package_root
         self._save_path = save_path
@@ -51,6 +53,8 @@ class RequirementsGenerator(object):
         self._cmp_operator = cmp_operator
         self._ref_comments = ref_comments
         self._installed_pkgs = None
+        self._answer_yes = answer_yes
+        self._answer_no = answer_no
 
     def __call__(self):
         self.generate()
@@ -67,7 +71,9 @@ class RequirementsGenerator(object):
         )
 
         answer = 'n'
-        if guess:
+        if self._answer_yes or self._answer_no:
+            answer = 'y' if self._answer_yes else 'n'
+        elif guess:
             print(Color.RED('The following modules are not found yet:'))
             self._print_uncertain_modules(guess)
             sys.stdout.write(
@@ -189,6 +195,8 @@ def check_requirements_latest_versions(
     ignores=None,
     comparison_operator="==",
     ref_comments=False,
+    answer_yes=False,
+    answer_no=False,
 ):
     logger.debug('Starting check requirements latest version ...')
     files = list()
@@ -209,8 +217,13 @@ def check_requirements_latest_versions(
             )
             save_path = os.path.join(check_path, 'requirements.txt')
             rg = RequirementsGenerator(
-                check_path, save_path, ignores, comparison_operator,
-                ref_comments
+                check_path,
+                save_path,
+                ignores,
+                comparison_operator,
+                ref_comments,
+                answer_yes,
+                answer_no,
             )
             rg()
             installed_pkgs = rg.installed_pkgs

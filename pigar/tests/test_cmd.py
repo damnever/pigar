@@ -15,7 +15,8 @@ def parse_args(args):
     return (
         args.log_level[0], args.update_db, args.check_path, args.search_names,
         args.ignores, args.save_path[0], args.project_path[0],
-        args.comparison_operator[0], args.ref_comments
+        args.comparison_operator[0], args.ref_comments, args.answer_yes,
+        args.answer_no
     )
 
 
@@ -23,7 +24,17 @@ class CmdTests(unittest.TestCase):
     def setUp(self):
         reqs_path = os.path.join(CUR_DIR, 'requirements.txt')
         self._default_args = [
-            'WARNING', False, None, [], [], reqs_path, CUR_DIR, '==', True
+            'WARNING',
+            False,
+            None,
+            [],
+            [],
+            reqs_path,
+            CUR_DIR,
+            '==',
+            True,
+            False,
+            False,
         ]
 
     def tearDown(self):
@@ -86,3 +97,14 @@ class CmdTests(unittest.TestCase):
         target = self._default_args
         target[7] = args[-1]
         self.assertListEqual(list(parse_args(args)), target)
+
+    def test_answer(self):
+        target = self._default_args
+        target[9] = True
+        self.assertListEqual(list(parse_args(['-y'])), target)
+        self.assertListEqual(list(parse_args(['--yes'])), target)
+        target = self._default_args
+        target[9] = False
+        target[10] = True
+        self.assertListEqual(list(parse_args(['-n'])), target)
+        self.assertListEqual(list(parse_args(['--no'])), target)
