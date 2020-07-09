@@ -1,3 +1,4 @@
+
 ## pigar
 
 [![](https://img.shields.io/github/workflow/status/damnever/pigar/PyCI?style=flat-square)](https://github.com/damnever/pigar/actions) [![](https://img.shields.io/pypi/v/pigar.svg?style=flat-square)](https://pypi.org/project/pigar)
@@ -31,7 +32,6 @@ To get the newest code from GitHub:
 ```
 pip install git+https://github.com/damnever/pigar.git@[master or other branch] --upgrade
 ```
-
 
 ### Usage
 
@@ -91,7 +91,7 @@ pip install git+https://github.com/damnever/pigar.git@[master or other branch] -
 `pigar` can not handle it gracefully, you may need to remove the duplicate packages in requirements.txt manually.
 Install the required package(remove others) in local environment should fix it as well.
 
-Related issues: [#32](https://github.com/damnever/pigar/issues/32), [#68](https://github.com/damnever/pigar/issues/68).
+Related issues: [#32](https://github.com/damnever/pigar/issues/32), [#68](https://github.com/damnever/pigar/issues/68), [#75](https://github.com/damnever/pigar/issues/75#issuecomment-605639825).
 </details>
 
 
