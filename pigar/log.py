@@ -54,5 +54,5 @@ class _LogFormatter(logging.Formatter):
             message += '\n' + record.exc_text
         record.message = message
 
-        formated = self._fmt % record.__dict__
-        return formated.replace('\n', '\n    ')
+        formatted = self._fmt % record.__dict__
+        return formatted.replace('\n', '\n    ')
