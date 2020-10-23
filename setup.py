@@ -21,7 +21,7 @@ long_description = """
 
 - Generating requirements.txt for Python project.
    - Handling the difference between different Python versions.
-   - Jupyter nodebook (`*.ipynb`) support.
+   - Jupyter notebook (`*.ipynb`) support.
    - Including the import statements from `exec`/`eval`, doctest of docstring, etc.
 - Searching packages by import name.
 - Checking the latest versions for Python project.
