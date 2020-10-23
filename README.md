@@ -6,7 +6,7 @@
 
 - Generating requirements.txt for Python project.
    - Handling the difference between different Python versions.
-   - Jupyter nodebook (`*.ipynb`) support.
+   - Jupyter notebook (`*.ipynb`) support.
    - Including the import statements from ``exec``/``eval``, doctest of docstring, etc.
 - Searching packages by import name.
 - Checking the latest versions for Python project.
@@ -45,7 +45,7 @@ pip install git+https://github.com/damnever/pigar.git@[master or other branch] -
     $ pigar -p ../dev-requirements.txt -P ../
     ```
 
-    `pigar` can list all files which referenced the package(the line numbers for Jupyter nodebook may be a bit confusing), for example:
+    `pigar` can list all files which referenced the package(the line numbers for Jupyter notebook may be a bit confusing), for example:
     ```
     # project/foo.py: 2,3
     # project/bar/baz.py: 2,7,8,9
