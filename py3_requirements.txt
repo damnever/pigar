@@ -5,6 +5,7 @@ colorama == 0.4.3
 
 # pigar/parser.py: 16
 nbformat == 5.0.4
+ipython == 7.0.0
 
 # pigar/core.py: 28
 # pigar/pypi.py: 19
