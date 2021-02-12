@@ -14,7 +14,11 @@ from .log import logger
 from .helpers import parse_git_config, trim_suffix
 
 import nbformat
-import IPython
+if sys.version_info.major == 3:
+    PYTHON_VERSION_3 = True
+    import IPython
+else:
+    PYTHON_VERSION_3 = False
 
 Module = collections.namedtuple('Module', ['name', 'try_', 'file', 'lineno'])
 
@@ -58,12 +62,17 @@ def parse_imports(package_root, ignores=None):
 
 def _read_code(fpath):
     if fpath.endswith(".ipynb"):
-        transformer = IPython.core.inputtransformer2.TransformerManager()
         nb = nbformat.read(fpath, as_version=4)
         code = ""
-        for cell in nb.cells:
-            if cell.cell_type == "code":
-                code += transformer.transform_cell(cell.source) + "\n"
+        if PYTHON_VERSION_3:
+            transformer = IPython.core.inputtransformer2.TransformerManager()
+            for cell in nb.cells:
+                if cell.cell_type == "code":
+                    code += transformer.transform_cell(cell.source) + "\n"
+        else: # not support !magic and !system
+            for cell in nb.cells:
+                if cell.cell_type == "code":
+                    code += cell.source + "\n"
         return code
     elif fpath.endswith(".py"):
         with open(fpath, 'rb') as f:
