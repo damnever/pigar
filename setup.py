@@ -35,7 +35,7 @@ with codecs.open('CHANGELOG.md', encoding='utf-8') as f:
 
 install_requires = [
     'colorama>=0.3.9', 'requests>=2.20.0', 'nbformat>=4.4.0',
-    'futures;python_version<"3.2"'
+    'ipython>=7.0', 'futures;python_version<"3.2"'
 ]
 
 setup(

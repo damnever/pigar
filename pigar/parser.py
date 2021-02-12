@@ -14,6 +14,7 @@ from .log import logger
 from .helpers import parse_git_config, trim_suffix
 
 import nbformat
+import IPython
 
 Module = collections.namedtuple('Module', ['name', 'try_', 'file', 'lineno'])
 
@@ -57,11 +58,12 @@ def parse_imports(package_root, ignores=None):
 
 def _read_code(fpath):
     if fpath.endswith(".ipynb"):
+        transformer = IPython.core.inputtransformer2.TransformerManager()
         nb = nbformat.read(fpath, as_version=4)
         code = ""
         for cell in nb.cells:
             if cell.cell_type == "code":
-                code += cell.source + "\n"
+                code += transformer.transform_cell(cell.source) + "\n"
         return code
     elif fpath.endswith(".py"):
         with open(fpath, 'rb') as f:
