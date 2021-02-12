@@ -69,7 +69,8 @@ def _read_code(fpath):
             for cell in nb.cells:
                 if cell.cell_type == "code":
                     code += transformer.transform_cell(cell.source) + "\n"
-        else: # not support !magic and !system
+        # allow python version 2.7, but without !magic and !system support
+        else:
             for cell in nb.cells:
                 if cell.cell_type == "code":
                     code += cell.source + "\n"
