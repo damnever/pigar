@@ -14,11 +14,18 @@ from .log import logger
 from .helpers import parse_git_config, trim_suffix
 
 import nbformat
-if sys.version_info.major == 3:
-    PYTHON_VERSION_3 = True
+try:
     import IPython
-else:
-    PYTHON_VERSION_3 = False
+    # untested
+    # only support IPython >= 6.0.0
+    _transformer_manager = IPython.core.inputtransformer2.TransformerManager()
+
+    # future: support IPython LTS 5.0.0 used by Google Colab
+    # _transformer_manager = ...
+
+except Exception:
+    import warnings
+    _transformer_manager = None
 
 Module = collections.namedtuple('Module', ['name', 'try_', 'file', 'lineno'])
 
@@ -64,13 +71,17 @@ def _read_code(fpath):
     if fpath.endswith(".ipynb"):
         nb = nbformat.read(fpath, as_version=4)
         code = ""
-        if PYTHON_VERSION_3:
-            transformer = IPython.core.inputtransformer2.TransformerManager()
+        if _transformer_manager:
             for cell in nb.cells:
                 if cell.cell_type == "code":
-                    code += transformer.transform_cell(cell.source) + "\n"
+                    code += _transformer_manager.transform_cell(cell.source) \
+                        + "\n"
         # allow python version 2.7, but without !magic and !system support
         else:
+            warning_msg = """No IPython >= 6.0.0
+            Not using IPython to parse notebooks
+            """
+            warnings.warn(warning_msg, Warning)
             for cell in nb.cells:
                 if cell.cell_type == "code":
                     code += cell.source + "\n"
