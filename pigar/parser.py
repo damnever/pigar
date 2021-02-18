@@ -71,19 +71,17 @@ def _read_code(fpath):
     if fpath.endswith(".ipynb"):
         nb = nbformat.read(fpath, as_version=4)
         code = ""
-        if _transformer_manager:
-            for cell in nb.cells:
-                if cell.cell_type == "code":
+        for cell in nb.cells:
+            if cell.cell_type == "code":
+                if _transformer_manager:
                     code += _transformer_manager.transform_cell(cell.source) \
                         + "\n"
-        # allow python version 2.7, but without !magic and !system support
-        else:
-            warning_msg = """No IPython >= 6.0.0
-            Not using IPython to parse notebooks
-            """
-            warnings.warn(warning_msg, Warning)
-            for cell in nb.cells:
-                if cell.cell_type == "code":
+                else:
+                    # allow without !magic and !system support
+                    warning_msg = """No IPython >= 6.0.0
+                    Not using IPython to parse notebooks
+                    """
+                    warnings.warn(warning_msg, Warning)
                     code += cell.source + "\n"
         return code
     elif fpath.endswith(".py"):
