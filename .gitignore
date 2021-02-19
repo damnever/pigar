@@ -7,3 +7,4 @@ insert.py
 build/
 dist/
 .venv*
+.vscode/
