@@ -74,8 +74,7 @@ def _read_code(fpath):
         for cell in nb.cells:
             if cell.cell_type == "code":
                 if _transformer_manager:
-                    code += _transformer_manager.transform_cell(cell.source) \
-                        + "\n"
+                    code += _transformer_manager.transform_cell(cell.source)
                 else:
                     # allow without !magic and !system support
                     warning_msg = """No IPython >= 6.0.0
