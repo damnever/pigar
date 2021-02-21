@@ -14,18 +14,27 @@ from .log import logger
 from .helpers import parse_git_config, trim_suffix
 
 import nbformat
+import warnings
+
 try:
     import IPython
-    # untested
-    # only support IPython >= 6.0.0
-    _transformer_manager = IPython.core.inputtransformer2.TransformerManager()
-
-    # future: support IPython LTS 5.0.0 used by Google Colab
-    # _transformer_manager = ...
+    if IPython.__version__.split('.')[0] >= 7:
+        _transformer_manager = IPython.core.inputtransformer2.TransformerManager()
+        _input_transformer = None
+    elif IPython.__version__.split('.')[0] >= 5:
+        # TODO(yasirroni): support IPython 5 LTS ()
+        warning_msg = """Currently only support IPython >= 7.0"""
+        warnings.warn(warning_msg, Warning)
+        _transformer_manager = None
+        _input_transformer = None
+    else:
+        _transformer_manager = None
+        _input_transformer = None
 
 except Exception:
-    import warnings
     _transformer_manager = None
+    _input_transformer = None
+
 
 Module = collections.namedtuple('Module', ['name', 'try_', 'file', 'lineno'])
 
@@ -75,9 +84,13 @@ def _read_code(fpath):
             if cell.cell_type == "code":
                 if _transformer_manager:
                     code += _transformer_manager.transform_cell(cell.source)
+                elif _input_transformer:
+                    # TODO(yasirroni):
+                    # code += _input_transformer.push()
+                    pass
                 else:
                     # allow without !magic and !system support
-                    warning_msg = """No IPython >= 6.0.0
+                    warning_msg = """No IPython >= 7.0
                     Not using IPython to parse notebooks
                     """
                     warnings.warn(warning_msg, Warning)
