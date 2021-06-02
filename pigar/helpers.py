@@ -117,7 +117,7 @@ def parse_requirements(fpath):
 
 
 def cmp_to_key(cmp_func):
-    """Convert a cmp=fcuntion into a key=function."""
+    """Convert a cmp=function into a key=function."""
     class K(object):
         def __init__(self, obj, *args):
             self.obj = obj
