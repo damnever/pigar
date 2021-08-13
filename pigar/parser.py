@@ -270,7 +270,7 @@ def parse_installed_packages():
 def _search_path(path):
     mapping = dict()
 
-    for file in os.listdir(path):
+    for file in sorted(os.listdir(path)):
         # Install from PYPI.
         if fnmatch.fnmatch(file, '*-info'):
             top_level = os.path.join(path, file, 'top_level.txt')
