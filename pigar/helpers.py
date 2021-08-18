@@ -195,7 +195,7 @@ def parse_git_config(path):
                 section = line[1:-1].strip()
                 config[section] = dict()
             elif section:
-                key, value = line.replace(' ', '').split('=')
+                key, value = line.replace(' ', '').split('=', 1)
                 config[section][key] = value
     return config
 

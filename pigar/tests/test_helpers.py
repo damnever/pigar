@@ -8,7 +8,8 @@ import random
 
 from .helper import CaptureOutput
 from ..helpers import (
-    Dict, print_table, parse_requirements, compare_version, cmp_to_key
+    Dict, print_table, parse_requirements,
+    parse_git_config, compare_version, cmp_to_key
 )
 
 
@@ -69,6 +70,17 @@ class ParseReqsTest(unittest.TestCase):
         path = os.path.join(os.path.dirname(__file__), './fake_reqs.txt')
         target = {'a': '4.1.4', 'b': '2.3.0', 'c': ''}
         reqs = parse_requirements(path)
+        self.assertDictEqual(reqs, target)
+
+
+class ParseGitConfigTest(unittest.TestCase):
+    def test_parse_gitconfig(self):
+        path = os.path.join(os.path.dirname(__file__), 'fake_git_conf')
+        target = {'core': {'editor': 'vim'},
+                  'user': {'email': 'pigar@example.com', 'name': 'Pigar'},
+                  'credential': {'helper': 'cache--timeout=3600'}
+                  }
+        reqs = parse_git_config(path)
         self.assertDictEqual(reqs, target)
 
 
