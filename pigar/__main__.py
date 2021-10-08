@@ -141,6 +141,7 @@ parser.add_argument(
     help='The comparison operator for versions, alternatives: [==, ~=, >=].'
 )
 parser.add_argument(
+    '-wc',
     '--without-referenced-comments',
     dest='ref_comments',
     action='store_false',
