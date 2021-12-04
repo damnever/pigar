@@ -3,6 +3,7 @@
 from __future__ import print_function, division, absolute_import
 
 import os
+import re
 import sys
 import fnmatch
 import ast
@@ -55,13 +56,22 @@ def parse_imports(package_root, ignores=None):
     return imported_modules, user_modules
 
 
+def _filter_ipynb_commands(cell_lines):
+    """
+    Filter out cells with magics and shell commands
+    e.g %matplotlib inline or !pip install pigar
+    """
+    return re.sub("^((\s)*(!|%).*$)|(\n\s*%.*)", "", cell_lines)
+
+
 def _read_code(fpath):
     if fpath.endswith(".ipynb"):
         nb = nbformat.read(fpath, as_version=4)
         code = ""
         for cell in nb.cells:
             if cell.cell_type == "code":
-                code += cell.source + "\n"
+                source = _filter_ipynb_commands(cell.source)
+                code += source + "\n"
         return code
     elif fpath.endswith(".py"):
         with open(fpath, 'rb') as f:
