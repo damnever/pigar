@@ -103,9 +103,9 @@ class RequirementsGenerator(object):
             for name in in_pypi:
                 del guess[name]
         if guess and answer in ('y', 'yes'):
-            print(Color.RED('These modules are not found:'))
+            print(Color.RED('The following modules are not found:'))
             self._print_uncertain_modules(guess)
-            print(Color.RED('Maybe or you need update database.'))
+            print(Color.RED('A database update might solve this issue.'))
 
     def _check_on_pypi(self, packages, guess):
         in_pypi = set()
