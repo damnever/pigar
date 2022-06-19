@@ -54,6 +54,8 @@ pip install git+https://github.com/damnever/pigar.git@[master or other branch] -
 
     If the requirements.txt is overwritten, ``pigar`` will show the difference between the old and the new.
 
+    **NOTE**, `pigar` will search the packages in local environment first, then it will search missing packages in PyPI.
+
 - If you do not know the import name that belongs to a specific package (more generally, does `Import Error: xxx` drive you crazy?), such as `bs4` which may come from `beautifulsoup4` or `MySQLdb` which could come from `MySQL_Python`, try searching for it:
 
     ```
@@ -80,6 +82,16 @@ pip install git+https://github.com/damnever/pigar.git@[master or other branch] -
 
 
 ### FAQ
+
+<details>
+  <summary>
+  Is `pigar` a dependency management tool?
+  </summary>
+
+**No.** I've thought about it many times, but there is too much dirty work to be done to make `pigar`'s way reliable.
+
+I like the way `pigar` does the job, but sadly, `pigar` does a bad job of managing dependencies, `pigar` is more like a tool to assist an old project to migrate to a new development workflow.
+</details>
 
 <details>
   <summary>
