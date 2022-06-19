@@ -32,7 +32,7 @@ class CmdTests(unittest.TestCase):
             reqs_path,
             CUR_DIR,
             '==',
-            True,
+            False,
             False,
             False,
         ]
