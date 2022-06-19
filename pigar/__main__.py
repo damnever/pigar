@@ -58,16 +58,16 @@ def _comparison_operator_check(op, supported_ops=('==', '~=', '>=')):
 parser = argparse.ArgumentParser(
     prog='pigar',
     #  usage='%(prog)s [options]',
-    description='Python requirements tool -- %(prog)s, it will '
-    'do only one thing at each time. Default action is generate'
-    ' requirements.txt in current directory.'
+    description='%(prog)s is not a package/dependency management tool,'
+    + ' but it does generate requirements.txt for your Python project.'
+    + ' https://github.com/damnever/pigar'
 )
 parser.add_argument(
     '-v',
     '--version',
     action='version',
     version='%(prog)s {0}'.format(version),
-    help='show %(prog)s version information and exit.'
+    help='show %(prog)s version information and exit'
 )
 parser.add_argument(
     '-u',
@@ -75,7 +75,7 @@ parser.add_argument(
     dest='update_db',
     action='store_true',
     help='update database, use it when %(prog)s failed you, exit when'
-    ' action done.'
+    ' action done'
 )
 parser.add_argument(
     '-s',  # '--search',
@@ -84,7 +84,7 @@ parser.add_argument(
     metavar='NAME',
     default=[],
     help='search package name by import name, use it if you do not '
-    'know import name come from which package, exit when action done.'
+    'know import name come from which package, exit when action done'
 )
 parser.add_argument(
     '-c',  # '--check',
@@ -95,7 +95,7 @@ parser.add_argument(
     const=os.getcwd(),
     help='check requirements for the latest version. If file path not '
     'given, search *requirements.txt in current directory, if not found, '
-    'generate file requirements.txt, exit when action done.'
+    'generate file requirements.txt, exit when action done'
 )
 parser.add_argument(
     '-l',  # '--log_level'
@@ -104,7 +104,7 @@ parser.add_argument(
     type=_log_level_check,
     default=['WARNING'],
     help='show given level log messages, argument can be '
-    '(ERROR, WARNING, INFO, DEBUG), case-insensitive.'
+    '(ERROR, WARNING, INFO, DEBUG), case-insensitive'
 )
 parser.add_argument(
     '-i',  # '--ignore'
@@ -114,7 +114,7 @@ parser.add_argument(
     default=[],
     type=_ignore_dirs_check,
     help='given a list of directory to ignore, relative directory, '
-    '*used for* -c and default action.'
+    '*used for* -c and default action'
 )
 parser.add_argument(
     '-p',  # '--path',
@@ -122,7 +122,7 @@ parser.add_argument(
     nargs=1,
     type=_path_check,
     default=[os.path.join(os.getcwd(), 'requirements.txt')],
-    help='save requirements in given file path, *used for* default action.'
+    help='save requirements in given file path, *used for* default action'
 )
 parser.add_argument(
     '-P',  # '--projectpath',
@@ -130,7 +130,7 @@ parser.add_argument(
     nargs=1,
     type=_projectpath_check,
     default=[os.getcwd()],
-    help='project path, which is directory, *used for* default action.'
+    help='project path, which is directory, *used for* default action'
 )
 parser.add_argument(
     '-o',  # '--comparison-operator',
@@ -138,28 +138,28 @@ parser.add_argument(
     nargs=1,
     type=_comparison_operator_check,
     default=['=='],
-    help='The comparison operator for versions, alternatives: [==, ~=, >=].'
+    help='the comparison operator for versions, alternatives: [==, ~=, >=]'
 )
 parser.add_argument(
-    '--without-referenced-comments',
+    '--with-referenced-comments',
     dest='ref_comments',
-    action='store_false',
-    help='Omit requirements.txt comments showing the file and line of '
-    'each import.'
+    action='store_true',
+    help='add comments to list all files which referenced the imported' +
+    ' package'
 )
 parser.add_argument(
     '-y',
     '--yes',
     dest='answer_yes',
     action='store_true',
-    help='Answer yes for all possible questions.'
+    help='answer yes for all possible questions'
 )
 parser.add_argument(
     '-n',
     '--no',
     dest='answer_no',
     action='store_true',
-    help='Answer no for all possible questions.'
+    help='answer no for all possible questions'
 )
 
 

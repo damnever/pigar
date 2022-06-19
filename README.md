@@ -45,7 +45,7 @@ pip install git+https://github.com/damnever/pigar.git@[master or other branch] -
     $ pigar -p ../dev-requirements.txt -P ../
     ```
 
-    `pigar` can list all files which referenced the package(the line numbers for Jupyter notebook may be a bit confusing), for example:
+    `pigar --with-referenced-comments` can list all files which referenced the package(the line numbers for Jupyter notebook may be a bit confusing), for example:
     ```
     # project/foo.py: 2,3
     # project/bar/baz.py: 2,7,8,9
@@ -88,7 +88,7 @@ pip install git+https://github.com/damnever/pigar.git@[master or other branch] -
   Is `pigar` a dependency management tool?
   </summary>
 
-**No.** I've thought about it many times, but there is too much dirty work to be done to make `pigar`'s way reliable.
+**No.** I've thought about this many times, but there is too much dirty work to be done to make `pigar`'s way reliable.
 
 I like the way `pigar` does the job, but sadly, `pigar` does a bad job of managing dependencies, `pigar` is more like a tool to assist an old project to migrate to a new development workflow.
 </details>
