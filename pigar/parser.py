@@ -298,7 +298,7 @@ def _search_path(path):
                     line = line.strip()
                     if line != '.':
                         dev_dir = line
-            if not dev_dir:
+            if not dev_dir or not pathlib.exists(dev_dir):
                 continue
             # Egg info path.
             info_dir = [
