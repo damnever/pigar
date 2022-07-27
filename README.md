@@ -30,7 +30,7 @@ conda install -c conda-forge pigar
 ```
 To get the newest code from GitHub:
 ```
-pip install git+https://github.com/damnever/pigar.git@[master or other branch] --upgrade
+pip install git+https://github.com/damnever/pigar.git@[main or other branch] --upgrade
 ```
 
 ### Usage
