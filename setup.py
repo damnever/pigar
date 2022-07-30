@@ -76,4 +76,7 @@ setup(
     entry_points={'console_scripts': [
         'pigar=pigar.__main__:main',
     ]},
+    extras_require={
+        'ipython': ['IPython>=7.0.0']
+    }
 )

@@ -14,6 +14,27 @@ from .log import logger
 from .helpers import parse_git_config, trim_suffix
 
 import nbformat
+import warnings
+
+try:
+    import IPython
+    if IPython.__version__.split('.')[0] >= 7:
+        _transformer_manager = IPython.core.inputtransformer2.TransformerManager()
+        _input_transformer = None
+    elif IPython.__version__.split('.')[0] >= 5:
+        # TODO(yasirroni): support IPython 5 LTS ()
+        warning_msg = """Currently only support IPython >= 7.0"""
+        warnings.warn(warning_msg, Warning)
+        _transformer_manager = None
+        _input_transformer = None
+    else:
+        _transformer_manager = None
+        _input_transformer = None
+
+except Exception:
+    _transformer_manager = None
+    _input_transformer = None
+
 
 Module = collections.namedtuple('Module', ['name', 'try_', 'file', 'lineno'])
 
@@ -61,7 +82,19 @@ def _read_code(fpath):
         code = ""
         for cell in nb.cells:
             if cell.cell_type == "code":
-                code += cell.source + "\n"
+                if _transformer_manager:
+                    code += _transformer_manager.transform_cell(cell.source)
+                elif _input_transformer:
+                    # TODO(yasirroni):
+                    # code += _input_transformer.push()
+                    pass
+                else:
+                    # allow without !magic and !system support
+                    warning_msg = """No IPython >= 7.0
+                    Not using IPython to parse notebooks
+                    """
+                    warnings.warn(warning_msg, Warning)
+                    code += cell.source + "\n"
         return code
     elif fpath.endswith(".py"):
         with open(fpath, 'rb') as f:
