@@ -30,7 +30,7 @@ conda install -c conda-forge pigar
 ```
 To get the newest code from GitHub:
 ```
-pip install git+https://github.com/damnever/pigar.git@[master or other branch] --upgrade
+pip install git+https://github.com/damnever/pigar.git@[main or other branch] --upgrade
 ```
 
 ### Usage
@@ -45,7 +45,7 @@ pip install git+https://github.com/damnever/pigar.git@[master or other branch] -
     $ pigar -p ../dev-requirements.txt -P ../
     ```
 
-    `pigar` can list all files which referenced the package(the line numbers for Jupyter notebook may be a bit confusing), for example:
+    `pigar --with-referenced-comments` can list all files which referenced the package(the line numbers for Jupyter notebook may be a bit confusing), for example:
     ```
     # project/foo.py: 2,3
     # project/bar/baz.py: 2,7,8,9
@@ -53,6 +53,8 @@ pip install git+https://github.com/damnever/pigar.git@[master or other branch] -
     ```
 
     If the requirements.txt is overwritten, ``pigar`` will show the difference between the old and the new.
+
+    **NOTE**, `pigar` will search the packages in local environment first, then it will search missing packages in PyPI.
 
 - If you do not know the import name that belongs to a specific package (more generally, does `Import Error: xxx` drive you crazy?), such as `bs4` which may come from `beautifulsoup4` or `MySQLdb` which could come from `MySQL_Python`, try searching for it:
 
@@ -80,6 +82,16 @@ pip install git+https://github.com/damnever/pigar.git@[master or other branch] -
 
 
 ### FAQ
+
+<details>
+  <summary>
+  Is `pigar` a dependency management tool?
+  </summary>
+
+**No.** I've thought about this many times, but there is too much dirty work to be done to make `pigar`'s way reliable.
+
+I like the way `pigar` does the job, but sadly, `pigar` does a bad job of managing dependencies, `pigar` is more like a tool to assist an old project to migrate to a new development workflow.
+</details>
 
 <details>
   <summary>

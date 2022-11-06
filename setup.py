@@ -64,10 +64,13 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3',
     ],
     keywords='requirements.txt,automation,tool,module-search',
-    packages=find_packages(),
+    packages=find_packages(
+        exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     install_requires=install_requires,
     include_package_data=True,
     entry_points={'console_scripts': [

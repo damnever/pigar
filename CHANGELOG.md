@@ -1,6 +1,12 @@
 ### Change Logs
 
-#### Version 0.10.rc0 (2020.03.14)
+#### Version 0.10.0 (2022.06.22)
+
+- **BREAKING CHANGE:** Disable the comments which contain filenames and line numbers by default, use `--with-referenced-comments` to enable this feature.
+- Skip if local package (edit-mode project) not found, fixed [#99]((https://github.com/damnever/pigar/issues/61)).
+
+
+#### Version 0.10.0 (2020.03.14)
 
 - Refactored the main logic, **the interface has been changed**, be careful if you are using `pigar` as a library.
 - Handle the HTTP error, fixed [#61](https://github.com/damnever/pigar/issues/61).
