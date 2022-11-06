@@ -19,8 +19,8 @@ except ImportError:
 from .db import database
 from .log import logger
 from .helpers import (
-    Color, lines_diff, print_table, parse_requirements, trim_prefix,
-    trim_suffix
+    Color, lines_diff, print_table, parse_requirements, PraseRequirementError,
+    trim_prefix, trim_suffix
 )
 from .parser import parse_imports, parse_installed_packages
 from .pypi import PKGS_URL, Downloader, Updater
@@ -37,6 +37,7 @@ _special_packages = {
 
 
 class RequirementsGenerator(object):
+
     def __init__(
         self,
         package_root,
@@ -230,28 +231,32 @@ def check_requirements_latest_versions(
             files.append(save_path)
     else:
         files.append(check_path)
-    for fpath in files:
-        reqs.update(parse_requirements(fpath))
 
     logger.debug('Checking requirements latest version ...')
     installed_pkgs = installed_pkgs or parse_installed_packages()
     installed_pkgs = {v[0]: v[1] for v in installed_pkgs.values()}
     downloader = Downloader()
-    for pkg in reqs:
-        current = reqs[pkg]
-        # If no version specifies in requirements,
-        # check in installed packages.
-        if current == '' and pkg in installed_pkgs:
-            current = installed_pkgs[pkg]
-        logger.debug('Checking "{0}" latest version ...'.format(pkg))
+    for file in files:
         try:
-            latest = downloader.download_package(pkg).version()
-        except HTTPError as e:
-            logger.error('checking %s failed: %e', pkg, e)
-        pkg_versions.append((pkg, current, latest))
+            for req in parse_requirements(file):
+                local_version = ''
+                if req.name in installed_pkgs:
+                    local_version = installed_pkgs[req.name]
+                try:
+                    latest = downloader.download_package(req.name).version()
+                    pkg_versions.append(
+                        (
+                            req.name, req.specifier
+                            or req.url, local_version, latest
+                        )
+                    )
+                except HTTPError as e:
+                    logger.error('checking %s failed: %e', req.name, e)
+        except PraseRequirementError as e:
+            logger.error('parse %s failed: %e', file, e)
 
     logger.debug('Checking requirements latest version done.')
-    print_table(pkg_versions)
+    print_table(pkg_versions, headers=['PACKAGE', 'SPEC', 'LOCAL', 'LATEST'])
 
 
 def search_packages_by_names(names):
@@ -475,6 +480,7 @@ class _RequiredModules(dict):
 
 class _Locations(dict):
     """_Locations store code locations(file, linenos)."""
+
     def __init__(self):
         super(_Locations, self).__init__()
         self._sorted = None

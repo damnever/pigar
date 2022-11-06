@@ -1,3 +1,12 @@
 a == 4.1.4
 b == 2.3.0
 c
+
+d @ https://example.com/d/d/archive/refs/tags/1.0.0.zip
+e [fake] >= 2.8.1, == 2.8.* ; python_version < "2.7"
+
+-e git+ssh://git@github.com/damnever/pigar.git@abcdef#egg=pigar
+
+-r fake_reqs_2.txt
+--requirement fake_reqs_2.txt
+--no-index
