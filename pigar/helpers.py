@@ -3,11 +3,15 @@
 from __future__ import print_function, division, absolute_import
 
 import os
-import re
 import sys
+import re
 import difflib
 import functools
+import os.path as pathlib
+import collections
 
+from packaging.requirements import Requirement, InvalidRequirement
+from packaging.version import Version
 try:
     import colorama
 except ImportError:
@@ -23,6 +27,7 @@ else:
 
 class Dict(dict):
     """Convert dict key object to attribute."""
+
     def __init__(self, *args, **kwargs):
         super(Dict, self).__init__(*args, **kwargs)
 
@@ -57,7 +62,7 @@ Color = Dict(
 )
 
 
-def print_table(rows, headers=['PACKAGE', 'CURRENT', 'LATEST']):
+def print_table(rows, headers=[]):
     """Print table. Such as:
      PACKAGE | CURRENT | LATEST
      --------+---------+-------
@@ -88,37 +93,67 @@ def print_table(rows, headers=['PACKAGE', 'CURRENT', 'LATEST']):
     print('=' * width)
 
 
+ParsedRequirement = collections.namedtuple(
+    'ParsedRequirement', ['name', 'specifier', 'url']
+)
+
+
+class PraseRequirementError(ValueError):
+    pass
+
+
 def parse_requirements(fpath):
     """Parse requirements file."""
-    pkg_v_re = re.compile(r'^(?P<pkg>[^><==]+)[><==]{,2}(?P<version>.*)$')
-    referenced_reqs_re = re.compile(r'^-r *(?P<req_f>.*)')
-    reqs = dict()
+    referenced_reqs_re = re.compile(r'^(-r|--requirement) *(?P<reqs_file>.*)')
+
+    dup = set()
+    referenced_files = set()
     with open(fpath, 'r') as f:
-        for line in f:
-            if line.startswith('#'):
+        for lineno, line in enumerate(f):
+            line = line.strip()
+            if line == '' or line.startswith('#'):
                 continue
-            r = referenced_reqs_re.match(line.strip())
-            if r:
+            referenced = referenced_reqs_re.match(line.strip())
+            if referenced:
                 # Parse referenced requirements file
-                additional_reqs_file = r['req_f']
-                additional_reqs_fpath = os.path.join(
-                    os.path.dirname(fpath), additional_reqs_file
-                )
-                additional_reqs = parse_requirements(additional_reqs_fpath)
-                # Update dictionary with referenced reqs
-                for pkg, version in additional_reqs.items():
-                    reqs[pkg] = version
+                additional_reqs_file = referenced.groupdict()['reqs_file']
+                if not pathlib.isabs(additional_reqs_file):
+                    additional_reqs_file = os.path.join(
+                        os.path.dirname(fpath), additional_reqs_file
+                    )
+                referenced_files.add(additional_reqs_file)
                 continue
-            m = pkg_v_re.match(line.strip())
-            if m:
-                d = m.groupdict()
-                reqs[d['pkg'].strip()] = d['version'].strip()
-    return reqs
+            if line.startswith('-'):
+                # Ignore all other options..
+                continue
+
+            try:
+                req = Requirement(line)
+            except InvalidRequirement as e:
+                raise PraseRequirementError('line {}: {}'.format(lineno, e))
+            if req.name in dup:
+                continue
+            dup.add(req.name)
+            yield ParsedRequirement(
+                name=req.name,
+                specifier=str(req.specifier)
+                if req.specifier is not None else '',
+                url=str(req.url) if req.url is not None else '',
+            )
+
+    for rfile in referenced_files:
+        for req in parse_requirements(rfile):
+            if req.name in dup:
+                continue
+            dup.add(req.name)
+            yield req
 
 
 def cmp_to_key(cmp_func):
     """Convert a cmp=function into a key=function."""
+
     class K(object):
+
         def __init__(self, obj, *args):
             self.obj = obj
 
@@ -135,52 +170,15 @@ def cmp_to_key(cmp_func):
 
 
 def compare_version(version1, version2):
-    """Compare version number, such as 1.1.1 and 1.1b2.0."""
-    v1, v2 = list(), list()
-
-    for item in version1.split('.'):
-        if item.isdigit():
-            v1.append(int(item))
-        else:
-            v1.extend([i for i in _group_alnum(item)])
-    for item in version2.split('.'):
-        if item.isdigit():
-            v2.append(int(item))
-        else:
-            v2.extend([i for i in _group_alnum(item)])
-
-    while v1 and v2:
-        item1, item2 = v1.pop(0), v2.pop(0)
-        if item1 > item2:
-            return 1
-        elif item1 < item2:
-            return -1
-
-    if v1:
-        return 1
-    elif v2:
+    """Compare version number, such as 1.1.1 and 1.1b2.0.
+    Ref: https://peps.python.org/pep-0440/"""
+    v1 = Version(version1)
+    v2 = Version(version2)
+    if v1 < v2:
         return -1
+    if v1 > v2:
+        return 1
     return 0
-
-
-def _group_alnum(s):
-    tmp = list()
-    flag = 1 if s[0].isdigit() else 0
-    for c in s:
-        if c.isdigit():
-            if flag == 0:
-                yield ''.join(tmp)
-                tmp = list()
-                flag = 1
-            tmp.append(c)
-        elif c.isalpha():
-            if flag == 1:
-                yield int(''.join(tmp))
-                tmp = list()
-                flag = 0
-            tmp.append(c)
-    last = ''.join(tmp)
-    yield (int(last) if flag else last)
 
 
 def parse_git_config(path):
@@ -226,7 +224,9 @@ def trim_suffix(content, suffix):
 
 
 def retry(e, count=3):
+
     def _wrapper(f):
+
         @functools.wraps(f)
         def _retry(*args, **kwargs):
             c = count
