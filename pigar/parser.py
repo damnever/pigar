@@ -63,7 +63,7 @@ def parse_imports(package_root, ignores=None):
 #  - https://ipython.readthedocs.io/en/stable/interactive/magics.html
 #  - https://ipython.org/ipython-doc/3/interactive/shell.html
 _ipynb_magics_and_commands_regex = re.compile(
-    r"[^#]*\s*(!|%)[a-zA-Z][a-zA-Z0-9_-]*.*"
+    r"[^#]*\s*(!|%)[{a-zA-Z][a-zA-Z0-9_-]*.*"
 )
 
 
