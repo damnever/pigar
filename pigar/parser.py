@@ -3,6 +3,7 @@
 from __future__ import print_function, division, absolute_import
 
 import os
+import re
 import sys
 import fnmatch
 import ast
@@ -55,13 +56,29 @@ def parse_imports(package_root, ignores=None):
     return imported_modules, user_modules
 
 
+# Match ipython notebook magics and shell commands.
+# e.g %matplotlib inline or !pip install pigar
+#
+# Ref:
+#  - https://ipython.readthedocs.io/en/stable/interactive/magics.html
+#  - https://ipython.org/ipython-doc/3/interactive/shell.html
+_ipynb_magics_and_commands_regex = re.compile(
+    r"[^#]*\s*(!|%)[a-zA-Z][a-zA-Z0-9_-]*.*"
+)
+
+
 def _read_code(fpath):
     if fpath.endswith(".ipynb"):
         nb = nbformat.read(fpath, as_version=4)
         code = ""
         for cell in nb.cells:
-            if cell.cell_type == "code":
-                code += cell.source + "\n"
+            if cell.cell_type != "code":
+                continue
+            for line in cell.source.splitlines():
+                match = _ipynb_magics_and_commands_regex.match(line)
+                if not (match and match.group(0) == line):
+                    code += line
+                code += "\n"
         return code
     elif fpath.endswith(".py"):
         with open(fpath, 'rb') as f:
@@ -86,6 +103,7 @@ def parse_file_imports(fpath, content):
 
 
 class ImportsParser(object):
+
     def __init__(self, rawcode_callback=None):
         self._modules = []
         self._rawcode_callback = rawcode_callback
@@ -298,7 +316,7 @@ def _search_path(path):
                     line = line.strip()
                     if line != '.':
                         dev_dir = line
-            if not dev_dir or not pathlib.exists(dev_dir):
+            if not dev_dir:
                 continue
             # Egg info path.
             info_dir = [
