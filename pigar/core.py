@@ -415,29 +415,44 @@ def _checked_cache(func):
     return _wrapper
 
 
+try:
+    from importlib.util import find_spec
+
+    def _importlib_find_module_path(name):
+        spec = find_spec(name)
+        if spec is None:
+            raise ImportError(name)
+        return spec.origin
+except ImportError:
+    import imp
+
+    def _importlib_find_module_path(name):
+        module_info = imp.find_module(name)
+        # Testcase: ResourceWarning
+        if isinstance(module_info[0], FileType):
+            module_info[0].close()
+        return module_info[1]
+
+
 @_checked_cache
 def is_stdlib(name):
     """Check whether it is stdlib module."""
     exist = True
-    module_info = ('', '', '')
+    module_path = None
     try:
-        module_info = imp.find_module(name)
+        module_path = _importlib_find_module_path(name)
     except ImportError:
         try:
             # __import__(name)
             importlib.import_module(name)
-            module_info = imp.find_module(name)
+            module_path = _importlib_find_module_path(name)
             sys.modules.pop(name)
         except ImportError:
             exist = False
-    # Testcase: ResourceWarning
-    if isinstance(module_info[0], FileType):
-        module_info[0].close()
-    mpath = module_info[1]
     if exist and (
-        mpath is not None and (
-            'site-packages' in mpath or 'dist-packages' in mpath or
-            ('bin/' in mpath and mpath.endswith('.py'))
+        module_path is not None and (
+            'site-packages' in module_path or 'dist-packages' in module_path or
+            ('bin/' in module_path and module_path.endswith('.py'))
         )
     ):
         exist = False
