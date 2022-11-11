@@ -3,8 +3,7 @@
 <head>
   <title>Pigar</title>
   <script src='./vendor/sqljs-wasm/sql-wasm.js'></script>
-  <script src='./vendor/jszip/jszip.min.js'></script>
-  <script src='./vendor/jszip/jszip-utils.min.js'></script>
+  <script src='./vendor/pako/pako_inflate.min.js'></script>
   <script type="module">
     document.getElementById("query").disabled = true
     const queryPlaceholder = document.getElementById("query").placeholder;
@@ -13,20 +12,26 @@
       locateFile: file => `./vendor/sqljs-wasm/${file}`
     });
 
-    // const dataPromise = fetch("./static/pigar.sqlite3.bin").then(res => res.arrayBuffer());
-    const dataPromise = new JSZip.external.Promise(function (resolve, reject) {
-      JSZipUtils.getBinaryContent('./static/pigar.sqlite3.bin.zip', function (err, data) {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(data);
-        }
-      });
-    }).then(function (data) {
-      return JSZip.loadAsync(data);
-    }).then(function (zip) {
-      return zip.file("pigar.sqlite3.bin").async("arraybuffer");
-    })
+    // GitHub pages is not sending gziped content, so..
+    const dataPromise = fetch("./static/pigar.sqlite3.bin.gz").then(function (res) {
+      return res.arrayBuffer();
+    }).then(function (buffer) {
+      return pako.inflate(buffer);
+    });
+    // Zip is not good enough. require: jszip.min.js jszip-utils.min.js
+    // const dataPromise = new JSZip.external.Promise(function (resolve, reject) {
+    //   JSZipUtils.getBinaryContent('./static/pigar.sqlite3.bin.zip', function (err, data) {
+    //     if (err) {
+    //       reject(err);
+    //     } else {
+    //       resolve(data);
+    //     }
+    //   });
+    // }).then(function (data) {
+    //   return JSZip.loadAsync(data);
+    // }).then(function (zip) {
+    //   return zip.file("pigar.sqlite3.bin").async("arraybuffer");
+    // })
     const [SQL, buf] = await Promise.all([sqlPromise, dataPromise])
     document.getElementById("query").disabled = false
     document.getElementById("query").placeholder = queryPlaceholder;
