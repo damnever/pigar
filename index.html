@@ -18,20 +18,6 @@
     }).then(function (buffer) {
       return pako.inflate(buffer);
     });
-    // Zip is not good enough. require: jszip.min.js jszip-utils.min.js
-    // const dataPromise = new JSZip.external.Promise(function (resolve, reject) {
-    //   JSZipUtils.getBinaryContent('./static/pigar.sqlite3.bin.zip', function (err, data) {
-    //     if (err) {
-    //       reject(err);
-    //     } else {
-    //       resolve(data);
-    //     }
-    //   });
-    // }).then(function (data) {
-    //   return JSZip.loadAsync(data);
-    // }).then(function (zip) {
-    //   return zip.file("pigar.sqlite3.bin").async("arraybuffer");
-    // })
     const [SQL, buf] = await Promise.all([sqlPromise, dataPromise])
     document.getElementById("query").disabled = false
     document.getElementById("query").placeholder = queryPlaceholder;
