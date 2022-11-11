@@ -1,0 +1,94 @@
+<html>
+
+<head>
+  <title>Pigar</title>
+  <script src='./vendor/sqljs-wasm/sql-wasm.js'></script>
+  <script type="module">
+    document.getElementById("query").disabled = true
+    const queryPlaceholder = document.getElementById("query").placeholder;
+    document.getElementById("query").placeholder = "loading database...";
+    const sqlPromise = initSqlJs({
+      locateFile: file => `./vendor/sqljs-wasm/${file}`
+    });
+    const dataPromise = fetch("https://raw.githubusercontent.com/damnever/pigar/main/pigar/.db.sqlite3").then(res => res.arrayBuffer());
+    const [SQL, buf] = await Promise.all([sqlPromise, dataPromise])
+    document.getElementById("query").disabled = false
+    document.getElementById("query").placeholder = queryPlaceholder;
+
+    const db = new SQL.Database(new Uint8Array(buf));
+    const lowercase = 'a b c d e f g h i j k l m n o p q r s t u v w x y z'.split(' ')
+
+    function search() {
+      const query = document.getElementById('query').value.trim().toLowerCase()
+      if (query.length === 0) {
+        return
+      }
+      let suffix = 'lambda'
+      if (lowercase.includes(query[0])) {
+        suffix = query[0]
+      }
+      const nameTable = `table_${suffix}`
+      const packageTable = 'table_packages'
+      const contents = db.exec(`SELECT ${nameTable}.name , ${packageTable}.package
+        FROM ${nameTable} INNER JOIN ${packageTable} ON ${nameTable}.pkgid == ${packageTable}.id
+        WHERE name="${query}"`);
+
+      const results = document.getElementById("results");
+      results.innerHTML = ''
+      const table = document.createElement('table')
+      table.setAttribute("border", "1")
+      if (contents.length > 0) {
+        const rows = contents[0]["values"]
+        table.innerHTML = '<thead><tr><th>Distribution</th> <th>URL</th></tr> </thead> <tbody>';
+        rows.forEach(function (row) {
+          let name = row[1]
+          const url = `https://pypi.org/project/${name}/`
+          if (name.includes(query)) {
+            name = `<b>${name}</b>`
+          }
+          table.innerHTML += `<tr> <td>${name}</td> <td><a href="${url}" target="_blank">${url}</a></td> </tr>`;
+        })
+        table.innerHTML += `</tbody>`;
+      }
+      results.appendChild(table)
+    }
+    document.getElementById("search").addEventListener("click", search);
+    document.addEventListener("keypress", function (event) {
+      if (event.key === 'Enter') {
+        search()
+      }
+    });
+  </script>
+  <style type="text/css">
+    td {
+      padding: 0 15px;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>What is Pigar</h2>
+  <ul dir="auto">
+    <li>Generating requirements.txt for Python project.
+      <ul dir="auto">
+        <li>Handling the difference between different Python versions.</li>
+        <li>Jupyter notebook (<code>*.ipynb</code>) support.</li>
+        <li>Including the import statements from <code>exec</code>/<code>eval</code>, doctest of docstring, etc.</li>
+      </ul>
+    </li>
+    <li>Searching distributions by the top level import name.</li>
+    <li>Checking the latest versions for requirements.</li>
+  </ul>
+  Further information can be found <a href="https://github.com/damnever/pigar">here</a>.
+  <hr />
+  <h2>Search Python Distributions by Top Level Import Name</h2>
+  <p>Powered by <a href="https://github.com/sql-js/sql.js/">sql.js</a> and <a href="https://github.com/damnever/pigar/blob/main/pigar/.db.sqlite3">the incomplete pigar database</a>.</p>
+  <div>
+    <input name="query" type="text" placeholder="e.g. requests" size="50" id="query" />
+    <button id="search">Search</button>
+  </div>
+  <br />
+  <div id="results"></div>
+</body>
+
+</html>
