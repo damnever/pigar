@@ -38,7 +38,7 @@
       const table = document.createElement('table')
       table.setAttribute("border", "1")
       if (contents.length > 0) {
-        const rows = contents[0]["values"]
+        const rows = contents[0]["values"].sort((a, b) => (a[1] > b[1]) ? 1 : -1)
         table.innerHTML = '<thead><tr><th>Distribution</th> <th>URL</th></tr> </thead> <tbody>';
         rows.forEach(function (row) {
           let name = row[1]
