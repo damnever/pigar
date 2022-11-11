@@ -10,7 +10,7 @@
     const sqlPromise = initSqlJs({
       locateFile: file => `./vendor/sqljs-wasm/${file}`
     });
-    const dataPromise = fetch("https://raw.githubusercontent.com/damnever/pigar/main/pigar/.db.sqlite3").then(res => res.arrayBuffer());
+    const dataPromise = fetch("./static/pigar.sqlite3.bin").then(res => res.arrayBuffer());
     const [SQL, buf] = await Promise.all([sqlPromise, dataPromise])
     document.getElementById("query").disabled = false
     document.getElementById("query").placeholder = queryPlaceholder;
