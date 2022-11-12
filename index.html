@@ -50,8 +50,10 @@
         rows.forEach(function (row) {
           let name = row[1]
           const url = `https://pypi.org/project/${name}/`
-          if (name.includes(query)) {
-            name = `<b>${name}</b>`
+          if (name === query) { // Diff algorithm such as edit distance is not a good fit..
+            name = `<span style="font-weight: 900">${name}</span>`
+          } else if (name.includes(query)) {
+            name = `<span style="font-weight: 500">${name}</span>`
           }
           table.innerHTML += `<tr> <td>${name}</td> <td><a href="${url}" target="_blank">${url}</a></td> </tr>`;
         })
@@ -89,7 +91,7 @@
   Further information can be found <a href="https://github.com/damnever/pigar">here</a>.
   <hr />
   <h2>Search Python Distributions by Top Level Import Name</h2>
-  <p>Powered by <a href="https://github.com/sql-js/sql.js/">sql.js</a> and <a href="https://github.com/damnever/pigar/blob/main/pigar/.db.sqlite3">the incomplete pigar database</a>.</p>
+  <p>Powered by <a href="https://github.com/sql-js/sql.js">sql.js</a> and <a href="https://github.com/damnever/pigar/blob/main/pigar/.db.sqlite3">the pigar database</a>.</p>
   <div>
     <input name="query" type="text" placeholder="e.g. requests" size="50" id="query" />
     <button id="search">Search</button>
