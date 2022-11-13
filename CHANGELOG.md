@@ -1,5 +1,9 @@
 ### Change Logs
 
+#### Version 1.0.2 (2022.11.12)
+
+- Fix requirements list in setup.py [#122](https://github.com/damnever/pigar/pull/122).
+
 #### Version 1.0.1 (2022.11.12)
 
 - Support `*.ipynb` magics and shell command, fixed [#87](https://github.com/damnever/pigar/issues/87). See [#102](https://github.com/damnever/pigar/pull/102), [#117](https://github.com/damnever/pigar/pull/117), [#118](https://github.com/damnever/pigar/pull/118) for details.
