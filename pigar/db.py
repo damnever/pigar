@@ -3,6 +3,7 @@
 from __future__ import print_function, division, absolute_import
 
 import os
+import re
 import sqlite3
 import contextlib
 try:  # py2
@@ -11,14 +12,6 @@ except ImportError:  # py3
     from string import ascii_lowercase as lowercase
 
 from .helpers import Dict, retry
-
-# TODO(damnever): insert into db by default.
-# (import_name, package_name)
-_F_PACKAGES = {
-    'yaml': 'PyYAML',
-    'dogpile.cache': 'dogpile.cache',
-    'dogpile.core': 'dogpile.core',
-}
 
 
 class Database(object):
