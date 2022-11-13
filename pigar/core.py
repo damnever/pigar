@@ -22,18 +22,15 @@ from .helpers import (
     Color, lines_diff, print_table, parse_requirements, PraseRequirementError,
     trim_prefix, trim_suffix
 )
-from .parser import parse_imports, parse_installed_packages
+from .parser import parse_imports, parse_installed_packages, _special_package_import_names
 from .pypi import PKGS_URL, Downloader, Updater
 
 from requests.exceptions import HTTPError
 
-# FIXME: dirty workaround..
-_special_packages = {
-    "dogpile.cache": "dogpile.cache",
-    "dogpile.core": "dogpile.core",
-    "ruamel.yaml": "ruamel.yaml",
-    "ruamel.ordereddict": "ruamel.ordereddict",
-}
+_special_import_names = {}
+for pkg_name, import_names in _special_package_import_names.items():
+    for import_name in import_names:
+        _special_import_names[import_name] = pkg_name
 
 
 class RequirementsGenerator(object):
@@ -342,8 +339,8 @@ def parse_packages(package_root, ignores=None, installed_pkgs=None):
             names.append('flask')
             names.append('flask_' + name.split('.')[2])
         # Special cases..
-        elif special_name in _special_packages:
-            names.append(_special_packages[special_name])
+        elif special_name in _special_import_names:
+            names.append(special_name)
         # Other.
         elif '.' in name:
             names.append(name.split('.')[0])

@@ -285,6 +285,15 @@ def parse_installed_packages():
     return mapping
 
 
+# FIXME: dirty workaround..
+# Special distributions top level import name: Distribution name -> import name.
+_special_package_import_names = {
+    "dogpile.cache": ("dogpile.cache", ),
+    "dogpile.core": ("dogpile.core", ),
+    "ruamel.yaml": ("ruamel.yaml", ),
+}
+
+
 def _search_path(path):
     mapping = dict()
 
@@ -304,6 +313,10 @@ def _search_path(path):
             with open(top_level, 'r') as f:
                 for line in f:
                     mapping[line.strip()] = (pkg_name, version)
+            for import_name in _special_package_import_names.get(
+                pkg_name, set()
+            ):
+                mapping[import_name] = (pkg_name, version)
 
         # Install from local and available in GitHub.
         elif fnmatch.fnmatch(file, '*-link'):
