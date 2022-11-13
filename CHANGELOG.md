@@ -1,6 +1,14 @@
 ### Change Logs
 
-#### Version 0.10.0 (2022.06.22)
+#### Version 1.0.1 (2022.11.12)
+
+- Support `*.ipynb` magics and shell command, fixed [#87](https://github.com/damnever/pigar/issues/87). See [#102](https://github.com/damnever/pigar/pull/102), [#117](https://github.com/damnever/pigar/pull/117), [#118](https://github.com/damnever/pigar/pull/118) for details.
+- Parse requirements file with the more sophisticated utility, fixed [#48](https://github.com/damnever/pigar/issues/48), [#113](https://github.com/damnever/pigar/issues/113). See [#115](https://github.com/damnever/pigar/pull/115) for details.
+- Fixed [#99](https://github.com/damnever/pigar/issues/99), continue if a local package isn't exists. See [#107](https://github.com/damnever/pigar/pull/107) for details.
+- Fixed too many values to unpack error when parsing git config. See [#97](https://github.com/damnever/pigar/pull/97) for details.
+
+
+#### Version 1.0.0 (2022.06.22)
 
 - **BREAKING CHANGE:** Disable the comments which contain filenames and line numbers by default, use `--with-referenced-comments` to enable this feature.
 - Skip if local package (edit-mode project) not found, fixed [#99]((https://github.com/damnever/pigar/issues/61)).
