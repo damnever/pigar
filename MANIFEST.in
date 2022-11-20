@@ -2,4 +2,5 @@ include pigar/.db.sqlite3
 include CHANGELOG.md
 include README.md
 include LICENSE
+include pigar/_vendor/pip/LICENSE.txt
 include makefile
