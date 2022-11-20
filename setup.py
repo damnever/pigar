@@ -53,7 +53,7 @@ install_requires = [
     "pygments==2.13.0",
     "typing_extensions==4.4.0",
     "resolvelib==0.8.1",
-    "setuptools>=44.0.0",  # DO NOT pin it.
+    "setuptools>44.0.0",  # DO NOT pin it.
     "six==1.16.0",
     "tenacity==8.1.0",
     "tomli==2.0.1",

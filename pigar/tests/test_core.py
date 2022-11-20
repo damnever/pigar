@@ -7,21 +7,24 @@ import os.path as pathlib
 import sys
 import unittest
 
-from ..core import parse_packages, is_stdlib, _RequiredModules, _Locations
+from ..core import RequirementsAnalyzer, is_stdlib, _LocatableRequirements, _Locations
+from ..dist import FrozenRequirement
 
 
 class ReqsTests(unittest.TestCase):
+
     def setUp(self):
-        self._installed_packages = {
-            'foo': ('Foo', '0.1.0'),
-            'bar': ('Bar', '1.1.1'),
-            'baz': ('Baz', '2.2.2'),
-            'foobaz': ('FooBaz', '20151110'),
-            'mod': ('Mod', '1.0.0'),
-            'name': ('Name', '1.0.0'),
-            'pkg': ('Pkg', '1.0.0'),
-            'notebook': ('Notebook', '0.9.0'),
-            'mainfoobar': ('min-foo-bar', '0.10.0rc0'),
+        self._installed_dists = {
+            'foo': [FrozenRequirement('Foo', '0.1.0')],
+            'bar': [FrozenRequirement('Bar', '1.1.1')],
+            'baz': [FrozenRequirement('Baz', '2.2.2')],
+            'foobaz': [FrozenRequirement('FooBaz', '20151110')],
+            'mod': [FrozenRequirement('Mod', '1.0.0')],
+            'name': [FrozenRequirement('Name', '1.0.0')],
+            'pkg': [FrozenRequirement('Pkg', '1.0.0')],
+            'pkg': [FrozenRequirement('Pkg-fork', '1.1.0')],
+            'notebook': [FrozenRequirement('Notebook', '0.9.0')],
+            'mainfoobar': [FrozenRequirement('min-foo-bar', '0.10.0rc0')],
         }
         self._path = os.path.abspath(
             pathlib.join(os.path.dirname(__file__), 'imports_example/')
@@ -46,17 +49,14 @@ class ReqsTests(unittest.TestCase):
                 paths.append(pathlib.join(self._path, subp))
             self._module_infos[k] = paths
 
-        if sys.version_info[0] == 2:
-            self._installed_packages.update({'foobar': ('FooBar', '3.6.9')})
-
     def tearDown(self):
-        del self._installed_packages
-        del self._path
-        del self._module_infos
+        pass
 
-    @unittest.skipIf(sys.version_info[0] != 3, 'Not python 3.x')
-    def test_py3_requirements(self):
-        pv = {k: v for k, v in self._installed_packages.values()}
+    def test_analyze_requirements(self):
+        analyzer = RequirementsAnalyzer(self._path)
+        analyzer._installed_dists = self._installed_dists
+        analyzer.analyze_requirements()
+        pv = {v.name: v.version for v in self._installed_packages.values()}
         pkgs, guess = self._parse_packages()
 
         self.assertListEqual(sorted(pkgs.keys()), sorted(pv.keys()))
@@ -65,24 +65,13 @@ class ReqsTests(unittest.TestCase):
         self._check_require_pkgs(pkgs, pv)
         self._check_guess(guess, pv)
 
-    @unittest.skipIf(sys.version_info[0] != 2, 'Not python 2.x')
-    def test_py2_requirements(self):
-        self._installed_packages.update({'foobar': ('FooBar', '3.3.3')})
-        pv = {k: v for k, v in self._installed_packages.values()}
-        pkgs, guess = self._parse_packages()
-
-        self.assertListEqual(sorted(pkgs.keys()), sorted(pv.keys()))
-        self.assertListEqual(guess.keys(), ['queue'])
-        self._check_require_pkgs(pkgs, pv)
-        self._check_guess(guess, pv)
-
     def _check_require_pkgs(self, pkgs, pv):
-        for pkg, detail in pkgs.sorted_items():
+        for pkg, req in pkgs.sorted_items():
             if pkg not in pv:
                 self.fail('"{0}" not installed'.format(pkg))
-            self.assertEqual(detail.version, pv[pkg])
+            self.assertEqual(req.req.version, pv[pkg])
             self.assertListEqual(
-                sorted(detail.comments.sorted_items()),
+                sorted(req.locations.sorted_items()),
                 sorted(self._module_infos[pkg])
             )
 
@@ -92,17 +81,41 @@ class ReqsTests(unittest.TestCase):
                 sorted(locs.sorted_items()), sorted(self._module_infos[mod])
             )
 
-    def _parse_packages(self):
-        return parse_packages(self._path, [], self._installed_packages)
-
 
 class StdlibTest(unittest.TestCase):
+
     def test_stdlib(self):
-        self.assertTrue(is_stdlib('os'))
-        self.assertTrue(is_stdlib('sys'))
+        for lib in ['os', 'sys', 'importlib', 'asyncio']:
+            self.assertTrue(is_stdlib(lib))
+
+    @unittest.skipIf(
+        sys.version_info[0] != 3 and sys.version_info[1] < 8, '< Py3.8'
+    )
+    def test_stdlib_py3_8(self):
+        for lib in ['os', 'sys', 'importlib', 'asyncio', 'importlib.metadata']:
+            self.assertTrue(is_stdlib(lib))
+
+    @unittest.skipIf(
+        sys.version_info[0] != 3 and sys.version_info[1] < 9, '< Py3.9'
+    )
+    def test_stdlib_py3_9(self):
+        for lib in [
+            'os', 'sys', 'importlib', 'asyncio', 'zoneinfo', 'graphlib'
+        ]:
+            self.assertTrue(is_stdlib(lib))
+
+    @unittest.skipIf(
+        sys.version_info[0] != 3 and sys.version_info[1] < 11, '< Py3.11'
+    )
+    def test_stdlib_py3_11(self):
+        for lib in [
+            'os', 'sys', 'importlib', 'asyncio', 'zoneinfo', 'tomllib'
+        ]:
+            self.assertTrue(is_stdlib(lib))
 
 
 class LocationsTests(unittest.TestCase):
+
     def setUp(self):
         self._data = {
             'oo/xx.py': 33,
@@ -146,7 +159,8 @@ class LocationsTests(unittest.TestCase):
         self.assertListEqual(loc.sorted_items(), sorted(target))
 
 
-class RequiredModulesTest(unittest.TestCase):
+class LocatableRequirementsTest(unittest.TestCase):
+
     def setUp(self):
         loc1 = _Locations()
         loc2 = _Locations()
@@ -158,21 +172,21 @@ class RequiredModulesTest(unittest.TestCase):
         }
 
     def test_add(self):
-        rm = _RequiredModules()
+        rm = _LocatableRequirements()
         for pkg, (ver, loc) in self._data.items():
-            rm.add_locs(pkg, ver, loc)
+            rm.add_locs(FrozenRequirement(pkg, ver), loc)
 
         for pkg in self._data:
             if pkg not in rm:
                 self.fail('add "{0}" failed'.format(pkg))
             else:
-                detail = rm[pkg]
+                req = rm[pkg]
                 val = self._data[pkg]
-                self.assertEqual(detail.version, val[0])
-                self.assertIs(detail.comments, val[1])
+                self.assertEqual(req.req.version, val[0])
+                self.assertIs(req.locations, val[1])
 
-        rm.add('pigar', '9.9.9', 'foobar.py', 2)
+        rm.add(FrozenRequirement('pigar', '9.9.9'), 'foobar.py', 2)
         self.assertListEqual(
-            rm['pigar'].comments.sorted_items(),
+            rm['pigar'].locations.sorted_items(),
             sorted(['oo/xx.py: 33', 'foobar.py: 2'])
         )

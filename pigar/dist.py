@@ -11,7 +11,7 @@ import concurrent.futures
 import asyncio
 
 from .log import logger
-from .helpers import cmp_to_key, Color
+from .helpers import cmp_to_key
 from .unpack import parse_top_levels
 from .db import database
 from .version import version
@@ -124,7 +124,7 @@ class FrozenRequirement(object):
             req = f"-e {self.url}"
         else:
             req = f"{self.name}{spaces_around_operator}{operator}{spaces_around_operator}{self.version}"
-        return "\n".join(list(self.comments) + [str(req)]) + "\n"
+        return "\n".join(list(self.comments) + [str(req)])
 
     def __str__(self) -> str:
         return self.as_requirement('==', '')
