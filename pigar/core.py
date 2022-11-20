@@ -1,379 +1,370 @@
-# -*- coding: utf-8 -*-
-
-from __future__ import print_function, division, absolute_import
+from .dist import DEFAULT_PYPI_INDEX_URL
 
 import collections
-import codecs
 import functools
-import glob
 import importlib
 import imp
-import os
 import os.path as pathlib
 import sys
-try:
-    from types import FileType  # py2
-except ImportError:
-    from io import IOBase as FileType  # py3
+from typing import NamedTuple
+from io import IOBase as FileType
+import asyncio
 
 from .db import database
 from .log import logger
 from .helpers import (
-    Color, lines_diff, print_table, parse_requirements, PraseRequirementError,
-    trim_prefix, trim_suffix
+    Color, parse_requirements, PraseRequirementError, trim_prefix, trim_suffix
 )
-from .parser import parse_imports, parse_installed_packages, _special_package_import_names
-from .pypi import PKGS_URL, Downloader, Updater
+from .parser import parse_imports
+from .dist import (
+    installed_distributions_by_top_level_import_names, installed_distributions,
+    FrozenRequirement, _all_hardcode_import_names, DEFAULT_PYPI_INDEX_URL,
+    PyPIDistributions, PyPIDistributionsIndexSynchronizer
+)
 
-from requests.exceptions import HTTPError
-
-_special_import_names = {}
-for pkg_name, import_names in _special_package_import_names.items():
-    for import_name in import_names:
-        _special_import_names[import_name] = pkg_name
+_special_import_names = _all_hardcode_import_names()
 
 
-class RequirementsGenerator(object):
+class RequirementsAnalyzer(object):
 
-    def __init__(
-        self,
-        package_root,
-        save_path,
-        ignores=None,
-        cmp_operator="==",
-        ref_comments=False,
-        answer_yes=False,
-        answer_no=False,
+    def __init__(self, project_root):
+        self._project_root = project_root
+
+        self._installed_dists = installed_distributions_by_top_level_import_names(
+        )
+        self._requirements = _LocatableRequirements()
+        self._uncertain_requirements = collections.defaultdict(
+            _LocatableRequirements
+        )  # Multiple requirements for same import name.
+        self._unknown_imports = collections.defaultdict(_Locations)
+
+    def analyze_requirements(
+        self, ignores=None, dists_filter=None, follow_symbolic_links=True
     ):
-        self._package_root = package_root
-        self._save_path = save_path
-        self._ignores = ignores
-        self._cmp_operator = cmp_operator
-        self._ref_comments = ref_comments
-        self._installed_pkgs = None
-        self._answer_yes = answer_yes
-        self._answer_no = answer_no
-
-    def __call__(self):
-        self.generate()
-
-    @property
-    def installed_pkgs(self):
-        if self._installed_pkgs is None:
-            self._installed_pkgs = parse_installed_packages()
-        return self._installed_pkgs
-
-    def generate(self):
-        packages, guess = parse_packages(
-            self._package_root, self._ignores, self.installed_pkgs
+        imported_modules, user_modules = parse_imports(
+            self._project_root,
+            exclude_patterns=ignores,
+            followlinks=follow_symbolic_links,
         )
 
-        answer = 'n'
-        if self._answer_yes or self._answer_no:
-            answer = 'y' if self._answer_yes else 'n'
-        elif guess:
-            print(Color.RED('The following modules are not found yet:'))
-            self._print_uncertain_modules(guess)
-            sys.stdout.write(
-                Color.RED(
-                    (
-                        'Some of them may be not installed in local '
-                        'environment.\nTry to search PyPI for the '
-                        'missing modules and filter'
-                        ' some unnecessary modules? (y/[N]) '
+        try_imports = set()
+        for module in imported_modules:
+            name = module.name
+            if is_user_module(module, user_modules, self._project_root):
+                logger.debug("ignore imports from user module: %s", name)
+                continue
+            if is_stdlib(name) or is_stdlib(name.split('.')[0]):
+                logger.debug("ignore imports from stdlib: %s", name)
+                continue
+            names = []
+            special_name = '.'.join(name.split('.')[:2])
+            # Flask extension.
+            if name.startswith('flask.ext.'):
+                names.append('flask')
+                names.append('flask_' + name.split('.')[2])
+            # Special cases..
+            elif special_name in _special_import_names:
+                names.append(special_name)
+            # Other.
+            elif '.' in name:
+                names.append(name.split('.')[0])
+            else:
+                names.append(name)
+
+            for name in names:
+                if name in self._installed_dists:
+                    reqs = self._installed_dists[name]
+                    locs = _Locations.build(module.file, module.lineno)
+                    reqs = self._maybe_filter_distributions_with_same_import_name(
+                        name, locs, reqs, dists_filter
                     )
+                    self._record_requirements(name, locs, reqs)
+                else:
+                    self._unknown_imports[name].add(module.file, module.lineno)
+                if module.try_:
+                    try_imports.add(name)
+
+        names = []
+        for name in self._unknown_imports:
+            if name in try_imports:
+                names.append(name)
+        for name in names:
+            del self._unknown_imports[name]
+
+    def _record_requirements(self, import_name, locs, reqs):
+        requirements = self._requirements
+        if len(reqs) > 1:
+            requirements = self._uncertain_requirements[import_name]
+        for req in reqs:
+            requirements.add_locs(req, locs)
+
+    def search_unknown_imports_from_index(
+        self,
+        dists_filter=None,
+        pypi_index_url=DEFAULT_PYPI_INDEX_URL,
+        include_prereleases=False,
+    ):
+        found = set()
+
+        async def _get_latest_version(pypi_dists, dist):
+            try:
+                latest = await pypi_dists.get_latest_distribution_version(
+                    dist.name,
+                    include_prereleases=include_prereleases,
+                )
+                return FrozenRequirement(dist.name, latest or '')
+            except Exception as e:
+                logger.error('checking %s failed: %e', dist.name, e)
+
+        async def _collect(pypi_dists, name, locs):
+            logger.info('Checking for import name %s ...', name)
+            with database() as db:
+                distributions = db.query_distributions_by_top_level_module(
+                    name
+                )
+            if distributions is None:
+                return
+            distributions = self._maybe_filter_distributions_with_same_import_name(
+                name, locs, distributions, dists_filter
+            )
+            found.add(name)
+
+            reqs = await asyncio.gather(
+                *[
+                    _get_latest_version(pypi_dists, dist)
+                    for dist in distributions
+                ],
+                return_exceptions=True
+            )
+            self._record_requirements(name, locs, reqs)
+
+        async def _main():
+            async with PyPIDistributions(
+                index_url=pypi_index_url
+            ) as pypi_dists:
+                await asyncio.gather(
+                    *[
+                        _collect(pypi_dists, name, locs)
+                        for name, locs in self._unknown_imports.items()
+                    ],
+                    return_exceptions=True
+                )
+
+        asyncio.run(_main())
+
+        for name in found:
+            del self._unknown_imports[name]
+
+    def write_requirements(
+        self,
+        stream,
+        with_ref_comments=False,
+        comparison_specifier='==',
+        with_banner=True,
+        with_unknown_imports=False,
+    ):
+        package_root_parent = pathlib.dirname(
+            trim_suffix(self._project_root, "/")
+        ) + "/"
+
+        if with_banner:
+            stream.write(
+                '# Automatically generated by https://github.com/damnever/pigar.\n\n'
+            )
+        for _, req in self._requirements.sorted_items():
+            stream.write(
+                req.format_as_text(
+                    package_root_parent, with_ref_comments,
+                    comparison_specifier
                 )
             )
-            sys.stdout.flush()
-            answer = sys.stdin.readline().strip().lower()
 
-        in_pypi = None
-        if answer in ('y', 'yes'):
-            print(Color.BLUE('Checking modules on the PyPI...'))
-            in_pypi = self._check_on_pypi(packages, guess)
+        if self._uncertain_requirements:
+            stream.write(
+                '\nWARNING(pigar): some manual fixes are required since pigar has found duplicate requirements for the same import name.\n'
+            )
+            uncertain_requirements = sorted(
+                self._uncertain_requirements.items(),
+                key=lambda item: item[0].lower()
+            )
+            for import_name, reqs in uncertain_requirements:
+                stream.write(
+                    f'# WARNING(pigar): the following duplicate requirements are for import name: {import_name}\n'
+                )
+                with_ref_comments_once = with_ref_comments
+                for _, req in reqs.sorted_items():
+                    stream.write(
+                        req.format_as_text(
+                            package_root_parent, with_ref_comments_once,
+                            comparison_specifier
+                        )
+                    )
+                    with_ref_comments_once = False
 
-        old = self._read_requirements()
-        self._write_requirements(packages)
-        new = self._read_requirements()
-        self._print_diff(old, new)
+        if with_unknown_imports and self._unknown_imports:
+            stream.write(
+                '\n# WARNING(pigar): pigar can not find requirements for the following import names.\n'
+            )
+            unknown_imports = sorted(
+                self._unknown_imports.items(),
+                key=lambda item: item[0].lower()
+            )
+            for import_name, locs in unknown_imports:
+                if with_ref_comments:
+                    comments = '\n#   '.join(locs.sorted_items())
+                    stream.write(
+                        f'# "{import_name}" referenced from:\n   {comments}\n'
+                    )
+                else:
+                    stream.write(f'# {import_name}\n')
 
-        if in_pypi:
-            for name in in_pypi:
-                del guess[name]
-        if guess and answer in ('y', 'yes'):
-            print(Color.RED('These modules are not found:'))
-            self._print_uncertain_modules(guess)
-            print(Color.RED('Maybe or you need update database.'))
+    def has_unknown_imports(self):
+        return len(self._unknown_imports) > 0
 
-    def _check_on_pypi(self, packages, guess):
-        in_pypi = set()
-        for name, locs in guess.items():
-            logger.info('Checking %s on the PyPI ...', name)
-            downloader = Downloader()
-            with database() as db:
-                rows = db.query_all(name)
-                pkgs = [row.package for row in rows]
-                if pkgs:
-                    in_pypi.add(name)
-                for pkg in _best_matchs(name, pkgs):
-                    try:
-                        latest = downloader.download_package(pkg).version()
-                        packages.add_locs(pkg, latest, locs)
-                    except HTTPError as e:
-                        logger.error('checking %s failed: %e', pkg, e)
-        return in_pypi
-
-    def _print_uncertain_modules(self, modules):
-        for name, locs in modules.items():
-            print(
+    def format_unknown_imports(self, stream):
+        for idx, (name, locs) in enumerate(self._unknown_imports.items()):
+            if idx > 0:
+                stream.write('\n')
+            stream.write(
                 '  {0} referenced from:\n    {1}'.format(
                     Color.YELLOW(name), '\n    '.join(locs.sorted_items())
                 )
             )
 
-    def _read_requirements(self):
-        if not pathlib.isfile(self._save_path):
-            return
-        with codecs.open(self._save_path, 'rb', 'utf-8') as f:
-            return f.readlines()
+    def _maybe_filter_distributions_with_same_import_name(
+        self, import_name, locations, distributions, dists_filter=None
+    ):
+        if dists_filter is None or len(distributions) <= 1:
+            return distributions
 
-    def _write_requirements(self, packages):
-        print(
-            Color.GREEN(
-                'Writing requirements to "{0}"'.format(self._save_path)
-            )
-        )
-        package_root_parent = pathlib.dirname(
-            trim_suffix(self._package_root, "/")
-        ) + "/"
-        ref_comments = self._ref_comments
-        cmp_operator = self._cmp_operator
+        assert (hasattr(distributions[0], 'name'))
 
-        with open(self._save_path, 'w+') as f:
-            f.write(
-                '# Automatically generated by '
-                'https://github.com/damnever/pigar.\n'
-            )
-            if not ref_comments:
-                f.write('\n')
-            for k, v in packages.sorted_items():
-                if ref_comments:
-                    f.write('\n')
-                    f.write(
-                        ''.join(
-                            [
-                                '# {0}\n'.format(
-                                    trim_prefix(c, package_root_parent)
-                                ) for c in v.comments.sorted_items()
-                            ]
-                        )
-                    )
-                if k == '-e':
-                    f.write('{0} {1}\n'.format(k, v.version))
-                elif v:
-                    f.write('{0} {1} {2}\n'.format(k, cmp_operator, v.version))
-                else:
-                    f.write('{0}\n'.format(k))
-
-    def _print_diff(self, old, new):
-        if not old:
-            return
-        is_diff, diffs = lines_diff(old, new)
-        msg = 'Requirements file has been overwritten, '
-        if is_diff:
-            msg += 'here is the difference:'
-            print('{0}\n{1}'.format(Color.YELLOW(msg), ''.join(diffs)), end='')
-        else:
-            msg += 'no difference.'
-            print(Color.YELLOW(msg))
+        best_match = None
+        if import_name in distributions:
+            for dist in distributions:
+                if dist.name == import_name:
+                    best_match = dist
+                    break
+        return dists_filter(import_name, locations, distributions, best_match)
 
 
-def check_requirements_latest_versions(
-    check_path,
-    ignores=None,
-    comparison_operator="==",
-    ref_comments=False,
-    answer_yes=False,
-    answer_no=False,
+async def check_requirements_latest_versions(
+    requirement_files,
+    pypi_index_url=DEFAULT_PYPI_INDEX_URL,
+    include_prereleases=False,
 ):
-    logger.debug('Starting check requirements latest version ...')
-    files = list()
-    reqs = dict()
-    pkg_versions = list()
-    installed_pkgs = None
-    # If no requirements file given, check in current directory.
-    if pathlib.isdir(check_path):
-        logger.debug('Searching file in "{0}" ...'.format(check_path))
-        files.extend(glob.glob(pathlib.join(check_path, '*requirements.txt')))
-        # If not found in directory, generate requirements.
-        if not files:
-            print(
-                Color.YELLOW(
-                    'Requirements file not found, '
-                    'generate requirements ...'
+    installed_dists = installed_distributions()
+
+    async def _collect(pypi_dists, req):
+        local_version = ''
+        latest_version = ''
+        if req.has_name:
+            if req.name in installed_dists:
+                local_version = installed_dists[req.name].version
+            try:
+                latest_version = await pypi_dists.get_latest_distribution_version(
+                    req.name,
+                    include_prereleases=include_prereleases,
                 )
-            )
-            save_path = os.path.join(check_path, 'requirements.txt')
-            rg = RequirementsGenerator(
-                check_path,
-                save_path,
-                ignores,
-                comparison_operator,
-                ref_comments,
-                answer_yes,
-                answer_no,
-            )
-            rg()
-            installed_pkgs = rg.installed_pkgs
-            files.append(save_path)
-    else:
-        files.append(check_path)
+            except Exception as e:
+                logger.error(
+                    'search latest version for %s failed: %e', req.name, e
+                )
+        return (req.name, req.specifier, local_version, latest_version)
 
-    logger.debug('Checking requirements latest version ...')
-    installed_pkgs = installed_pkgs or parse_installed_packages()
-    installed_pkgs = {v[0]: v[1] for v in installed_pkgs.values()}
-    downloader = Downloader()
-    for file in files:
-        try:
-            for req in parse_requirements(file):
-                local_version = ''
-                if req.name in installed_pkgs:
-                    local_version = installed_pkgs[req.name]
-                try:
-                    latest = downloader.download_package(req.name).version()
-                    pkg_versions.append(
-                        (
-                            req.name, req.specifier
-                            or req.url, local_version, latest
-                        )
-                    )
-                except HTTPError as e:
-                    logger.error('checking %s failed: %e', req.name, e)
-        except PraseRequirementError as e:
-            logger.error('parse %s failed: %e', file, e)
-
-    logger.debug('Checking requirements latest version done.')
-    print_table(pkg_versions, headers=['PACKAGE', 'SPEC', 'LOCAL', 'LATEST'])
+    async with PyPIDistributions(index_url=pypi_index_url) as pypi_dists:
+        tasks = []
+        for file in requirement_files:
+            logger.debug('checking requirements from %s', file)
+            try:
+                for req in parse_requirements(file):
+                    tasks.append(_collect(pypi_dists, req))
+            except PraseRequirementError as e:
+                logger.error('parse %s failed: %e', file, e)
+        return await asyncio.gather(*tasks, return_exceptions=True)
 
 
-def search_packages_by_names(names):
-    """Search package information by names(`import XXX`).
-    """
-    downloader = Downloader()
+async def search_distributions_by_top_level_import_names(
+    names,
+    pypi_index_url=DEFAULT_PYPI_INDEX_URL,
+    include_prereleases=False,
+):
     results = collections.defaultdict(list)
     not_found = list()
 
-    installed_pkgs = parse_installed_packages()
-    for name in names:
-        logger.debug('Searching package name for "{0}" ...'.format(name))
+    installed_dists = installed_distributions_by_top_level_import_names()
+
+    async def _get_latest_version(pypi_dists, distribution, import_name):
+        try:
+            version = await pypi_dists.get_latest_distribution_version(
+                distribution.name,
+                include_prereleases=include_prereleases,
+            )
+            results[import_name].append((distribution.name, version, 'PyPI'))
+        except Exception as e:
+            logger.error('checking %s failed: %e', distribution.name, e)
+
+    async def _collect(pypi_dists, import_name):
+        logger.debug(
+            'Searching package distributions for "{0}" ...'.
+            format(import_name)
+        )
         # If exists in local environment, do not check on the PyPI.
-        if name in installed_pkgs:
-            results[name].append(list(installed_pkgs[name]) + ['local'])
+        if import_name in installed_dists:
+            for req in installed_dists[import_name]:
+                results[import_name].append([req.name, req.version, 'local'])
         # Check information on the PyPI.
         else:
-            rows = None
             with database() as db:
-                rows = db.query_all(name)
-            if rows:
-                for row in rows:
-                    try:
-                        version = downloader.download_package(row.package
-                                                              ).version()
-                        results[name].append((row.package, version, 'PyPI'))
-                    except HTTPError as e:
-                        logger.error('checking %s failed: %e', row.package, e)
+                distributions = db.query_distributions_by_top_level_module(
+                    import_name
+                )
+            if distributions:
+                await asyncio.gather(
+                    *[
+                        _get_latest_version(pypi_dists, dist, import_name)
+                        for dist in distributions
+                    ],
+                    return_exceptions=True
+                )
             else:
-                not_found.append(name)
+                not_found.append(import_name)
 
-    for name in results:
-        print('Found package(s) for "{0}":'.format(Color.GREEN(name)))
-        print_table(results[name], headers=['PACKAGE', 'VERSION', 'WHERE'])
-    if not_found:
-        msg = '"{0}" not found.\n'.format(Color.RED(', '.join(not_found)))
-        msg += 'Maybe you need to update the database.'
-        print(Color.YELLOW(msg))
-
-
-def update_database():
-    """Update database."""
-    print(Color.GREEN('Starting update database ...'))
-    print(Color.YELLOW('The process will take a long time!!!'))
-    logger.info('Crawling "{0}" ...'.format(PKGS_URL))
-    try:
-        updater = Updater()
-    except Exception:
-        logger.error("Fail to fetch all packages: ", exc_info=True)
-        print(Color.RED('Operation aborted'))
-        return
-
-    try:
-        updater.run()
-        updater.wait()
-    except (KeyboardInterrupt, SystemExit):
-        # FIXME(damnever): the fucking signal..
-        updater.cancel()
-        print(Color.BLUE('Operation canceled!'))
-    else:
-        print(Color.GREEN('Operation done!'))
+    async with PyPIDistributions(index_url=pypi_index_url) as pypi_dists:
+        await asyncio.gather(
+            *[_collect(pypi_dists, name) for name in names],
+            return_exceptions=True
+        )
+    return results, not_found
 
 
-def parse_packages(package_root, ignores=None, installed_pkgs=None):
-    imported_modules, user_modules = parse_imports(package_root, ignores)
-    installed_pkgs = installed_pkgs or parse_installed_packages()
-    packages = _RequiredModules()
-    guess = collections.defaultdict(_Locations)
+def sync_distributions_index_from_pypi(
+    index_url=DEFAULT_PYPI_INDEX_URL, concurrency=30
+):
+    print(Color.YELLOW('NOTE: this process may take a very LONG time!!!'))
 
-    try_imports = set()
-    for module in imported_modules:
-        name = module.name
-        if is_user_module(module, user_modules, package_root):
-            logger.debug("ignore imports from user module: %s", name)
-            continue
-        if is_stdlib(name) or is_stdlib(name.split('.')[0]):
-            logger.debug("ignore imports from stdlib: %s", name)
-            continue
-        names = []
-        special_name = '.'.join(name.split('.')[:2])
-        # Flask extension.
-        if name.startswith('flask.ext.'):
-            names.append('flask')
-            names.append('flask_' + name.split('.')[2])
-        # Special cases..
-        elif special_name in _special_import_names:
-            names.append(special_name)
-        # Other.
-        elif '.' in name:
-            names.append(name.split('.')[0])
-        else:
-            names.append(name)
-
-        for name in names:
-            if name in installed_pkgs:
-                pkg_name, version = installed_pkgs[name]
-                packages.add(pkg_name, version, module.file, module.lineno)
+    async def _main():
+        async with PyPIDistributionsIndexSynchronizer(
+            index_url=index_url,
+            concurrency=concurrency,
+        ) as synchronizer:
+            try:
+                await synchronizer.run()
+                await synchronizer.wait()
+            except (KeyboardInterrupt, SystemExit):
+                await synchronizer.cancel()
+                print(Color.BLUE('Operation canceled!'))
+            except Exception as e:
+                await synchronizer.cancel()
+                logger.error("Unexpected error: ", exc_info=True)
+                print(Color.BLUE('Operation aborted!'), e)
             else:
-                guess[name].add(module.file, module.lineno)
-            if module.try_:
-                try_imports.add(name)
+                print(Color.GREEN('Operation done!'))
 
-    names = []
-    for name in guess:
-        if name in try_imports:
-            names.append(name)
-    for name in names:
-        del guess[name]
-    return packages, guess
+    asyncio.run(_main())
 
 
-def _best_matchs(name, pkgs):
-    # If imported name equals to package name.
-    if name in pkgs:
-        return [pkgs[pkgs.index(name)]]
-    # If not, return all possible packages.
-    return pkgs
-
-
-def is_user_module(module, user_modules, package_root):
+def is_user_module(module, user_modules, project_root):
     name = module.name
     if name.startswith("."):
         return True
@@ -415,6 +406,8 @@ def _checked_cache(func):
 @_checked_cache
 def is_stdlib(name):
     """Check whether it is stdlib module."""
+    if name == 'pigar':
+        return False
     exist = True
     module_info = ('', '', '')
     try:
@@ -441,46 +434,18 @@ def is_stdlib(name):
     return exist
 
 
-class _RequiredModules(dict):
-
-    _Detail = collections.namedtuple('Detail', ['version', 'comments'])
-
-    def __init__(self):
-        super(_RequiredModules, self).__init__()
-        self._sorted = None
-
-    def add_locs(self, package, version, locations):
-        if package in self:
-            self[package].comments.extend(locations)
-        else:
-            self[package] = self._Detail(version, locations)
-
-    def add(self, package, version, file, lineno):
-        if package in self:
-            self[package].comments.add(file, lineno)
-        else:
-            loc = _Locations()
-            loc.add(file, lineno)
-            self[package] = self._Detail(version, loc)
-
-    def sorted_items(self):
-        if self._sorted is None:
-            self._sorted = sorted(self.items())
-        return self._sorted
-
-    def remove(self, *names):
-        for name in names:
-            if name in self:
-                self.pop(name)
-        self._sorted = None
-
-
 class _Locations(dict):
     """_Locations store code locations(file, linenos)."""
 
     def __init__(self):
         super(_Locations, self).__init__()
         self._sorted = None
+
+    @classmethod
+    def build(cls, file, lineno):
+        self = cls()
+        self.add(file, lineno)
+        return self
 
     def add(self, file, lineno):
         if file in self and lineno not in self[file]:
@@ -500,3 +465,56 @@ class _Locations(dict):
                 for f, ls in sorted(self.items())
             ]
         return self._sorted
+
+
+class _LocatableRequirements(dict):
+
+    class _Requirement(NamedTuple):
+        req: FrozenRequirement
+        locations: _Locations
+
+        def format_as_text(
+            self,
+            package_root_parent: str,
+            with_locations: bool = False,
+            operator: str = '=='
+        ):
+            comments = ''
+            if with_locations and len(self.locations) > 0:
+                comments = '\n'.join(
+                    '# {0}'.format(trim_prefix(c, package_root_parent))
+                    for c in self.locations.sorted_items()
+                )
+                comments += '\n'
+            return comments + self.req.as_requirement(operator=operator) + '\n'
+
+    def __init__(self):
+        super(_LocatableRequirements, self).__init__()
+        self._sorted = None
+
+    def add_locs(self, req: FrozenRequirement, locs: _Locations):
+        if req.name in self:
+            self[req.name].locations.extend(locs)
+        else:
+            self[req.name] = self._Requirement(req, locs)
+
+    def add(self, req: FrozenRequirement, file: str, lineno: int):
+        if req.name in self:
+            self[req.name].locations.add(file, lineno)
+        else:
+            loc = _Locations()
+            loc.add(file, lineno)
+            self[req.name] = self._Requirement(req, loc)
+
+    def sorted_items(self):
+        if self._sorted is None:
+            self._sorted = sorted(
+                self.items(), key=lambda item: item[0].lower()
+            )
+        return self._sorted
+
+    def remove(self, *names):
+        for name in names:
+            if name in self:
+                self.pop(name)
+        self._sorted = None
