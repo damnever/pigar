@@ -1,38 +1,17 @@
-# -*- coding: utf-8 -*-
-
-from __future__ import print_function, division, absolute_import
-
 import os
-import re
 import sqlite3
 import contextlib
-try:  # py2
-    from string import lowercase
-except ImportError:  # py3
-    from string import ascii_lowercase as lowercase
+from string import ascii_lowercase
 
-from .helpers import Dict, retry
+from .helpers import Dict
 
 
 class Database(object):
-    """Database store (top_level_name, package_name) piars.
-
-    `top_level_name` is name can be imported from package,
-    use `name` replace in db.
-    `package_name` is name which be installed by pip, use
-    `package` replace in db.
-
-    Split table by `top_level_name` first letter, such as
-    'table_a', `package_name` stored in `table_packages`.
-    """
     _DB = os.path.join(os.path.dirname(__file__), '.db.sqlite3')
-    _TABLE_PREFIX = 'table_{0}'
-    _TABLE_OTHER_SUFFIX = 'lambda'
-    _TABLE_PACKAGES = 'table_packages'
 
-    def __init__(self, db=_DB):
-        exist = os.path.isfile(db)
-        self._db = db
+    def __init__(self, path=_DB):
+        exist = os.path.isfile(path)
+        self._db = path
         self._conn = None
         self._reconnect()
         if not exist:
@@ -41,85 +20,116 @@ class Database(object):
     def _reconnect(self):
         self.close()
         self._conn = sqlite3.connect(
-            self._db, timeout=15
-        )  # Avoid lock exception..
+            self._db, timeout=5
+        )  # Timeout to avoid lock exception..
+        self._conn.row_factory = sqlite3.Row
 
     def close(self):
         if self._conn is not None:
             self._conn.close()
             self._conn = None
 
-    def insert_package_with_imports(self, pkgname, inames):
-        package_table = self._package_table()
-        sql = 'INSERT OR IGNORE INTO {0} (package) VALUES (?)'.format(
-            package_table
-        )
-        sqls = [(sql, (pkgname, ))]
-        sqltpl = '''INSERT OR IGNORE INTO {0} (name, pkgid) VALUES
-        (?, (SELECT id from {1} WHERE package=?))'''
-        for iname in inames:
-            iname = iname or pkgname  # empty top_level.txt
-            sql = sqltpl.format(self._name_table(iname[0]), package_table)
-            sqls.append((sql, (iname, pkgname)))
-        self.insert(sqls)
-
-    @retry(sqlite3.OperationalError, count=3)
-    def query_all(self, name):
-        name_table = self._name_table(name[0])
-        package_table = self._package_table()
-        sql = '''SELECT {0}.name , {1}.package
-        FROM {0} INNER JOIN {1} ON {0}.pkgid == {1}.id
-        WHERE name=?'''.format(name_table, package_table)
-        return self.query(sql, name)
-
-    @retry(sqlite3.OperationalError, count=3)
-    def query_package(self, package):
-        package_table = self._package_table()
-        if package:
-            sql = 'SELECT * FROM {0} WHERE package=?'.format(package_table)
-            rows = self.query(sql, package)
-        else:
-            sql = 'SELECT package FROM {0}'.format(package_table)
-            rows = self.query(sql)
-        if package:
-            return rows[0] if rows else None
-        else:
-            return [r.package for r in rows]
-
-    @retry(sqlite3.OperationalError, count=5)
-    def insert(self, sqls):
+    def store_distribution_with_top_level_modules(
+        self, distribution, version, top_levels
+    ):
         cursor = self._conn.cursor()
         conn = self._conn
+        distributions_table = self._table_distributions()
+        sql_insert_distribution = f'INSERT OR REPLACE INTO {distributions_table} (name, version) VALUES (?, ?)'
+        sql_select_distribution_id = f'SELECT id FROM {distributions_table} WHERE name = ?'
+        sqltpl = '''INSERT OR IGNORE INTO {0} (name, distribution_id) VALUES
+        (?, ?)'''
         try:
-            for (sql, params) in sqls:
-                cursor.execute(sql, params)
-            cursor.close()
+            cursor.execute(sql_insert_distribution, (distribution, version))
+            conn.commit()
+            if not top_levels:
+                return
+            res = cursor.execute(sql_select_distribution_id, (distribution, ))
+            distribution_id = res.fetchone()
+            for module_name in top_levels:
+                sql = sqltpl.format(
+                    self._table_top_level_import_names(module_name)
+                )
+                cursor.execute(sql, (module_name, distribution_id[0]))
             conn.commit()
         except sqlite3.OperationalError:
-            cursor.close()
             try:
                 conn.rollback()
             except Exception:
                 pass
             self._reconnect()
             raise
-
-    @retry(sqlite3.OperationalError, count=3)
-    def query(self, sql, *parameters):
-        cursor = self._conn.cursor()
-        try:
-            self._execute(cursor, sql, *parameters)
-            names = [d[0] for d in cursor.description]
-            return [Dict(zip(names, row)) for row in cursor]
         finally:
             cursor.close()
 
-    def _execute(self, cursor, sql, *parameters):
+    def query_distributions_by_top_level_module(self, name):
+        top_levels_table = self._table_top_level_import_names(name)
+        distributions_table = self._table_distributions()
+        sql = f'''SELECT name, version FROM {distributions_table} WHERE id IN
+        (SELECT distribution_id FROM {top_levels_table} WHERE name=?)'''
+        return self._query(sql, name)
+
+    def query_distribution_by_name(self, name):
+        distributions_table = self._table_distributions()
+        sql = f'SELECT name, version FROM {distributions_table} WHERE name=?'
+        rows = self._query(sql, name)
+        return rows[0] if rows else None
+
+    def query_distributions(self):
+        distributions_table = self._table_distributions()
+        sql = f'SELECT name, version FROM {distributions_table}'
+        return self._query(sql)
+
+    def _query(self, sql, *parameters):
+        cursor = self._conn.cursor()
+        try:
+            res = cursor.execute(sql, parameters)
+            rows = res.fetchall()
+            return [Dict(r) for r in rows] if rows else None
+        except sqlite3.OperationalError:
+            self._reconnect()
+            raise
+        finally:
+            cursor.close()
+
+    def _table_top_level_import_names(self, import_name):
+        first_char = import_name[0].lower()
+        if first_char not in ascii_lowercase:
+            first_char = "blackhole"
+        return f"top_level_import_names_partition_{first_char}"
+
+    def _table_distributions(self):
+        return "distributions"
+
+    def _create_tables(self):
+        cursor = self._conn.cursor()
         conn = self._conn
         try:
-            result = cursor.execute(sql, parameters)
+            distributions_table = self._table_distributions()
+            cursor.execute(
+                f'''CREATE TABLE IF NOT EXISTS {distributions_table} (
+                id INTEGER PRIMARY KEY,
+                name VARCHAR NOT NULL,
+                version VARCHAR DEFAULT ''
+            );'''
+            )
+            cursor.execute(
+                f'''CREATE UNIQUE INDEX `_uidx_name_` ON `{distributions_table}` (`name`);'''
+            )
+
+            tli_table_sql = '''CREATE TABLE IF NOT EXISTS {0} (
+                id INTEGER PRIMARY KEY,
+                distribution_id INTEGER NOT NULL,
+                name VARCHAR NOT NULL
+            );'''
+            tli_index_sql = '''
+            CREATE UNIQUE INDEX `_uidx_{0}_distribution_id_name_` ON `{0}` (`distribution_id`, `name`);
+            '''
+            for x in (list(ascii_lowercase) + ["__other"]):
+                table_name = self._table_top_level_import_names(x)
+                cursor.execute(tli_table_sql.format(table_name))
+                cursor.execute(tli_index_sql.format(table_name))
             conn.commit()
-            return result
         except sqlite3.OperationalError:
             try:
                 conn.rollback()
@@ -127,38 +137,6 @@ class Database(object):
                 pass
             self._reconnect()
             raise
-
-    def _name_table(
-        self, initial, prefix=_TABLE_PREFIX, other=_TABLE_OTHER_SUFFIX
-    ):
-        initial = initial.lower()
-        if initial not in lowercase:
-            initial = other
-        return prefix.format(initial)
-
-    def _package_table(self, pkg_table=_TABLE_PACKAGES):
-        return pkg_table
-
-    def _create_tables(self, other=_TABLE_OTHER_SUFFIX):
-        cursor = self._conn.cursor()
-        try:
-            # Create table `table_packages`.
-            sql = '''CREATE TABLE IF NOT EXISTS {0} (
-                id INTEGER PRIMARY KEY,  -- id will auto increment
-                package VARCHAR NOT NULL UNIQUE
-            )'''.format(self._package_table())
-            self._execute(cursor, sql)
-
-            # Create `table_[a-z]`.
-            sql = '''CREATE TABLE IF NOT EXISTS {0} (
-                id INTEGER PRIMARY KEY,
-                name VARCHAR NOT NULL,
-                pkgid INTEGER NOT NULL
-                -- FOREIGN KEY(pkgid) REFERENCES packages(id)
-            )'''
-            for initial in (list(lowercase) + [other]):
-                table = self._name_table(initial)
-                self._execute(cursor, sql.format(table))
         finally:
             cursor.close()
 
