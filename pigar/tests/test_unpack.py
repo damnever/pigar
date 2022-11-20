@@ -9,7 +9,7 @@ import os
 import shutil
 import tempfile
 
-from ..unpack import top_level
+from ..unpack import parse_top_levels
 
 
 class TopLevelTests(unittest.TestCase):
@@ -25,14 +25,16 @@ class TopLevelTests(unittest.TestCase):
         # .whl and .egg both are .zip file.
         zip_path = os.path.join(self._tmp_path, 'pigar-1.1.zip')
         zf = zipfile.ZipFile(
-            zip_path, mode='w', compression=zipfile.ZIP_DEFLATED)
+            zip_path, mode='w', compression=zipfile.ZIP_DEFLATED
+        )
         try:
             zf.writestr('pigar-info/top_level.txt', 'pigar\npigar/tests')
         finally:
             zf.close()
         with open(zip_path, 'rb') as f:
             self.assertListEqual(
-                top_level(zip_path, f.read()), ['pigar', 'pigar.tests'])
+                parse_top_levels(zip_path, f.read()), ['pigar', 'pigar.tests']
+            )
 
     def test_tar(self):
         tar_path = os.path.join(self._tmp_path, 'pigar-1.1.tar.gz')
@@ -44,4 +46,5 @@ class TopLevelTests(unittest.TestCase):
             tarf.close()
         with open(tar_path, 'rb') as f:
             self.assertListEqual(
-                top_level(tar_path, f.read()), ['pigar.tests'])
+                parse_top_levels(tar_path, f.read()), ['pigar.tests']
+            )
