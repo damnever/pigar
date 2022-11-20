@@ -8,9 +8,12 @@ import random
 
 from .helper import CaptureOutput
 from ..helpers import (
-    Dict, print_table, ParsedRequirement, parse_requirements, parse_git_config,
+    Dict, print_table, ParsedRequirementParts, parse_requirements,
     compare_version, cmp_to_key
 )
+
+from packaging.requirements import Requirement
+from packaging.markers import Marker
 
 
 class DictTests(unittest.TestCase):
@@ -72,59 +75,69 @@ class ParseReqsTest(unittest.TestCase):
     def test_parse_requirements(self):
         path = os.path.join(os.path.dirname(__file__), './fake_reqs.txt')
         expected = [
-            ParsedRequirement(
-                name='a',
-                specifier='==4.1.4',
-                url='',
+            ParsedRequirementParts(
+                Requirement('a==4.1.4'),
+                '',
+                None,
+                set(),
             ),
-            ParsedRequirement(
-                name='b',
-                specifier='==2.3.0',
-                url='',
+            ParsedRequirementParts(
+                Requirement('b==2.3.0'),
+                '',
+                None,
+                set(),
             ),
-            ParsedRequirement(
-                name='c',
-                specifier='',
-                url='',
+            ParsedRequirementParts(
+                Requirement('c'),
+                '',
+                None,
+                set(),
             ),
-            ParsedRequirement(
-                name='d',
-                specifier='',
-                url='https://example.com/d/d/archive/refs/tags/1.0.0.zip',
+            ParsedRequirementParts(
+                Requirement(
+                    'd @ https://example.com/d/d/archive/refs/tags/1.0.0.zip'
+                ),
+                '',
+                None,
+                set(),
             ),
-            ParsedRequirement(
-                name='e',
-                specifier='==2.8.*,>=2.8.1',
-                url='',
+            ParsedRequirementParts(
+                Requirement('e[fake] ==2.8.*,>=2.8.1'),
+                '',
+                Marker('python_version < "2.7"'),
+                set(),
             ),
-            ParsedRequirement(
-                name='another-in-ref',
-                specifier='',
-                url='',
+            ParsedRequirementParts(
+                Requirement('pigar'),
+                'git+ssh://git@github.com/damnever/pigar.git@abcdef#egg=pigar',
+                None,
+                set(),
+            ),
+            ParsedRequirementParts(
+                None,
+                'git+https://git@github.com/damnever/pigar.git@abcdef',
+                None,
+                set(),
+            ),
+            ParsedRequirementParts(
+                Requirement('another-in-ref'),
+                '',
+                None,
+                set(),
             ),
         ]
-        reqs = parse_requirements(path)
-        self.assertListEqual(list(reqs), expected)
-
-
-class ParseGitConfigTest(unittest.TestCase):
-
-    def test_parse_gitconfig(self):
-        path = os.path.join(os.path.dirname(__file__), 'fake_git_conf')
-        target = {
-            'core': {
-                'editor': 'vim'
-            },
-            'user': {
-                'email': 'pigar@example.com',
-                'name': 'Pigar'
-            },
-            'credential': {
-                'helper': 'cache--timeout=3600'
-            }
-        }
-        reqs = parse_git_config(path)
-        self.assertDictEqual(reqs, target)
+        reqs = list(parse_requirements(path))
+        self.assertEqual(len(reqs), len(expected))
+        for idx, req in enumerate(reqs):
+            oth = expected[idx]
+            self.assertEqual(
+                str(req.requirement or ''), str(oth.requirement or ''), idx
+            )
+            self.assertEqual(req.url, oth.url, idx)
+            self.assertEqual(
+                str(req.markers or ''), str(oth.markers or ''), idx
+            )
+            self.assertEqual(req.extras, oth.extras, idx)
 
 
 class CompareVersionTests(unittest.TestCase):
