@@ -1,7 +1,0 @@
-[user]
-	email = pigar@example.com
-	name = Pigar
-[core]
-    editor = vim
-[credential]
-    helper = cache --timeout=3600

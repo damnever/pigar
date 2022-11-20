@@ -1,45 +1,47 @@
-# -*- coding: utf-8 -*-
-
-from __future__ import print_function, division, absolute_import
-
 import os
 import re
-import sys
-import fnmatch
 import ast
 import doctest
 import collections
+import fnmatch
 import os.path as pathlib
 
 from .log import logger
-from .helpers import parse_git_config, trim_suffix
+from .helpers import trim_prefix, trim_suffix
 
 import nbformat
 
 Module = collections.namedtuple('Module', ['name', 'try_', 'file', 'lineno'])
 
 
-def parse_imports(package_root, ignores=None):
+def _match_exclude_patterns(name, patterns, root=""):
+    name = trim_prefix(trim_prefix(name, root), "/")
+    for pattern in patterns:
+        if fnmatch.fnmatch(name, pattern):
+            return True
+    return False
+
+
+def parse_imports(project_root, exclude_patterns=None, followlinks=True):
     """package_root must be a absolute path to package root,
     e.g. /path/to/pigar/pigar."""
-    ignores = set(ignores) if ignores else set()
-    ignores |= set([".hg", ".svn", ".git", "__pycache__"])
-    ignored_paths = collections.defaultdict(set)
-    for path in ignores:
-        path = trim_suffix(path, "/")
-        ignored_paths[pathlib.dirname(path)].add(pathlib.basename(path))
+    exclude_patterns = set(trim_prefix(p, './') for p in exclude_patterns
+                           ) if exclude_patterns else set()
+    exclude_patterns |= set(["**/.git", "**/.hg", "**/.svn", "**/__pycache__"])
 
     imported_modules = []
     user_modules = set()
 
-    for dirpath, dirnames, files in os.walk(package_root, followlinks=True):
-        if dirpath in ignored_paths:
-            dirnames[:] = [
-                d for d in dirnames if d not in ignored_paths[dirpath]
-            ]
+    for dirpath, _, files in os.walk(project_root, followlinks=followlinks):
+        if _match_exclude_patterns(dirpath, exclude_patterns, project_root):
+            continue
+
         has_py = False
         for fn in files:
             fpath = pathlib.join(dirpath, fn)
+            if _match_exclude_patterns(fpath, exclude_patterns, project_root):
+                continue
+
             # C extension.
             if fn.endswith('.so'):
                 has_py = True
@@ -256,7 +258,7 @@ class ImportsParser(object):
         if docstring:
             parser = doctest.DocTestParser()
             try:
-                dt = parser.get_doctest(docstring, {}, None, None, None)
+                dt = parser.get_doctest(docstring, {}, "", None, None)
             except ValueError:
                 # >>> 'abc'
                 pass
@@ -268,102 +270,3 @@ class ImportsParser(object):
     @property
     def modules(self):
         return self._modules
-
-
-def parse_installed_packages():
-    """Get mapping for import top level name
-    and install package name with version.
-    """
-    mapping = dict()
-
-    for path in sys.path:
-        if pathlib.isdir(path) and trim_suffix(path, '/').endswith(
-            ('site-packages', 'dist-packages')
-        ):
-            mapping.update(_search_path(path))
-
-    return mapping
-
-
-# FIXME: dirty workaround..
-# Special distributions top level import name: Distribution name -> import name.
-_special_package_import_names = {
-    "dogpile.cache": ("dogpile.cache", ),
-    "dogpile.core": ("dogpile.core", ),
-    "ruamel.yaml": ("ruamel.yaml", ),
-}
-
-
-def _search_path(path):
-    mapping = dict()
-
-    for file in os.listdir(path):
-        # Install from PYPI.
-        if fnmatch.fnmatch(file, '*-info'):
-            top_level = os.path.join(path, file, 'top_level.txt')
-            pkg_name, version = file.split('-')[:2]
-            if version.endswith('dist'):
-                version = version.rsplit('.', 1)[0]
-            # Issue for ubuntu: sudo pip install xxx
-            elif version.endswith('egg'):
-                version = version.rsplit('.', 1)[0]
-            mapping[pkg_name] = (pkg_name, version)
-            if not os.path.isfile(top_level):
-                continue
-            with open(top_level, 'r') as f:
-                for line in f:
-                    mapping[line.strip()] = (pkg_name, version)
-            for import_name in _special_package_import_names.get(
-                pkg_name, set()
-            ):
-                mapping[import_name] = (pkg_name, version)
-
-        # Install from local and available in GitHub.
-        elif fnmatch.fnmatch(file, '*-link'):
-            link = os.path.join(path, file)
-            if not os.path.isfile(link):
-                continue
-            # Link path.
-            with open(link, 'r') as f:
-                for line in f:
-                    line = line.strip()
-                    if line != '.':
-                        dev_dir = line
-            if not dev_dir:
-                continue
-            # Egg info path.
-            info_dir = [
-                _file for _file in os.listdir(dev_dir)
-                if _file.endswith('egg-info')
-            ]
-            if not info_dir:
-                continue
-            info_dir = info_dir[0]
-            top_level = os.path.join(dev_dir, info_dir, 'top_level.txt')
-            # Check whether it can be imported.
-            if not os.path.isfile(top_level):
-                continue
-
-            # Check .git dir.
-            git_path = os.path.join(dev_dir, '.git')
-            if os.path.isdir(git_path):
-                config = parse_git_config(git_path)
-                url = config.get('remote "origin"', {}).get('url')
-                if not url:
-                    continue
-                branch = 'branch "master"'
-                if branch not in config:
-                    for section in config:
-                        if 'branch' in section:
-                            branch = section
-                            break
-                if not branch:
-                    continue
-                branch = branch.split()[1][1:-1]
-
-                pkg_name = info_dir.split('.egg')[0]
-                git_url = 'git+{0}@{1}#egg={2}'.format(url, branch, pkg_name)
-                with open(top_level, 'r') as f:
-                    for line in f:
-                        mapping[line.strip()] = ('-e', git_url)
-    return mapping

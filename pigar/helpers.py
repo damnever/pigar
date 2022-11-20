@@ -1,28 +1,19 @@
-# -*- coding: utf-8 -*-
-
-from __future__ import print_function, division, absolute_import
-
 import os
 import sys
 import re
 import difflib
-import functools
-import os.path as pathlib
-import collections
+import urllib.parse
 
-from packaging.requirements import Requirement, InvalidRequirement
+from ._vendor.pip._internal.req.req_file import get_file_content
+from ._vendor.pip._internal.req.constructors import parse_req_from_line
+from ._vendor.pip._internal.network.session import PipSession
+from ._vendor.pip._internal.exceptions import InstallationError
+
 from packaging.version import Version
 try:
     import colorama
 except ImportError:
     colorama = None
-
-PY32 = sys.version_info[:2] == (3, 2)
-
-if sys.version_info[0] == 3:
-    binary_type = bytes
-else:
-    binary_type = str
 
 
 class Dict(dict):
@@ -93,60 +84,102 @@ def print_table(rows, headers=[]):
     print('=' * width)
 
 
-ParsedRequirement = collections.namedtuple(
-    'ParsedRequirement', ['name', 'specifier', 'url']
-)
-
-
-class PraseRequirementError(ValueError):
+class PraseRequirementError(InstallationError):
     pass
+
+
+PIP_INSTALL_OPTIONS_RE = re.compile(
+    r'^\s*(?P<opt>-r|--requirement|-e|--editable)\s*(?P<value>\S*)\s*.*'
+)
+SCHEME_RE = re.compile(r"^(http|https|file):", re.I)
+_pip_session = PipSession()  # noqa
 
 
 def parse_requirements(fpath):
     """Parse requirements file."""
-    referenced_reqs_re = re.compile(r'^(-r|--requirement) *(?P<reqs_file>.*)')
-
-    dup = set()
     referenced_files = set()
-    with open(fpath, 'r') as f:
-        for lineno, line in enumerate(f):
-            line = line.strip()
-            if line == '' or line.startswith('#'):
-                continue
-            referenced = referenced_reqs_re.match(line.strip())
-            if referenced:
-                # Parse referenced requirements file
-                additional_reqs_file = referenced.groupdict()['reqs_file']
-                if not pathlib.isabs(additional_reqs_file):
-                    additional_reqs_file = os.path.join(
-                        os.path.dirname(fpath), additional_reqs_file
+    _, content = get_file_content(fpath, _pip_session)
+    for lineno, line in enumerate(content.splitlines()):
+        origin_line = line
+        line = line.strip()
+        if line == '' or line.startswith('#'):
+            continue
+        match = PIP_INSTALL_OPTIONS_RE.match(line)
+        if match:
+            groups = match.groupdict()
+            if groups['opt'] in ('-r', '--requirement'):
+                req_path = groups['value']
+                # original file is over http
+                if SCHEME_RE.search(fpath):
+                    # do a url join so relative paths work
+                    req_path = urllib.parse.urljoin(fpath, req_path)
+                # original file and nested file are paths
+                elif not SCHEME_RE.search(req_path):
+                    # do a join so relative paths work
+                    req_path = os.path.join(
+                        os.path.dirname(fpath),
+                        req_path,
                     )
-                referenced_files.add(additional_reqs_file)
+                referenced_files.add(req_path)
                 continue
-            if line.startswith('-'):
-                # Ignore all other options..
-                continue
+            elif groups['opt'] in ('-e', '--editable'):
+                line = groups['value']
+        elif line.startswith('-'):
+            # Ignore all other options..
+            continue
 
-            try:
-                req = Requirement(line)
-            except InvalidRequirement as e:
-                raise PraseRequirementError('line {}: {}'.format(lineno, e))
-            if req.name in dup:
-                continue
-            dup.add(req.name)
-            yield ParsedRequirement(
-                name=req.name,
-                specifier=str(req.specifier)
-                if req.specifier is not None else '',
-                url=str(req.url) if req.url is not None else '',
+        line_source = "line {} of {}".format(lineno, fpath)
+        try:
+            req = parse_req_from_line(line, line_source)
+            yield ParsedRequirementParts(
+                req.requirement,
+                req.link.url if req.link else '',
+                req.markers,
+                req.extras,
+            )
+        except InstallationError as e:
+            raise PraseRequirementError(e.args)
+        except Exception as e:
+            raise PraseRequirementError(
+                "Fail to parse {} on {}: {}", origin_line, line_source, e
             )
 
     for rfile in referenced_files:
         for req in parse_requirements(rfile):
-            if req.name in dup:
-                continue
-            dup.add(req.name)
             yield req
+
+
+class ParsedRequirementParts(object):
+
+    def __init__(
+        self,
+        requirement,
+        url,
+        markers,
+        extras,
+    ):
+        self.requirement = requirement
+        self.url = url
+        self.markers = markers
+        self.extras = extras
+
+    @property
+    def has_name(self):
+        return self.requirement is not None
+
+    @property
+    def name(self):
+        if self.requirement is not None:
+            return self.requirement.name
+        return self.url
+
+    @property
+    def specifier(self):
+        if self.requirement is not None:
+            spec = str(self.requirement.specifier)
+            if spec != '':
+                return spec
+        return self.url
 
 
 def cmp_to_key(cmp_func):
@@ -181,23 +214,6 @@ def compare_version(version1, version2):
     return 0
 
 
-def parse_git_config(path):
-    """Parse git config file."""
-    config = dict()
-    section = None
-
-    with open(os.path.join(path, 'config'), 'r') as f:
-        for line in f:
-            line = line.strip()
-            if line.startswith('['):
-                section = line[1:-1].strip()
-                config[section] = dict()
-            elif section:
-                key, value = line.replace(' ', '').split('=', 1)
-                config[section][key] = value
-    return config
-
-
 def lines_diff(lines1, lines2):
     """Show difference between lines."""
     is_diff = False
@@ -221,22 +237,3 @@ def trim_suffix(content, suffix):
     if content.endswith(suffix):
         return content[:-len(suffix)]
     return content
-
-
-def retry(e, count=3):
-
-    def _wrapper(f):
-
-        @functools.wraps(f)
-        def _retry(*args, **kwargs):
-            c = count
-            while c > 1:
-                try:
-                    return f(*args, **kwargs)
-                except e:
-                    c -= 1
-            return f(*args, **kwargs)
-
-        return _retry
-
-    return _wrapper
