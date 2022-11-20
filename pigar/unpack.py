@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-
-from __future__ import print_function, division, absolute_import
-
 import tarfile
 import zipfile
 import re
@@ -13,6 +9,7 @@ class Archive(object):
     """Archive provides a consistent interface for unpacking
     compressed file.
     """
+
     def __init__(self, filename, fileobj):
         self._filename = filename
         self._fileobj = fileobj
@@ -92,7 +89,7 @@ class Archive(object):
         return not (
             filename.startswith(("/", "\\")) or (
                 len(filename) > 1 and filename[1] == ":"
-                and filename[0] in string.ascii_letter
+                and filename[0] in string.ascii_letters
             ) or re.search(r"[.][.][/\\]", filename)
         )
 
@@ -103,11 +100,11 @@ class Archive(object):
         self.close()
 
 
-def top_level(url, data):
+def parse_top_levels(filename, data):
     """Read top level names from compressed file."""
     sb = io.BytesIO(data)
     txt = None
-    with Archive(url, sb) as archive:
+    with Archive(filename, sb) as archive:
         file = None
         for name in archive.names:
             if name.lower().endswith('top_level.txt'):
@@ -116,4 +113,5 @@ def top_level(url, data):
         if file:
             txt = archive.read(file).decode('utf-8')
     sb.close()
-    return [name.replace('/', '.') for name in txt.splitlines()] if txt else []
+    return [name.replace('/', '.') for name in txt.splitlines()
+            if name] if txt else []

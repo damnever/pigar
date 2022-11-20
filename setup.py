@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 import re
 import codecs
 
@@ -22,9 +19,9 @@ long_description = """
 - Generating requirements.txt for Python project.
    - Handling the difference between different Python versions.
    - Jupyter notebook (`*.ipynb`) support.
-   - Including the import statements from `exec`/`eval`, doctest of docstring, etc.
-- Searching packages by import name.
-- Checking the latest versions for Python project.
+   - Including the import statements from ``exec``/``eval``, doctest of docstring, etc.
+- Searching ditributions(packages) by the top level import name.
+- Checking the latest versions of requirements.
 
 
 You can find more information on [GitHub](https://github.com/damnever/pigar).
@@ -34,8 +31,33 @@ with codecs.open('CHANGELOG.md', encoding='utf-8') as f:
     change_logs = f.read()
 
 install_requires = [
-    'colorama>=0.3.9', 'requests>=2.20.0', 'nbformat>=4.4.0',
-    'packaging>=20.9', 'futures;python_version<"3.2"'
+    'click==8.1.3',
+    'nbformat>=4.4.0',
+    'aiohttp>=3.8.3',
+    # The following distributions: ./pigar/_vendor/pip_vendor_requirements.txt
+    "CacheControl==0.12.11",
+    "colorama==0.4.5",
+    "distlib==0.3.6",
+    "distro==1.7.0",
+    "msgpack==1.0.4",
+    "packaging==21.3",
+    "pep517==0.13.0",
+    "platformdirs==2.5.2",
+    "pyparsing==3.0.9",
+    "requests==2.28.1",
+    "certifi==2022.09.24",
+    "chardet==5.0.0",
+    "idna==3.4",
+    "urllib3==1.26.12",
+    "rich==12.5.1",
+    "pygments==2.13.0",
+    "typing_extensions==4.4.0",
+    "resolvelib==0.8.1",
+    "setuptools>=44.0.0",  # DO NOT pin it.
+    "six==1.16.0",
+    "tenacity==8.1.0",
+    "tomli==2.0.1",
+    "webencodings==0.5.1",
 ]
 
 setup(
@@ -56,16 +78,12 @@ setup(
         'Intended Audience :: Developers',
         'Topic :: Utilities',
         'License :: OSI Approved :: BSD License',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3.2',
-        'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: 3',
     ],
     keywords='requirements.txt,automation,tool,module-search',
