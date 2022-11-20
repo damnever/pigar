@@ -1,0 +1,38 @@
+[tool.vendoring]
+destination = "."
+requirements = "vendor.txt"
+namespace = "pigar._vendor"
+
+protected-files = [
+  "__init__.py",
+  "README.md",
+  "vendor.txt",
+  "pyproject.toml",
+  "pip_vendor_requirements.txt",
+]
+# patches-dir = "tools/vendoring/patches"
+
+[tool.vendoring.transformations]
+substitute = [
+  # pkg_resource's vendored packages are directly vendored in pip.
+  { match = 'import pip\._internal', replace = "import pigar._vendor.pip._internal" },
+  { match = 'import pip\._vendor\.', replace = "import " },
+  { match = 'from pip\._vendor\.', replace = "from " },
+  { match = 'from pip\._vendor import', replace = "import" },
+  { match = 'import pip\._vendor', replace = "" },
+]
+drop = [
+  "pip/_vendor",
+  # contains unnecessary scripts
+  "bin/",
+  # unneeded parts of setuptools
+  "easy_install.py",
+  "setuptools",
+]
+
+[tool.vendoring.typing-stubs]
+
+[tool.vendoring.license.directories]
+
+[tool.vendoring.license.fallback-urls]
+pip = "https://raw.githubusercontent.com/pypa/pip/main/LICENSE.txt"

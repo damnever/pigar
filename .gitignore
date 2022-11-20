@@ -3,7 +3,6 @@
 __pycache__/
 *-info/
 count.py
-insert.py
-build/
-dist/
+/build/
+/dist/
 .venv*
