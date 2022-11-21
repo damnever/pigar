@@ -8,7 +8,7 @@ class HTMLParserTest(unittest.TestCase):
 
     def test_parse_urls_from_html(self):
         path = os.path.join(
-            os.path.dirname(__file__), './fake_simple_html.txt'
+            os.path.dirname(__file__), 'data/fake_simple_html.txt'
         )
         names = []
         with open(path) as f:

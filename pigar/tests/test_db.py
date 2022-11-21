@@ -16,16 +16,39 @@ class DBTests(unittest.TestCase):
         os.remove(self._db_path)
 
     def test_db(self):
+
+        def _assert_moduels(modules, deleted=set()):
+            for module in modules:
+                rows = self._db.query_distributions_by_top_level_module(module)
+                self.assertListEqual([r.name for r in rows], ['pigar'])
+            dist = self._db.query_distribution_with_top_level_modules('pigar')
+            self.assertListEqual(sorted(modules), sorted(dist.modules))
+
+            for module in deleted:
+                rows = self._db.query_distributions_by_top_level_module(module)
+                self.assertIsNone(rows)
+
         self._db.store_distribution_with_top_level_modules(
             'pigar', '1.0.0', []
         )
         row = self._db.query_distribution_by_name('pigar')
         self.assertDictEqual(dict(row), {'name': 'pigar', 'version': '1.0.0'})
+        modules1 = ['pigar', 'pigar1', 'pigar2']
         self._db.store_distribution_with_top_level_modules(
-            'pigar', '2.0.0', ['pigar']
+            'pigar', '1.9.0', modules1
         )
-        rows = self._db.query_distributions_by_top_level_module('pigar')
-        self.assertListEqual([r.name for r in rows], ['pigar'])
+        _assert_moduels(modules1)
+
+        modules2 = ['pigar', 'pigar3', 'pigar4']
+        modules_to_delete = set(modules1) - set(modules2)
+        self._db.store_distribution_with_top_level_modules(
+            'pigar',
+            '2.0.0',
+            modules2,
+            modules_to_delete=modules_to_delete,
+        )
+        _assert_moduels(modules2, modules_to_delete)
+
         rows = self._db.query_distributions()
         self.assertListEqual(
             [dict(r) for r in rows], [{
@@ -33,3 +56,6 @@ class DBTests(unittest.TestCase):
                 'version': '2.0.0'
             }]
         )
+
+        res = self._db.query_distribution_by_name('not-found')
+        self.assertIsNone(res)

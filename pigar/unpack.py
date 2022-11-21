@@ -2,7 +2,10 @@ import tarfile
 import zipfile
 import re
 import string
-import io
+import os.path
+from typing import List
+
+from .helpers import InMemoryOrDiskFile
 
 
 class Archive(object):
@@ -100,18 +103,22 @@ class Archive(object):
         self.close()
 
 
-def parse_top_levels(filename, data):
+def parse_top_levels(file: InMemoryOrDiskFile) -> List[str]:
     """Read top level names from compressed file."""
-    sb = io.BytesIO(data)
-    txt = None
-    with Archive(filename, sb) as archive:
-        file = None
-        for name in archive.names:
-            if name.lower().endswith('top_level.txt'):
-                file = name
-                break
-        if file:
-            txt = archive.read(file).decode('utf-8')
-    sb.close()
-    return [name.replace('/', '.') for name in txt.splitlines()
-            if name] if txt else []
+    assert (not file.opened())
+
+    with file as stream:
+        with Archive(file.name, stream) as archive:
+            top_level_file = None
+            for name in archive.names:
+                if os.path.basename(name.lower()) == 'top_level.txt':
+                    top_level_file = name
+                    break
+            if top_level_file is None:
+                return []
+
+            top_level_txt = archive.read(top_level_file).decode('utf-8')
+            return [
+                name.replace('/', '.') for name in top_level_txt.splitlines()
+                if name
+            ]
