@@ -1,9 +1,0 @@
-<html><head><title>Simple Index</title><meta name="api-version" value="2" /></head><body>
-<a href='/simple/a/'>a</a><br/>
-<a href='/simple/b/'>b</a><br/>
-<a href='/simple/c/'>c</a><br/>
-<a href='d'>d</a><br/>
-<a href='e'>f</a><br/>
-<a href='f'>f</a><br/>
-<a href='g'>g</a><br/>
-</body></html>

@@ -1,8 +1,10 @@
 import os
+import io
 import sys
 import re
 import difflib
 import urllib.parse
+from typing import Optional
 
 from ._vendor.pip._internal.req.req_file import get_file_content
 from ._vendor.pip._internal.req.constructors import parse_req_from_line
@@ -237,3 +239,46 @@ def trim_suffix(content, suffix):
     if content.endswith(suffix):
         return content[:-len(suffix)]
     return content
+
+
+class InMemoryOrDiskFile(object):
+    # The instance must be picklable.
+
+    def __init__(
+        self,
+        name: str,
+        data: Optional[bytes] = None,
+        file_path: Optional[str] = None
+    ):
+        assert (data is not None or file_path is not None)
+        self.name = name
+        self._data = data
+        self._path = file_path
+
+        self._stream = None
+
+    def opened(self):
+        return self._stream is not None
+
+    def open(self):
+        if self._stream is not None:
+            raise IOError(f'{self.name} already opened')
+
+        if self._data is not None:
+            self._stream = io.BytesIO(self._data)
+        elif self._path is not None:
+            self._stream = open(self._path, 'rb')
+        else:
+            raise RuntimeError('unreachable')
+
+    def close(self):
+        if self._stream is None:
+            return
+        self._stream.close()
+
+    def __enter__(self):
+        self.open()
+        return self._stream
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        self.close()

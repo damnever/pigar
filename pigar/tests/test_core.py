@@ -27,7 +27,7 @@ class ReqsTests(unittest.TestCase):
             'mainfoobar': [FrozenRequirement('min-foo-bar', '0.10.0rc0')],
         }
         self._path = os.path.abspath(
-            pathlib.join(os.path.dirname(__file__), 'imports_example/')
+            pathlib.join(os.path.dirname(__file__), 'data/imports_example/')
         )
 
         def _abs_path(subpaths):

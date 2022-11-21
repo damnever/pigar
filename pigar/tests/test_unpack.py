@@ -5,6 +5,7 @@ import os
 import shutil
 import tempfile
 
+from ..helpers import InMemoryOrDiskFile
 from ..unpack import parse_top_levels
 
 
@@ -27,20 +28,17 @@ class TopLevelTests(unittest.TestCase):
             zf.writestr('pigar-info/top_level.txt', 'pigar\npigar/tests')
         finally:
             zf.close()
-        with open(zip_path, 'rb') as f:
-            self.assertListEqual(
-                parse_top_levels(zip_path, f.read()), ['pigar', 'pigar.tests']
-            )
+        file = InMemoryOrDiskFile(zip_path, data=None, file_path=zip_path)
+        self.assertListEqual(parse_top_levels(file), ['pigar', 'pigar.tests'])
 
     def test_tar(self):
         tar_path = os.path.join(self._tmp_path, 'pigar-1.1.tar.gz')
         tarf = tarfile.open(tar_path, 'w:gz')
-        fpath = os.path.join(os.path.dirname(__file__), 'fake_top_level.txt')
+        fpath = os.path.join(os.path.dirname(__file__), 'data/top_level.txt')
         try:
             tarf.add(fpath)
         finally:
             tarf.close()
         with open(tar_path, 'rb') as f:
-            self.assertListEqual(
-                parse_top_levels(tar_path, f.read()), ['pigar.tests']
-            )
+            file = InMemoryOrDiskFile(tar_path, data=f.read(), file_path=None)
+            self.assertListEqual(parse_top_levels(file), ['pigar.tests'])

@@ -69,7 +69,7 @@ class PrintTableTests(unittest.TestCase):
 class ParseReqsTest(unittest.TestCase):
 
     def test_parse_requirements(self):
-        path = os.path.join(os.path.dirname(__file__), './fake_reqs.txt')
+        path = os.path.join(os.path.dirname(__file__), 'data/fake_reqs.txt')
         expected = [
             ParsedRequirementParts(
                 Requirement('a==4.1.4'),

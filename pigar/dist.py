@@ -2,9 +2,10 @@ import os
 import os.path as pathlib
 import re
 import codecs
+import tempfile
 from html.parser import HTMLParser
 from urllib.parse import urljoin, quote, urlparse
-from typing import Mapping, Set, List, NamedTuple
+from typing import Mapping, Set, List, NamedTuple, Optional, ValuesView
 from html.parser import HTMLParser
 from urllib.parse import urljoin
 from collections import defaultdict
@@ -12,7 +13,7 @@ import concurrent.futures
 import asyncio
 
 from .log import logger
-from .helpers import cmp_to_key, trim_prefix, trim_suffix
+from .helpers import cmp_to_key, trim_prefix, trim_suffix, InMemoryOrDiskFile
 from .unpack import parse_top_levels
 from .db import database
 from .version import version
@@ -173,9 +174,14 @@ class FrozenRequirement(object):
     def __str__(self) -> str:
         return self.as_requirement('==', '')
 
+    def __repr__(self):
+        modules = ' '.join(self.modules)
+        code_paths = ' '.join(self.code_paths or [])
+        return f'<{self.name} {self.version}  [{modules}]  [{code_paths}]>'
+
 
 def installed_distributions_by_top_level_import_names(
-    distributions=[None | List[FrozenRequirement]]
+    distributions: Optional[ValuesView[FrozenRequirement]] = None,
 ) -> Mapping[str, List[FrozenRequirement]]:
     """Mapping of top level import name to installed distributions."""
     mapping = defaultdict(list)
@@ -192,6 +198,7 @@ def installed_distributions() -> Mapping[str, FrozenRequirement]:
     dist_path = DistributionPath(include_egg=True)
     for distribution in dist_path.get_distributions():
         req = FrozenRequirement.from_dist(distribution)
+        logger.debug('found local distribution: %r', req)
         mapping[req.name] = req
     return mapping
 
@@ -389,7 +396,11 @@ class PyPIDistributions(object):
         return str(latest[0]), latest[2]  # version, url
 
     async def get_latest_distribution(
-        self, name, url=None, include_prereleases=True
+        self,
+        name,
+        url=None,
+        include_prereleases=True,
+        tmp_download_dir=tempfile.gettempdir(),
     ):
         version, url = await self.get_latest_distribution_info(
             name,
@@ -398,32 +409,55 @@ class PyPIDistributions(object):
         )
         if version is None:
             return (None, None, None)
-        data = await self._download_raw(url)
-        return (version, url, data)
+        content = await self._download_raw(
+            url, tmp_download_dir=tmp_download_dir
+        )
+        return (version, url, content)
 
     async def iter_all_distribution_urls(self, callback):
         html = await self._download_text(self._index_url, timeout=300)
         _parse_urls_from_html(html, self._index_url, callback)
 
-    async def _download_text(self, url, timeout=30):
+    async def _download_text(self, url, timeout=30) -> str:
         async with self._session.get(
             url, headers=self._HTTP_HEADERS, timeout=timeout
         ) as resp:
             return await resp.text()
 
-    async def _download_raw(self, url, timeout=30):
+    async def _download_raw(
+        self,
+        url,
+        timeout=30,
+        read_in_mem_threshold=16777216,
+        tmp_download_dir=tempfile.gettempdir()
+    ) -> InMemoryOrDiskFile:
         async with self._session.get(
             url, headers=self._HTTP_HEADERS, timeout=timeout
         ) as resp:
-            return await resp.read()
+            filename = os.path.basename(urlparse(url).path)
+            if resp.content_length is not None and resp.content_length <= read_in_mem_threshold:
+                data = await resp.read()
+                return InMemoryOrDiskFile(filename, data=data, file_path=None)
+
+            path = os.path.join(tmp_download_dir, filename)
+            with open(path, 'wb') as f:
+                while True:
+                    block = await resp.content.readany()
+                    if not block:
+                        break
+                    f.write(block)
+            return InMemoryOrDiskFile(filename, data=None, file_path=path)
 
 
 class PyPIDistributionsIndexSynchronizer(object):
 
-    def __init__(self, index_url=DEFAULT_PYPI_INDEX_URL, concurrency=100):
+    def __init__(
+        self, index_url=DEFAULT_PYPI_INDEX_URL, concurrency=100, gc=False
+    ):
         self._index_url = index_url
-        self._pypi_distributions = PyPIDistributions()
         self._concurrency = concurrency
+        self._gc = gc  # TODO(damnever): delete distributions not existed anymore.
+        self._pypi_distributions = PyPIDistributions()
         self._queue = asyncio.Queue()
         self._process_pool_executor = concurrent.futures.ProcessPoolExecutor()
 
@@ -485,18 +519,39 @@ class PyPIDistributionsIndexSynchronizer(object):
     async def _sync_project(self, project_url):
         project_name = _parse_project_name_from_url(project_url)
         logger.info('processing distribution: %s', project_name)
+        dist = None
+        with database() as db:
+            dist = db.query_distribution_with_top_level_modules(project_name)
+
         try:
-            version, top_levels = await self._parse_top_levels(
-                project_name, project_url
-            )
+            with tempfile.TemporaryDirectory() as tmp_download_dir:
+                # FIXME(damnever): create temporary directory on demand.
+                version, top_levels = await self._parse_top_levels(
+                    project_name,
+                    project_url,
+                    tmp_download_dir,
+                )
             if version is None:
                 logger.warn(
                     'distribution "%s" has no valid versions', project_name
                 )
                 return
+            if dist is not None and dist.version == version:
+                logger.info(
+                    'distribution "%s" version not changed', project_name
+                )
+                return
+
+            modules_to_add = set(top_levels or [])
+            modules_to_delete = None
+            if dist is not None:
+                modules_to_delete = set(dist.modules) - modules_to_add
             with database() as db:
                 db.store_distribution_with_top_level_modules(
-                    project_name, version, top_levels
+                    project_name,
+                    version,
+                    modules_to_add,
+                    modules_to_delete=modules_to_delete,
                 )
         except aiohttp.ClientError as e:
             logger.error(
@@ -513,11 +568,14 @@ class PyPIDistributionsIndexSynchronizer(object):
             )
             raise e
 
-    async def _parse_top_levels(self, project_name, project_url):
-        version, url, data = await self._pypi_distributions.get_latest_distribution(
+    async def _parse_top_levels(
+        self, project_name, project_url, tmp_download_dir
+    ):
+        version, url, dist_file = await self._pypi_distributions.get_latest_distribution(
             project_name,
             project_url,
             include_prereleases=False,
+            tmp_download_dir=tmp_download_dir,
         )
         if version is None:
             return None, None
@@ -526,7 +584,7 @@ class PyPIDistributionsIndexSynchronizer(object):
         event_loop = asyncio.get_event_loop()
         try:
             top_levels = await event_loop.run_in_executor(
-                self._process_pool_executor, parse_top_levels, filename, data
+                self._process_pool_executor, parse_top_levels, dist_file
             )
         except Exception:
             logger.error(
