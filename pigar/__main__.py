@@ -10,6 +10,7 @@ import multiprocessing
 from .version import version
 from .log import enable_pretty_logging, logger
 from .helpers import Color, print_table, lines_diff
+from .parser import DEFAULT_GLOB_EXCLUDE_PATTERNS
 from .core import (
     RequirementsAnalyzer,
     check_requirements_latest_versions,
@@ -114,7 +115,7 @@ def cli(log_level):
     '-e',
     '--exclude-glob',
     'exclude_glob',
-    default=["**/.git", "**/.hg", "**/.svn", "**/__pycache__"],
+    default=list(DEFAULT_GLOB_EXCLUDE_PATTERNS),
     show_default=True,
     multiple=True,
     type=str,
@@ -194,7 +195,7 @@ def generate(
 
     analyzer = RequirementsAnalyzer(project_path)
     analyzer.analyze_requirements(
-        exclude_glob,
+        ignores=exclude_glob,
         dists_filter=_dists_filter,
         follow_symbolic_links=follow_symbolic_links
     )

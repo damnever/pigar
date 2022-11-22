@@ -1,9 +1,10 @@
 import os
 import os.path as pathlib
 import re
+import codecs
 from html.parser import HTMLParser
 from urllib.parse import urljoin, quote, urlparse
-from typing import Mapping, List, NamedTuple
+from typing import Mapping, Set, List, NamedTuple
 from html.parser import HTMLParser
 from urllib.parse import urljoin
 from collections import defaultdict
@@ -11,7 +12,7 @@ import concurrent.futures
 import asyncio
 
 from .log import logger
-from .helpers import cmp_to_key
+from .helpers import cmp_to_key, trim_prefix, trim_suffix
 from .unpack import parse_top_levels
 from .db import database
 from .version import version
@@ -78,6 +79,7 @@ class FrozenRequirement(object):
         editable: bool = False,
         url: str = '',
         comments: List[str] = [],
+        code_paths: Set[str] = set(),
     ):
         self.name = name
         self.version = version
@@ -86,12 +88,14 @@ class FrozenRequirement(object):
         self.editable = editable
         self.url = url
         self.comments = comments
+        self.code_paths = code_paths
 
     @classmethod
     def from_dist(cls, dist):
         modules = set()
         editable = isinstance(dist, EggInfoDistribution)
         url = ''
+        installed_files = []
         if editable:
             req, comments = _get_editable_info(dist)
             url = req
@@ -99,7 +103,17 @@ class FrozenRequirement(object):
             if os.path.exists(top_level_file):
                 with open(top_level_file, 'rb') as f:
                     modules = set(f.read().decode('utf-8').splitlines())
+            sources_file = os.path.join(dist.path, 'SOURCES.txt')
+            if os.path.exists(sources_file):
+                with codecs.open(
+                    sources_file, mode='r', encoding='utf-8'
+                ) as f:
+                    installed_files = f.readlines()
         else:
+            # read from RECORD file
+            installed_files = [
+                finfo[0] for finfo in dist.list_installed_files()
+            ]
             comments = []
             modules = set(dist.modules)
             modules = _maybe_include_project_name_as_import_name(
@@ -107,14 +121,44 @@ class FrozenRequirement(object):
             )
             modules |= _get_hardcode_distributions_import_names(dist.name)
 
+        dist_path = trim_suffix(dist.path, os.sep)
+        root_dir = os.path.dirname(dist_path)
+        dist_info_dir = os.path.basename(dist_path)
+        code_paths = set()
+        code_file_dir = os.pardir
+        for file in installed_files:
+            if not any(
+                [
+                    os.path.commonpath([code_file_dir, file]) ==
+                    code_file_dir,  # Fast path to skip the same path prefix.
+                    os.path.commonpath([dist_info_dir, file]) == dist_info_dir,
+                    os.path.commonpath([os.pardir, file]) == os.pardir,
+                    os.path.commonpath([os.curdir, file]) == os.curdir,
+                    file.startswith('__')
+                ]
+            ):
+                code_file_dir = trim_prefix(file, os.sep).split(os.sep)[0]
+                code_path = os.path.join(root_dir, code_file_dir)
+                if os.path.exists(code_path):
+                    code_paths.add(code_path)
+
         return cls(
             dist.name,
             dist.version,
             list(modules),
             editable,
             url,
-            comments=comments
+            comments=comments,
+            code_paths=code_paths,
         )
+
+    def contains_file(self, file):
+        if not self.code_paths or not file:
+            return False
+        for code_path in self.code_paths:
+            if code_path == os.path.commonpath([code_path, file]):
+                return True
+        return False
 
     def as_requirement(
         self, operator: str = '==', spaces_around_operator: str = ''
@@ -131,11 +175,12 @@ class FrozenRequirement(object):
 
 
 def installed_distributions_by_top_level_import_names(
+    distributions=[None | List[FrozenRequirement]]
 ) -> Mapping[str, List[FrozenRequirement]]:
     """Mapping of top level import name to installed distributions."""
     mapping = defaultdict(list)
-    for distribution in installed_distributions().values():
-        req = FrozenRequirement.from_dist(distribution)
+    distributions = distributions or installed_distributions().values()
+    for req in distributions:
         for module in req.modules:
             mapping[module].append(req)
 
@@ -254,22 +299,6 @@ def _parse_urls_from_html(html, base_url, put):
 def _parse_project_name_from_url(url):
     parsed = urlparse(url)
     return parsed.path.rstrip("/").split("/")[-1]
-
-
-def get_latest_distribution_version(
-    name, index_url=DEFAULT_PYPI_INDEX_URL, include_prereleases=False
-):
-
-    async def _main():
-        async with aiohttp.ClientSession() as session:
-            pypi_distributions = PyPIDistributions(
-                session, index_url=index_url
-            )
-            return await pypi_distributions.get_latest_distribution_version(
-                name, url=None, include_prereleases=include_prereleases
-            )
-
-    return asyncio.run(_main())
 
 
 class PyPIDistributions(object):
