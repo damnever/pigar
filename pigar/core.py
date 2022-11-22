@@ -1,13 +1,14 @@
 from .dist import DEFAULT_PYPI_INDEX_URL
 
+import os
 import collections
 import functools
 import importlib
-import imp
-import os.path as pathlib
+import importlib.util
+import os.path
+import pathlib
 import sys
 from typing import NamedTuple
-from io import IOBase as FileType
 import asyncio
 
 from .db import database
@@ -30,7 +31,9 @@ class RequirementsAnalyzer(object):
     def __init__(self, project_root):
         self._project_root = project_root
 
-        self._installed_dists = installed_distributions_by_top_level_import_names(
+        self._installed_dists = installed_distributions()
+        self._installed_dists_by_imports = installed_distributions_by_top_level_import_names(
+            distributions=self._installed_dists.values()
         )
         self._requirements = _LocatableRequirements()
         self._uncertain_requirements = collections.defaultdict(
@@ -47,15 +50,20 @@ class RequirementsAnalyzer(object):
             followlinks=follow_symbolic_links,
         )
 
-        try_imports = set()
+        importables = dict()
+        tryimports = set()
         for module in imported_modules:
             name = module.name
             if is_user_module(module, user_modules, self._project_root):
-                logger.debug("ignore imports from user module: %s", name)
+                logger.debug("ignore import name from user module: %s", name)
                 continue
-            if is_stdlib(name) or is_stdlib(name.split('.')[0]):
-                logger.debug("ignore imports from stdlib: %s", name)
+            is_stdlib, code_path = check_stdlib(name)
+            if not is_stdlib:
+                is_stdlib, code_path = check_stdlib(name.split('.')[0])
+            if is_stdlib:
+                logger.debug("ignore import name from stdlib: %s", name)
                 continue
+
             names = []
             special_name = '.'.join(name.split('.')[:2])
             # Flask extension.
@@ -72,23 +80,46 @@ class RequirementsAnalyzer(object):
                 names.append(name)
 
             for name in names:
-                if name in self._installed_dists:
-                    reqs = self._installed_dists[name]
-                    locs = _Locations.build(module.file, module.lineno)
+                if name in self._installed_dists_by_imports:
+                    reqs = self._installed_dists_by_imports[name]
+                    locs = _Locations.build_from(module.file, module.lineno)
                     reqs = self._maybe_filter_distributions_with_same_import_name(
                         name, locs, reqs, dists_filter
                     )
                     self._record_requirements(name, locs, reqs)
                 else:
+                    if code_path is not None:
+                        importables[name] = code_path
+                    if module.try_:
+                        tryimports.add(name)
                     self._unknown_imports[name].add(module.file, module.lineno)
-                if module.try_:
-                    try_imports.add(name)
 
-        names = []
-        for name in self._unknown_imports:
-            if name in try_imports:
-                names.append(name)
-        for name in names:
+        resolved = set()
+        for name, locs in self._unknown_imports.items():
+            if name in tryimports:
+                logger.debug(
+                    "ignore import name with `try/except ImportError`: %s",
+                    name
+                )
+                resolved.add(name)
+            elif name in importables:
+                # Handle special cases like distutils,
+                # which is importable but it is not in top_level.txt.
+                code_path = importables[name]
+                # Let's do a brute-force match..
+                for req in self._installed_dists.values():
+                    if req.contains_file(code_path):
+                        # XXX: there is an issue if multiple distributions has the same path..
+                        # reqs = self._maybe_filter_distributions_with_same_import_name( name, locs, reqs, dists_filter)
+                        self._record_requirements(name, locs, [req])
+                        logger.debug(
+                            "the import name is importable(no top levels contains it): %s",
+                            name
+                        )
+                        resolved.add(name)
+                        break
+
+        for name in resolved:
             del self._unknown_imports[name]
 
     def _record_requirements(self, import_name, locs, reqs):
@@ -117,7 +148,7 @@ class RequirementsAnalyzer(object):
                 logger.error('checking %s failed: %e', dist.name, e)
 
         async def _collect(pypi_dists, name, locs):
-            logger.info('Checking for import name %s ...', name)
+            logger.info('search distributions for import name %s ...', name)
             with database() as db:
                 distributions = db.query_distributions_by_top_level_module(
                     name
@@ -163,9 +194,9 @@ class RequirementsAnalyzer(object):
         with_banner=True,
         with_unknown_imports=False,
     ):
-        package_root_parent = pathlib.dirname(
-            trim_suffix(self._project_root, "/")
-        ) + "/"
+        package_root_parent = os.path.dirname(
+            trim_suffix(self._project_root, os.sep)
+        ) + os.sep
 
         if with_banner:
             stream.write(
@@ -370,16 +401,16 @@ def is_user_module(module, user_modules, project_root):
         return True
     parts = name.split(".")
     cur_mod_path = module.file[:-3]
-    dir_path_parts = pathlib.dirname(module.file).split("/")
+    dir_path_parts = os.path.dirname(module.file).split(os.sep)
     nparts = len(dir_path_parts)
     for i in range(0, nparts):
         i = -i if i > 0 else nparts
-        dir_path = "/".join(dir_path_parts[:i])
+        dir_path = os.sep.join(dir_path_parts[:i])
         if dir_path == "":
-            dir_path = "/"
+            dir_path = os.sep
         if dir_path not in user_modules:
             break
-        mod_paths = [pathlib.join(dir_path, "/".join(parts))]
+        mod_paths = [os.path.join(dir_path, os.sep.join(parts))]
         if len(dir_path_parts[:i]) > 0 and dir_path_parts[:i][-1] == parts[0]:
             mod_paths.append(dir_path)
         for mod_path in mod_paths:
@@ -391,7 +422,7 @@ def is_user_module(module, user_modules, project_root):
     return False
 
 
-def _checked_cache(func):
+def _cache_check_stdlib(func):
     checked = dict()
 
     @functools.wraps(func)
@@ -403,35 +434,35 @@ def _checked_cache(func):
     return _wrapper
 
 
-@_checked_cache
-def is_stdlib(name):
+@_cache_check_stdlib
+def check_stdlib(name):
     """Check whether it is stdlib module."""
-    if name == 'pigar':
-        return False
-    exist = True
-    module_info = ('', '', '')
     try:
-        module_info = imp.find_module(name)
+        spec = importlib.util.find_spec(name)
     except ImportError:
+        spec = None
+    if spec is None:
         try:
             # __import__(name)
+            orignal_sys_modules = set(sys.modules.keys())
             importlib.import_module(name)
-            module_info = imp.find_module(name)
-            sys.modules.pop(name)
+            spec = importlib.util.find_spec(name)
+            for name in set(sys.modules.keys()) - orignal_sys_modules:
+                sys.modules.pop(name)
         except ImportError:
-            exist = False
-    # Testcase: ResourceWarning
-    if isinstance(module_info[0], FileType):
-        module_info[0].close()
-    mpath = module_info[1]
-    if exist and (
-        mpath is not None and (
-            'site-packages' in mpath or 'dist-packages' in mpath or
-            ('bin/' in mpath and mpath.endswith('.py'))
-        )
+            return False, None
+
+    module_path = spec.origin
+    if module_path is None:
+        return False, None
+    pure_path = pathlib.PurePath(module_path)
+    if (
+        'site-packages' in pure_path.parts
+        or 'dist-packages' in pure_path.parts
+        or ('bin' in pure_path.parts and module_path.endswith('.py'))
     ):
-        exist = False
-    return exist
+        return False, module_path
+    return True, None
 
 
 class _Locations(dict):
@@ -442,7 +473,7 @@ class _Locations(dict):
         self._sorted = None
 
     @classmethod
-    def build(cls, file, lineno):
+    def build_from(cls, file, lineno):
         self = cls()
         self.add(file, lineno)
         return self

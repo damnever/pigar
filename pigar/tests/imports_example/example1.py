@@ -22,13 +22,14 @@ class A(object):
     """
     >>> import itertools
     """
+
     def baz(self):
         """
         >>> import baz
         """
 
 
-def bar():
+async def bar():
     """
     >>> import queue
     >>> def test():

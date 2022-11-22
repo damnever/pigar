@@ -15,11 +15,16 @@ Module = collections.namedtuple('Module', ['name', 'try_', 'file', 'lineno'])
 
 
 def _match_exclude_patterns(name, patterns, root=""):
-    name = trim_prefix(trim_prefix(name, root), "/")
+    # name = trim_prefix(trim_prefix(name, root), "/")
     for pattern in patterns:
         if fnmatch.fnmatch(name, pattern):
             return True
     return False
+
+
+DEFAULT_GLOB_EXCLUDE_PATTERNS = (
+    "**/.git", "**/.hg", "**/.svn", "**/__pycache__"
+)
 
 
 def parse_imports(project_root, exclude_patterns=None, followlinks=True):
@@ -27,20 +32,26 @@ def parse_imports(project_root, exclude_patterns=None, followlinks=True):
     e.g. /path/to/pigar/pigar."""
     exclude_patterns = set(trim_prefix(p, './') for p in exclude_patterns
                            ) if exclude_patterns else set()
-    exclude_patterns |= set(["**/.git", "**/.hg", "**/.svn", "**/__pycache__"])
+    exclude_patterns |= set(DEFAULT_GLOB_EXCLUDE_PATTERNS)
 
     imported_modules = []
     user_modules = set()
 
-    for dirpath, _, files in os.walk(project_root, followlinks=followlinks):
+    for dirpath, subdirs, files in os.walk(
+        project_root, followlinks=followlinks
+    ):
         if _match_exclude_patterns(dirpath, exclude_patterns, project_root):
+            logger.debug('excluded by glob patterns: %s', dirpath)
+            subdirs.clear()
             continue
 
         has_py = False
         for fn in files:
             fpath = pathlib.join(dirpath, fn)
             if _match_exclude_patterns(fpath, exclude_patterns, project_root):
+                logger.debug('excluded by glob patterns: %s', fpath)
                 continue
+            logger.debug('analyzing file: %s', fpath)
 
             # C extension.
             if fn.endswith('.so'):

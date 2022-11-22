@@ -1,17 +1,8 @@
-# -*- coding: utf-8 -*-
 # Reference:
 # http://stackoverflow.com/questions/16571150/how-to-capture-stdout-output-from-a-python-function-call
 
-from __future__ import print_function, division, absolute_import
-
 import sys
-try:
-    from cStringIO import StringIO
-except ImportError:
-    try:
-        from StringIO import StringIO
-    except ImportError:
-        from io import StringIO
+from io import StringIO
 
 
 class CaptureOutput(list):
