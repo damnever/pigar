@@ -23,22 +23,14 @@
     document.getElementById("query").placeholder = queryPlaceholder;
 
     const db = new SQL.Database(new Uint8Array(buf));
-    const lowercase = 'a b c d e f g h i j k l m n o p q r s t u v w x y z'.split(' ')
 
     function search() {
       const query = document.getElementById('query').value.trim().toLowerCase()
       if (query.length === 0) {
         return
       }
-      let suffix = 'lambda'
-      if (lowercase.includes(query[0])) {
-        suffix = query[0]
-      }
-      const nameTable = `table_${suffix}`
-      const packageTable = 'table_packages'
-      const contents = db.exec(`SELECT ${nameTable}.name , ${packageTable}.package
-        FROM ${nameTable} INNER JOIN ${packageTable} ON ${nameTable}.pkgid == ${packageTable}.id
-        WHERE name="${query}"`);
+      const contents = db.exec(`SELECT name, version FROM distributions WHERE id IN
+        (SELECT distribution_id FROM top_level_module_names WHERE name="${query}")`);
 
       const results = document.getElementById("results");
       results.innerHTML = ''
@@ -46,9 +38,10 @@
       table.setAttribute("border", "1")
       if (contents.length > 0) {
         const rows = contents[0]["values"].sort((a, b) => (a[1] > b[1]) ? 1 : -1)
-        table.innerHTML = '<thead><tr><th>Distribution</th> <th>URL</th></tr> </thead> <tbody>';
+        table.innerHTML = '<thead><tr> <th>Distribution</th> <th>URL</th> </tr></thead><tbody>';
         rows.forEach(function (row) {
-          let name = row[1]
+          let name = row[0]
+          const version = row[1]
           const url = `https://pypi.org/project/${name}/`
           if (name === query) { // Diff algorithm such as edit distance is not a good fit..
             name = `<span style="font-weight: 900">${name}</span>`
@@ -82,16 +75,16 @@
       <ul dir="auto">
         <li>Handling the difference between different Python versions.</li>
         <li>Jupyter notebook (<code>*.ipynb</code>) support.</li>
-        <li>Including the import statements from <code>exec</code>/<code>eval</code>, doctest of docstring, etc.</li>
+        <li>Including the import statements from <code>exec</code>/<code>eval</code>/<code>importlib</code>, doctest of docstring, etc.</li>
       </ul>
     </li>
-    <li>Searching Python package distributions by the top-level import name.</li>
+    <li>Searching Python package/distributions by the top-level import/module names.</li>
     <li>Checking the latest versions of requirements.</li>
   </ul>
   Further information can be found <a href="https://github.com/damnever/pigar">here</a>.
   <hr />
-  <h2>Search Python Package Distributions by the Top-level Import Name</h2>
-  <p>Powered by <a href="https://github.com/sql-js/sql.js">sql.js</a> and <a href="https://github.com/damnever/pigar/blob/main/pigar/.db.sqlite3">the pigar database</a>.</p>
+  <h2>Search Python Package/Distributions by the Top-level Import/Module Name</h2>
+  <p>Powered by <a href="https://github.com/sql-js/sql.js">sql.js</a> and <a href="https://github.com/damnever/pigar/blob/main/pigar/.db.sqlite3">the pigar index database</a>.</p>
   <div>
     <input name="query" type="text" placeholder="e.g. requests" size="50" id="query" />
     <button id="search">Search</button>
