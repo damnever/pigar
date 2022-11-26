@@ -1,10 +1,13 @@
 import os
+import os.path
+import pathlib
 import io
 import sys
 import re
 import difflib
 import urllib.parse
-from typing import Optional
+import contextlib
+from typing import Optional, List
 
 from ._vendor.pip._internal.req.req_file import get_file_content
 from ._vendor.pip._internal.req.constructors import parse_req_from_line
@@ -94,13 +97,15 @@ PIP_INSTALL_OPTIONS_RE = re.compile(
     r'^\s*(?P<opt>-r|--requirement|-e|--editable)\s*(?P<value>\S*)\s*.*'
 )
 SCHEME_RE = re.compile(r"^(http|https|file):", re.I)
-_pip_session = PipSession()  # noqa
 
 
 def parse_requirements(fpath):
     """Parse requirements file."""
     referenced_files = set()
-    _, content = get_file_content(fpath, _pip_session)
+
+    with contextlib.closing(PipSession()) as pip_session:
+        _, content = get_file_content(fpath, pip_session)
+
     for lineno, line in enumerate(content.splitlines()):
         origin_line = line
         line = line.strip()
@@ -282,3 +287,28 @@ class InMemoryOrDiskFile(object):
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         self.close()
+
+
+def determine_python_sys_lib_paths() -> List[str]:
+    pythonmmv_zip = f'python{sys.version_info.major}{sys.version_info.minor}.zip'
+    # Ref: https://docs.python.org/3/library/sys_path_init.html
+    py_sys_path_prefix = ''
+    for path in sys.path:
+        if os.path.basename(path) == pythonmmv_zip:
+            py_sys_path_prefix = os.path.dirname(path)
+            break
+    if py_sys_path_prefix == '':
+        raise RuntimeError('python sys path prefix not found')
+
+    lib_paths = []
+    for path in sys.path:
+        if path == '':
+            continue
+        parts = pathlib.PurePath(path).parts
+        if 'site-packages' in parts or 'dist-packages' in parts:
+            continue
+        if os.path.commonpath(
+            [path, py_sys_path_prefix]
+        ) == py_sys_path_prefix:
+            lib_paths.append(path)
+    return lib_paths

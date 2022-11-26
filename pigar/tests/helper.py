@@ -6,6 +6,7 @@ from io import StringIO
 
 
 class CaptureOutput(list):
+
     def __enter__(self):
         self._stdout = sys.stdout
         sys.stdout = self._strio = StringIO()
@@ -15,3 +16,7 @@ class CaptureOutput(list):
         self.extend(self._strio.getvalue().splitlines())
         self._strio.close()
         sys.stdout = self._stdout
+
+
+def py_version():
+    return sys.version.split(' ')[0]

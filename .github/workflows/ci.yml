@@ -13,17 +13,21 @@ jobs:
           - "3.11"
     name: Python ${{ matrix.python-version }}
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
       - name: Setup python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
           architecture: x64
-      - name: Install Py2.x dependencies
-        if: "startsWith(matrix.python-version, '2')"
-        run: pip install -r py2_requirements.txt
-      - name: Install Py3.x dependencies
-        if: "startsWith(matrix.python-version, '3')"
-        run: pip install -r py3_requirements.txt
-      - name: Run tests
-        run: python -m unittest discover pigar/tests/ -t . -v
+      - name: Run tests with requirements.txt
+        run: |
+          python -m venv venv-requirements-txt
+          source venv-requirements-txt/bin/activate
+          pip install -r requirements.txt
+          python -m unittest discover pigar/tests/ -t . -v
+      - name: Run tests with pip install -e
+        run: |
+          python -m venv venv-pip-e
+          source venv-pip-e/bin/activate
+          pip install -e .
+          python -m unittest discover pigar/tests/ -t . -v
