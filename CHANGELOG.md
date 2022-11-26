@@ -1,5 +1,33 @@
 ### Change Logs
 
+#### Version 2.0.0b1 (2022.11.27)
+
+This version has changed a lot of things, most of them are **BREAKING CHANGE**s!
+
+- **Dropped support for Python versions older than 3.7.**
+- **Redesigned the command line interface.**
+  - `pigar generate` to generate requirements.txt.
+  - `pigar search` to search packages/distributions by the top level module names.
+  - `pigar check` to check the latest versions of requirements.
+  - `pigar -h` to explore more.
+  - `pigar` accepts a prefix for a command, such as `pigar gen`, `pigar c`.
+- **Refactored/changed a lot of code and interfaces.**
+- [Vendoring](https://github.com/pradyunsg/vendoring) the [pip](https://github.com/pypa/pip) to access more sophisticated utilities(`pip` named it's module as `_internal` so vendoring technology is introduced).
+  - Fixed a lot of issues when parsing the requirements file, e.g. [#113](https://github.com/damnever/pigar/issues/113).
+  - Fixed the issues for editable requirements, e.g. [#60](https://github.com/damnever/pigar/issues/60).
+- Tweaked some default actions and introduced more options for better user experience.
+  - `pigar` will ask user to choose the right packages/distributions if `pigar` has found multiple packages/distributions for the same module names. With`--auto-select` enabled, `pigar` will guess the best matched one or choose all possible packages/distributions automatically.
+  - Added an option `--dry-run` which allows `pigar` to not write a requirements.txt file, just print it.
+  - Added an option `--follow-symbolic-links/--dont-follow-symbolic-links` to let user decide whether to follow the symbolic links, fixed [#89](https://github.com/damnever/pigar/issues/89).
+  - Added an option `-i/--index-url` to allow the custom URL of the Python Package Index, fixed [#52](https://github.com/damnever/pigar/issues/52).
+  - Removed the spaces from requirements specifier, fixed [#86](https://github.com/damnever/pigar/issues/86).
+  - Added an option `--show-differences/--dont-show-differences` to enable or disable showing the differences when the requirements file is overwritten.
+- Introduced `asyncio` to synchronize distributions' metadata with the PyPI, the process is much faster now.
+- Refactored the code to make the index database more reliable.
+  - Add unique contstraints to avoid duplicate records, fixed [#119](https://github.com/damnever/pigar/issues/119).
+  - Store versions in the database to do incremental index synchronization.
+
+
 #### Version 1.0.2 (2022.11.12)
 
 - Fix requirements list in setup.py [#122](https://github.com/damnever/pigar/pull/122).

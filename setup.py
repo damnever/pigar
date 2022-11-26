@@ -61,15 +61,20 @@ setup(
     ),
     long_description=long_description + '\n\n' + change_logs,
     long_description_content_type="text/markdown",
-    url='https://github.com/damnever/pigar',
+    project_urls={
+        'Documentation': 'https://github.com/damnever/pigar',
+        'Source': 'https://github.com/damnever/pigar',
+    },
     author='damnever',
-    author_email='dxc.wolf@gmail.com',
+    author_email='the.xcdong@gmail.com',
     license='The BSD 3-Clause License',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'Topic :: Utilities',
         'License :: OSI Approved :: BSD License',
+        'Programming Language :: Python :: Implementation :: CPython',
+        'Programming Language :: Python :: 3 :: Only',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
@@ -80,6 +85,7 @@ setup(
     packages=find_packages(
         exclude=["*.tests", "*.tests.*", "tests.*", "tests"]
     ),
+    python_requires='>=3.7',
     install_requires=install_requires,
     include_package_data=True,
     entry_points={'console_scripts': [
