@@ -45,8 +45,8 @@ class AliasedGroup(click.Group):
 def _click_prompt_choose_multiple_or_all(choices):
 
     def _value_proc(input):
-        input = input.sttrip()
-        if input == '':
+        input = input.strip()
+        if input == '*':
             return choices
 
         vs = [a.strip() for a in input.split(',')]
@@ -205,17 +205,24 @@ def generate(
                 return [best_match]
             return distributions
 
-        msg = f'Please select package/distribution(s) for the module "{import_name}",\n'
+        dists_mapping = {dist.name: dist for dist in distributions}
+        dist_names = list(dists_mapping.keys())
+        msg = 'Please select one or more packages from the below list for the module '
+        msg += Color.YELLOW(f'"{import_name}"')
+        msg += f' (input * to select all, multiple values can be sperated by ",")\n'
+        dist_names_msg = ', '.join(dist_names)
+        msg += Color.YELLOW(f'[{dist_names_msg}]\n')
         if best_match is not None:
-            msg += f'the best match may be "{best_match}",\n'
-        msg += f'input nothing to select all, multiple values can be sperated by ","\n'
+            msg += f'(the best match may be '
+            msg += Color.YELLOW(f'"{best_match.name}"')
+            msg += ')'
         choosed = click.prompt(
-            Color.YELLOW(msg),
-            type=click.Choice(distributions),
-            show_choices=True,
-            value_proc=_click_prompt_choose_multiple_or_all(distributions),
+            msg,
+            type=click.Choice(dist_names),
+            show_choices=False,
+            value_proc=_click_prompt_choose_multiple_or_all(dist_names),
         )
-        return choosed
+        return [dists_mapping[i] for i in choosed]
 
     analyzer = RequirementsAnalyzer(project_path)
     analyzer.analyze_requirements(
@@ -345,7 +352,7 @@ def generate(
     help='Include pre-release and development versions.',
 )
 def check(requirement_file, index_url, include_prereleases):
-    '''Check latest versions for package/distributions from requirements.txt.'''
+    '''Check latest versions for packages/distributions from requirements.txt.'''
     files = []
     cwd = os.getcwd()
     if not requirement_file:
@@ -392,7 +399,7 @@ def check(requirement_file, index_url, include_prereleases):
 )
 @click.argument('names', nargs=-1, type=str)
 def search(names, index_url, include_prereleases):
-    '''Search package/distributions by the top level import/module names'''
+    '''Search packages/distributions by the top level import/module names'''
     results, not_found = asyncio.run(
         search_distributions_by_top_level_import_names(
             names,

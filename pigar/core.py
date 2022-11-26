@@ -150,23 +150,11 @@ class RequirementsAnalyzer(object):
                     dist.name,
                     include_prereleases=include_prereleases,
                 )
-                return FrozenRequirement(dist.name, latest or '')
+                return FrozenRequirement(dist.name, latest or '0.0.0')
             except Exception as e:
-                logger.error('checking %s failed: %e', dist.name, e)
+                logger.error('checking %s failed: %r', dist.name, e)
 
-        async def _collect(pypi_dists, name, locs):
-            logger.info('search distributions for import name %s ...', name)
-            with database() as db:
-                distributions = db.query_distributions_by_top_level_module(
-                    name
-                )
-            if distributions is None:
-                return
-            distributions = self._maybe_filter_distributions_with_same_import_name(
-                name, locs, distributions, dists_filter
-            )
-            found.add(name)
-
+        async def _collect(pypi_dists, name, locs, distributions):
             reqs = await asyncio.gather(
                 *[
                     _get_latest_version(pypi_dists, dist)
@@ -180,13 +168,25 @@ class RequirementsAnalyzer(object):
             async with PyPIDistributions(
                 index_url=pypi_index_url
             ) as pypi_dists:
-                await asyncio.gather(
-                    *[
-                        _collect(pypi_dists, name, locs)
-                        for name, locs in self._unknown_imports.items()
-                    ],
-                    return_exceptions=True
-                )
+                tasks = []
+                for name, locs in self._unknown_imports.items():
+                    logger.info(
+                        'search distributions for import name %s ...', name
+                    )
+                    with database() as db:
+                        distributions = db.query_distributions_by_top_level_module(
+                            name
+                        )
+                    if distributions is None:
+                        continue
+                    distributions = self._maybe_filter_distributions_with_same_import_name(
+                        name, locs, distributions, dists_filter
+                    )
+                    found.add(name)
+                    tasks.append(
+                        _collect(pypi_dists, name, locs, distributions)
+                    )
+                await asyncio.gather(*tasks, return_exceptions=True)
 
         asyncio.run(_main())
 
@@ -279,16 +279,15 @@ class RequirementsAnalyzer(object):
 
         best_match = None
         contains = []
-        if import_name in distributions:
-            for dist in distributions:
-                if dist.name == import_name:
-                    best_match = dist
-                    break
-                if dist.name.startswith(import_name
-                                        ) or dist.name.endswith(import_name):
-                    contains.append(dist.name)
+        for dist in distributions:
+            if dist.name == import_name:
+                best_match = dist
+                break
+            if dist.name.startswith(import_name
+                                    ) or dist.name.endswith(import_name):
+                contains.append(dist)
         if best_match is None and len(contains) == 1:
-            best_match = contains[1]
+            best_match = contains[0]
         return dists_filter(import_name, locations, distributions, best_match)
 
 
@@ -312,7 +311,7 @@ async def check_requirements_latest_versions(
                 )
             except Exception as e:
                 logger.error(
-                    'search latest version for %s failed: %e', req.name, e
+                    'search latest version for %s failed: %r', req.name, e
                 )
         return (req.name, req.specifier, local_version, latest_version)
 
@@ -324,7 +323,7 @@ async def check_requirements_latest_versions(
                 for req in parse_requirements(file):
                     tasks.append(_collect(pypi_dists, req))
             except PraseRequirementError as e:
-                logger.error('parse %s failed: %e', file, e)
+                logger.error('parse %s failed: %r', file, e)
         res = await asyncio.gather(*tasks, return_exceptions=True)
     return sorted(res, key=lambda item: item[0].lower())
 
@@ -345,13 +344,15 @@ async def search_distributions_by_top_level_import_names(
                 distribution.name,
                 include_prereleases=include_prereleases,
             )
-            results[import_name].append((distribution.name, version, 'PyPI'))
+            results[import_name].append(
+                (distribution.name, version or '<unknown>', 'PyPI')
+            )
         except Exception as e:
-            logger.error('checking %s failed: %e', distribution.name, e)
+            logger.error('checking %s failed: %r', distribution.name, e)
 
     async def _collect(pypi_dists, import_name):
         logger.debug(
-            'Searching package distributions for "{0}" ...'.
+            'searching package distributions for "{0}" ...'.
             format(import_name)
         )
         # If exists in local environment, do not check on the PyPI.
