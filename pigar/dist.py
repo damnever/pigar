@@ -23,6 +23,7 @@ from ._vendor.pip._internal.exceptions import BadCommand, InstallationError
 from distlib.database import DistributionPath, Distribution, EggInfoDistribution
 from packaging.version import Version, InvalidVersion
 from distlib.locators import SimpleScrapingLocator
+from distlib.wheel import Wheel
 from packaging.utils import canonicalize_name
 import aiohttp
 
@@ -359,18 +360,24 @@ class PyPIDistributions(object):
         dummy_locator = SimpleScrapingLocator('')
         versions = []
         for url in download_urls:
-            parsed = urlparse(url)
-            path = parsed.path
+            path = urlparse(url).path
             if not path.endswith(self._ACCEPTABLE_EXT):
                 continue
 
-            info = dummy_locator.convert_url_to_download_info(url, name)
-            if not info:
+            version_str = None
+            if path.endswith('.whl'):
+                wheel = Wheel(path)
+                version_str = wheel.version
+            else:
+                info = dummy_locator.convert_url_to_download_info(url, name)
+                if info:
+                    version_str = info.pop('version')
+            if version_str is None:
                 continue
             try:
-                version = Version(info.pop('version'))
+                version = Version(version_str)
             except InvalidVersion as e:
-                logger.debug('%s ignore: %r', name, e.args)
+                logger.debug('%s ignore: %r', name, e)
                 continue
 
             if not include_prereleases and version.is_prerelease:
