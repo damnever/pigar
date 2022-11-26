@@ -1,15 +1,15 @@
 import os
-import os.path as pathlib
-import sys
+import os.path
 import unittest
 
 from ..core import RequirementsAnalyzer, check_stdlib, _LocatableRequirements, _Locations
 from ..dist import FrozenRequirement
+from .helper import py_version
 
 from packaging.version import Version
 
 
-class ReqsTests(unittest.TestCase):
+class RequirementsAnalyzerTests(unittest.TestCase):
 
     def setUp(self):
         self._installed_dists_by_imports = {
@@ -27,13 +27,13 @@ class ReqsTests(unittest.TestCase):
             'mainfoobar': [FrozenRequirement('min-foo-bar', '0.10.0rc0')],
         }
         self._path = os.path.abspath(
-            pathlib.join(os.path.dirname(__file__), 'data/imports_example/')
+            os.path.join(os.path.dirname(__file__), 'data/imports_example/')
         )
 
         def _abs_path(subpaths):
             paths = []
             for subp in subpaths:
-                paths.append(pathlib.join(self._path, subp))
+                paths.append(os.path.join(self._path, subp))
             return paths
 
         self._certain_requirements = {}
@@ -112,10 +112,6 @@ class ReqsTests(unittest.TestCase):
             self.assertEqual(locs.sorted_items(), expected_locs)
 
 
-def _py_version():
-    return sys.version.split(' ')[0]
-
-
 class StdlibTest(unittest.TestCase):
 
     def test_stdlibs(self):
@@ -125,24 +121,24 @@ class StdlibTest(unittest.TestCase):
             'urllib.parse', 'urllib.request', 'itertools', 'time', 'typing',
             'importlib', 'asyncio', 'importlib.util'
         ]:
-            self.assertTrue(self._is_stdlib(lib))
+            self.assertTrue(self._is_stdlib(lib), lib)
 
-    @unittest.skipIf(Version(_py_version()) < Version('3.8'), '< Py3.8')
+    @unittest.skipIf(Version(py_version()) < Version('3.8'), '< Py3.8')
     def test_stdlibs_added_since_py3_8(self):
         for lib in ['importlib.metadata']:
             self.assertTrue(self._is_stdlib(lib), lib)
 
-    @unittest.skipIf(Version(_py_version()) < Version('3.9'), '< Py3.9')
+    @unittest.skipIf(Version(py_version()) < Version('3.9'), '< Py3.9')
     def test_stdlibs_added_since_py3_9(self):
         for lib in ['zoneinfo', 'graphlib']:
-            self.assertTrue(self._is_stdlib(lib))
+            self.assertTrue(self._is_stdlib(lib), lib)
 
-    @unittest.skipIf(Version(_py_version()) < Version('3.11'), '< Py3.11')
+    @unittest.skipIf(Version(py_version()) < Version('3.11'), '< Py3.11')
     def test_stdlibs_added_since_py3_11(self):
         for lib in ['tomllib']:
-            self.assertTrue(self._is_stdlib(lib))
+            self.assertTrue(self._is_stdlib(lib), lib)
 
-    @unittest.skipIf(Version(_py_version()) >= Version('3.12'), '< Py3.12')
+    @unittest.skipIf(Version(py_version()) >= Version('3.12'), '< Py3.12')
     def test_stdlib_deprecated_since_py3_12(self):
         for lib in ['asynchat', 'asyncore', 'smtpd']:
             self.assertTrue(self._is_stdlib(lib), lib)

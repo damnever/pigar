@@ -5,13 +5,19 @@ import doctest
 import collections
 import fnmatch
 import os.path as pathlib
+from typing import List, NamedTuple, Optional
 
 from .log import logger
-from .helpers import trim_prefix, trim_suffix
+from .helpers import trim_prefix
 
 import nbformat
 
-Module = collections.namedtuple('Module', ['name', 'try_', 'file', 'lineno'])
+
+class Module(NamedTuple):
+    name: str
+    try_: bool
+    file: str
+    lineno: int
 
 
 def _match_exclude_patterns(name, patterns, root=""):
@@ -23,11 +29,19 @@ def _match_exclude_patterns(name, patterns, root=""):
 
 
 DEFAULT_GLOB_EXCLUDE_PATTERNS = (
-    "**/.git", "**/.hg", "**/.svn", "**/__pycache__"
+    "**/.git",
+    "**/.hg",
+    "**/.svn",
+    "**/__pycache__",
+    "*venv*",
 )
 
 
-def parse_imports(project_root, exclude_patterns=None, followlinks=True):
+def parse_imports(
+    project_root: str,
+    exclude_patterns: Optional[List[str]] = None,
+    followlinks: bool = True
+) -> List[Module]:
     """package_root must be a absolute path to package root,
     e.g. /path/to/pigar/pigar."""
     exclude_patterns = set(trim_prefix(p, './') for p in exclude_patterns
@@ -35,7 +49,6 @@ def parse_imports(project_root, exclude_patterns=None, followlinks=True):
     exclude_patterns |= set(DEFAULT_GLOB_EXCLUDE_PATTERNS)
 
     imported_modules = []
-    user_modules = set()
 
     for dirpath, subdirs, files in os.walk(
         project_root, followlinks=followlinks
@@ -45,7 +58,6 @@ def parse_imports(project_root, exclude_patterns=None, followlinks=True):
             subdirs.clear()
             continue
 
-        has_py = False
         for fn in files:
             fpath = pathlib.join(dirpath, fn)
             if _match_exclude_patterns(fpath, exclude_patterns, project_root):
@@ -53,20 +65,10 @@ def parse_imports(project_root, exclude_patterns=None, followlinks=True):
                 continue
             logger.debug('analyzing file: %s', fpath)
 
-            # C extension.
-            if fn.endswith('.so'):
-                has_py = True
-                user_modules.add(fpath[:-3])
-            # Normal Python file.
-            elif fn.endswith('.py'):
-                has_py = True
-                user_modules.add(fpath[:-3])
             code = _read_code(fpath)
             if code:
                 imported_modules.extend(parse_file_imports(fpath, code))
-        if has_py:
-            user_modules.add(trim_suffix(dirpath, "/"))
-    return imported_modules, user_modules
+    return imported_modules
 
 
 # Match ipython notebook magics and shell commands.
@@ -150,9 +152,15 @@ class ImportsParser(object):
         """
         mod_name = node.module
         level = node.level
-        if mod_name is None:
-            level -= 1
-            mod_name = ""
+        if mod_name is not None:
+            name = level*"." + mod_name
+            lineno = node.lineno + self._lineno
+            self._add_module(name, try_, lineno)
+            return
+
+        # Handle cases like: from .. import a
+        level -= 1
+        mod_name = ""
         for alias in node.names:
             name = mod_name
             if level > 0 or mod_name == "":

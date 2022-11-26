@@ -58,7 +58,13 @@ def _click_prompt_choose_multiple_or_all(choices):
     return _value_proc
 
 
-@click.group(cls=AliasedGroup)
+@click.group(
+    cls=AliasedGroup,
+    context_settings=dict(
+        help_option_names=['-h', '--help'],
+        max_content_width=120,
+    ),
+)
 @click.version_option(version=version)
 @click.option(
     '-l',
@@ -72,9 +78,16 @@ def _click_prompt_choose_multiple_or_all(choices):
 def cli(log_level):
     '''A tool to generate requirements.txt for your Python project,
     and more than that.
+
     NOTE that pigar is not a package/dependency management tool.
     '''
     enable_pretty_logging(log_level)
+
+
+@click.command(name='gohome')
+def gohome():
+    '''Go to the project home page to report a BUG or find more information.'''
+    click.launch('https://github.com/damnever/pigar')
 
 
 @click.command(name='generate')
@@ -82,9 +95,9 @@ def cli(log_level):
     '-f',
     '--requirement-file',
     'requirement_file',
-    default='./requirements.txt',
+    default='requirements.txt',
     show_default=True,
-    type=click.Path(),
+    type=click.Path(dir_okay=False),
     help='The path to requirement file.',
 )
 @click.option(
@@ -155,33 +168,44 @@ def cli(log_level):
     help='Include pre-release and development versions.',
 )
 @click.option(
-    '-y',
-    '--yes',
-    'answer_yes',
-    default=False,
-    is_flag=True,
-    help='TODO: Answer yes for all possible questions.'
+    '--question-answer',
+    'question_answer',
+    default='ask',
+    show_default=True,
+    type=click.Choice(['ask', 'yes', 'no']),
+    help=
+    'Whether to answer all possible questions with yes or no, otherwise manual confirmation is required.'
 )
 @click.option(
-    '-n',
-    '--no',
-    'answer_no',
+    '--auto-select',
+    'auto_select',
     default=False,
+    show_default=True,
     is_flag=True,
-    help='TODO: Answer no for all possible questions.'
+    help=
+    'When multiple package/distributions are found for the same module, select the best matched one or all of them automatically, otherwise manual interaction is required.'
 )
-@click.argument('project_path', type=click.Path(exists=True))
+@click.argument(
+    'project_path',
+    default=os.curdir,
+    type=click.Path(file_okay=False, exists=True)
+)
 def generate(
     requirement_file, with_referenced_comments, comparison_specifier,
     show_differences, exclude_glob, follow_symbolic_links, dry_run, index_url,
-    include_prereleases, answer_yes, answer_no, project_path
+    include_prereleases, question_answer, auto_select, project_path
 ):
     '''Generate requirements.txt for the given Python project.'''
     requirement_file = os.path.abspath(requirement_file)
     project_path = os.path.abspath(project_path)
 
     def _dists_filter(import_name, locations, distributions, best_match):
-        msg = f'Please select package distribution(s) for the import name "{import_name}",\n'
+        if auto_select:
+            if best_match:
+                return [best_match]
+            return distributions
+
+        msg = f'Please select package/distribution(s) for the module "{import_name}",\n'
         if best_match is not None:
             msg += f'the best match may be "{best_match}",\n'
         msg += f'input nothing to select all, multiple values can be sperated by ","\n'
@@ -201,28 +225,34 @@ def generate(
     )
     if analyzer.has_unknown_imports():
         msgbuf = io.StringIO()
-        msgbuf.write(
-            Color.RED('The following import names are not found yet:\n')
-        )
-        analyzer.format_unknown_imports(msgbuf)
-        msgbuf.write('\n')
-        msgbuf.write(
-            Color.RED(
-                (
-                    'Some of them may be not installed in the local environment.\n'
-                    'Try to search them on PyPI for further analysis?'
+        yes = False
+        if question_answer == 'ask':
+            msgbuf.write(
+                Color.RED('The following module(s) are not found yet:\n')
+            )
+            analyzer.format_unknown_imports(msgbuf)
+            msgbuf.write('\n')
+            msgbuf.write(
+                Color.RED(
+                    (
+                        'Some of them may be not installed in the local environment.\n'
+                        'Try to search them on PyPI for further analysis?'
+                    )
                 )
             )
-        )
-        # msgbuf.close()
-        if click.confirm(msgbuf.getvalue(), default=False):
+            yes = click.confirm(msgbuf.getvalue(), default=False)
+            # msgbuf.close()
+        else:
+            yes = question_answer == 'yes'
+
+        if yes:
             analyzer.search_unknown_imports_from_index(
                 dists_filter=_dists_filter,
                 pypi_index_url=index_url,
                 include_prereleases=include_prereleases,
             )
             if analyzer.has_unknown_imports():
-                print(Color.RED('These import names are still not found:'))
+                print(Color.RED('These module(s) are still not found:'))
                 analyzer.format_unknown_imports(sys.stdout)
                 sys.stdout.flush()
                 # print(Color.RED('Maybe or you need update database.'))
@@ -293,9 +323,8 @@ def generate(
     '-f',
     '--requirement-file',
     'requirement_file',
-    default='./requirements.txt',
-    show_default=True,
-    type=click.Path(exists=True),
+    default='',
+    type=click.Path(dir_okay=False),
     help='The path to requirement file.',
 )
 @click.option(
@@ -316,15 +345,14 @@ def generate(
     help='Include pre-release and development versions.',
 )
 def check(requirement_file, index_url, include_prereleases):
-    '''Check latest versions for package distributions from requirements.txt.'''
-    requirement_file = os.path.abspath(requirement_file)
-
+    '''Check latest versions for package/distributions from requirements.txt.'''
     files = []
     cwd = os.getcwd()
-    if os.path.isdir(requirement_file):
+    if not requirement_file:
         logger.debug('searching requirements file under {0} ...'.format(cwd))
         files.extend(glob.glob(os.path.join(cwd, '*requirements.txt')))
     else:
+        requirement_file = os.path.abspath(requirement_file)
         files.append(requirement_file)
     if not files:
         print(
@@ -364,7 +392,7 @@ def check(requirement_file, index_url, include_prereleases):
 )
 @click.argument('names', nargs=-1, type=str)
 def search(names, index_url, include_prereleases):
-    '''Search package distributions by the top level import names.'''
+    '''Search package/distributions by the top level import/module names'''
     results, not_found = asyncio.run(
         search_distributions_by_top_level_import_names(
             names,
@@ -382,8 +410,7 @@ def search(names, index_url, include_prereleases):
             results[name], headers=['DISTRIBUTION', 'VERSION', 'WHERE']
         )
     if not_found:
-        msg = '"{0}" not found.\n'.format(Color.RED(', '.join(not_found)))
-        msg += 'Maybe you need to update the index database.'
+        msg = '"{0}" not found.'.format(Color.RED(', '.join(not_found)))
         print(Color.YELLOW(msg))
 
 
@@ -414,12 +441,13 @@ def indexdb():
 )
 def indexdb_sync(index_url, concurrency):
     '''Synchronize the local index database with distributions' metadata on PyPI.'''
-    # TODO: update database with incremental or total mode.
+    # TODO: garbage collection.
     sync_distributions_index_from_pypi(
         index_url=index_url, concurrency=concurrency
     )
 
 
+cli.add_command(gohome)
 cli.add_command(generate)
 cli.add_command(check)
 cli.add_command(search)

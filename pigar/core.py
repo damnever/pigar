@@ -1,22 +1,25 @@
 from .dist import DEFAULT_PYPI_INDEX_URL
 
 import os
+import os.path
+import sys
 import collections
+import contextlib
 import functools
 import importlib
 import importlib.util
-import os.path
+import importlib.machinery
 import pathlib
-import sys
 from typing import NamedTuple
 import asyncio
 
 from .db import database
 from .log import logger
 from .helpers import (
-    Color, parse_requirements, PraseRequirementError, trim_prefix, trim_suffix
+    Color, parse_requirements, PraseRequirementError, trim_prefix, trim_suffix,
+    determine_python_sys_lib_paths
 )
-from .parser import parse_imports
+from .parser import parse_imports, Module
 from .dist import (
     installed_distributions_by_top_level_import_names, installed_distributions,
     FrozenRequirement, _all_hardcode_import_names, DEFAULT_PYPI_INDEX_URL,
@@ -44,7 +47,7 @@ class RequirementsAnalyzer(object):
     def analyze_requirements(
         self, ignores=None, dists_filter=None, follow_symbolic_links=True
     ):
-        imported_modules, user_modules = parse_imports(
+        imported_modules = parse_imports(
             self._project_root,
             exclude_patterns=ignores,
             followlinks=follow_symbolic_links,
@@ -52,16 +55,19 @@ class RequirementsAnalyzer(object):
 
         importables = dict()
         tryimports = set()
+        importlib.invalidate_caches()
         for module in imported_modules:
             name = module.name
-            if is_user_module(module, user_modules, self._project_root):
-                logger.debug("ignore import name from user module: %s", name)
+            if is_user_module(module, self._project_root):
+                logger.debug(
+                    "ignore import name from user module: %s", module.name
+                )
                 continue
             is_stdlib, code_path = check_stdlib(name)
             if not is_stdlib:
                 is_stdlib, code_path = check_stdlib(name.split('.')[0])
             if is_stdlib:
-                logger.debug("ignore import name from stdlib: %s", name)
+                logger.debug("ignore import name from stdlib: %s", module.name)
                 continue
 
             names = []
@@ -105,6 +111,7 @@ class RequirementsAnalyzer(object):
             elif name in importables:
                 # Handle special cases like distutils,
                 # which is importable but it is not in top_level.txt.
+                # Ref: https://docs.python.org/3/library/sys_path_init.html#pth-files
                 code_path = importables[name]
                 # Let's do a brute-force match..
                 for req in self._installed_dists.values():
@@ -271,11 +278,17 @@ class RequirementsAnalyzer(object):
         assert (hasattr(distributions[0], 'name'))
 
         best_match = None
+        contains = []
         if import_name in distributions:
             for dist in distributions:
                 if dist.name == import_name:
                     best_match = dist
                     break
+                if dist.name.startswith(import_name
+                                        ) or dist.name.endswith(import_name):
+                    contains.append(dist.name)
+        if best_match is None and len(contains) == 1:
+            best_match = contains[1]
         return dists_filter(import_name, locations, distributions, best_match)
 
 
@@ -312,7 +325,8 @@ async def check_requirements_latest_versions(
                     tasks.append(_collect(pypi_dists, req))
             except PraseRequirementError as e:
                 logger.error('parse %s failed: %e', file, e)
-        return await asyncio.gather(*tasks, return_exceptions=True)
+        res = await asyncio.gather(*tasks, return_exceptions=True)
+    return sorted(res, key=lambda item: item[0].lower())
 
 
 async def search_distributions_by_top_level_import_names(
@@ -395,31 +409,40 @@ def sync_distributions_index_from_pypi(
     asyncio.run(_main())
 
 
-def is_user_module(module, user_modules, project_root):
-    name = module.name
-    if name.startswith("."):
+@contextlib.contextmanager
+def _prepend_sys_path(path: str):
+    sys.path.insert(0, path)
+    yield
+    sys.path.pop(0)
+
+
+@contextlib.contextmanager
+def _keep_sys_modules_clean():
+    orignal_sys_modules = set(sys.modules.keys())
+    yield
+    for name in set(sys.modules.keys()) - orignal_sys_modules:
+        sys.modules.pop(name)
+
+
+def is_user_module(module: Module, project_root: str):
+    if module.name.startswith("."):
         return True
-    parts = name.split(".")
-    cur_mod_path = module.file[:-3]
-    dir_path_parts = os.path.dirname(module.file).split(os.sep)
-    nparts = len(dir_path_parts)
-    for i in range(0, nparts):
-        i = -i if i > 0 else nparts
-        dir_path = os.sep.join(dir_path_parts[:i])
-        if dir_path == "":
-            dir_path = os.sep
-        if dir_path not in user_modules:
-            break
-        mod_paths = [os.path.join(dir_path, os.sep.join(parts))]
-        if len(dir_path_parts[:i]) > 0 and dir_path_parts[:i][-1] == parts[0]:
-            mod_paths.append(dir_path)
-        for mod_path in mod_paths:
-            # FIXME(damnever): ignore the current file?
-            if mod_path == cur_mod_path:
-                continue
-            if mod_path in user_modules:
-                return True
-    return False
+
+    try:
+        # FIXME(damnever): isolated environment!!
+        with _prepend_sys_path(project_root):
+            with _keep_sys_modules_clean():
+                spec = importlib.util.find_spec(
+                    module.name, os.path.dirname(module.file)
+                )
+        if spec.origin is None:
+            return False
+        return (
+            spec.origin != module.file
+            and os.path.commonpath([spec.origin, project_root]) == project_root
+        )
+    except Exception:
+        return False
 
 
 def _cache_check_stdlib(func):
@@ -435,34 +458,34 @@ def _cache_check_stdlib(func):
 
 
 @_cache_check_stdlib
-def check_stdlib(name):
+def check_stdlib(name: str, _sys_lib_paths=determine_python_sys_lib_paths()):
     """Check whether it is stdlib module."""
-    try:
-        spec = importlib.util.find_spec(name)
-    except ImportError:
-        spec = None
-    if spec is None:
+    with _keep_sys_modules_clean():
         try:
-            # __import__(name)
-            orignal_sys_modules = set(sys.modules.keys())
-            importlib.import_module(name)
             spec = importlib.util.find_spec(name)
-            for name in set(sys.modules.keys()) - orignal_sys_modules:
-                sys.modules.pop(name)
         except ImportError:
-            return False, None
+            spec = None
+        if spec is None:
+            try:
+                # __import__(name)
+                importlib.import_module(name)
+                spec = importlib.util.find_spec(name)
+            except ImportError:
+                return False, None
 
     module_path = spec.origin
-    if module_path is None:
-        return False, None
-    pure_path = pathlib.PurePath(module_path)
-    if (
-        'site-packages' in pure_path.parts
-        or 'dist-packages' in pure_path.parts
-        or ('bin' in pure_path.parts and module_path.endswith('.py'))
-    ):
+    if module_path is None or not os.path.isabs(module_path):
+        return True, None
+
+    module_path_parts = pathlib.PurePath(module_path).parts
+    if 'site-packages' in module_path_parts or 'dist-packages' in module_path_parts:
         return False, module_path
-    return True, None
+
+    for sys_path in _sys_lib_paths:
+        if os.path.commonpath([sys_path, module_path]) == sys_path:
+            return True, None
+
+    return False, module_path
 
 
 class _Locations(dict):
