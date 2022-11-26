@@ -19,8 +19,8 @@ long_description = """
 - Generating requirements.txt for Python project.
    - Handling the difference between different Python versions.
    - Jupyter notebook (`*.ipynb`) support.
-   - Including the import statements from ``exec``/``eval``, doctest of docstring, etc.
-- Searching ditributions(packages) by the top level import name.
+   - Including the import statements/magic from ``exec``/``eval``/``importlib``, doctest of docstring, etc.
+- Searching ditributions(packages) by the top level import/module names.
 - Checking the latest versions of requirements.
 
 
