@@ -23,7 +23,7 @@ jobs:
         run: |
           python -m venv venv-requirements-txt
           source venv-requirements-txt/bin/activate
-          pip install -r requirements.txt
+          pip install -r requirements/py${{ matrix.python-version }}.txt
           python -m unittest discover pigar/tests/ -t . -v
       - name: Run tests with pip install -e
         run: |

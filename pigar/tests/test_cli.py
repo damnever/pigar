@@ -1,13 +1,12 @@
+import sys
 import codecs
 import os
 import os.path
 import unittest
 
 from ..__main__ import cli
-from .helper import py_version
 
 from click.testing import CliRunner
-from packaging.version import Version
 
 
 class CliTests(unittest.TestCase):
@@ -16,23 +15,9 @@ class CliTests(unittest.TestCase):
         self._pigar_project_root = os.path.join(
             os.path.dirname(__file__), '../..'
         )
-        pigar_requirements_dir = os.path.join(
-            self._pigar_project_root, 'requirements'
-        )
-        current_version = Version(py_version())
-        requirement_file = 'requirements.txt'
-        for fpath in os.listdir(pigar_requirements_dir):
-            fname = os.path.basename(fpath)
-            fname_no_ext, _ = os.path.splitext(fname)
-            try:
-                startv, endv = fname_no_ext.split('-', 1)
-            except Exception:
-                continue
-            if Version(startv) <= current_version <= Version(endv):
-                requirement_file = fname
-                break
         self._pigar_requirements = os.path.join(
-            pigar_requirements_dir, requirement_file
+            self._pigar_project_root, 'requirements',
+            f'py{sys.version_info.major}.{sys.version_info.minor}.txt'
         )
 
         self.maxDiff = None
