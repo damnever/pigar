@@ -312,3 +312,8 @@ def determine_python_sys_lib_paths() -> List[str]:
         ) == py_sys_path_prefix:
             lib_paths.append(path)
     return lib_paths
+
+
+def is_site_packages_path(path: str) -> bool:
+    parts = pathlib.PurePath(path).parts
+    return 'site-packages' in parts or 'dist-packages' in parts

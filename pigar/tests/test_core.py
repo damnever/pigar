@@ -74,7 +74,7 @@ class RequirementsAnalyzerTests(unittest.TestCase):
         }
         analyzer._installed_dists = dist_mapping
         analyzer._installed_dists_by_imports = self._installed_dists_by_imports
-        analyzer.analyze_requirements()
+        analyzer.analyze_requirements(visit_doc_str=True)
 
         self.assertListEqual(
             sorted(list(analyzer._requirements.keys())),
