@@ -39,6 +39,7 @@ DEFAULT_GLOB_EXCLUDE_PATTERNS = (
 
 def parse_imports(
     project_root: str,
+    visit_doc_str: bool = False,
     exclude_patterns: Optional[List[str]] = None,
     followlinks: bool = True
 ) -> List[Module]:
@@ -67,7 +68,11 @@ def parse_imports(
 
             code = _read_code(fpath)
             if code:
-                imported_modules.extend(parse_file_imports(fpath, code))
+                imported_modules.extend(
+                    parse_file_imports(
+                        fpath, code, visit_doc_str=visit_doc_str
+                    )
+                )
     return imported_modules
 
 
@@ -101,10 +106,11 @@ def _read_code(fpath):
     return None
 
 
-def parse_file_imports(fpath, content):
+def parse_file_imports(fpath, content, visit_doc_str=False):
     py_codes = collections.deque([(content, 1)])
     parser = ImportsParser(
-        lambda code, lineno: py_codes.append((code, lineno))  # noqa
+        lambda code, lineno: py_codes.append((code, lineno)),  # noqa
+        doc_str_enabled=visit_doc_str,
     )
 
     while py_codes:
@@ -119,9 +125,10 @@ def parse_file_imports(fpath, content):
 
 class ImportsParser(object):
 
-    def __init__(self, rawcode_callback=None):
+    def __init__(self, rawcode_callback=None, doc_str_enabled=False):
         self._modules = []
         self._rawcode_callback = rawcode_callback
+        self._doc_str_enabled = doc_str_enabled
 
     def parse(self, content, fpath, lineno):
         parsed = ast.parse(content)
@@ -252,6 +259,9 @@ class ImportsParser(object):
         """
         Check docstring of function, if docstring is used for doctest.
         """
+        if not self._doc_str_enabled:
+            return
+
         docstring = self._parse_docstring(node)
         if docstring:
             self._add_rawcode(docstring, node.lineno + self._lineno + 2)
@@ -260,6 +270,9 @@ class ImportsParser(object):
         """
         Check docstring of class, if docstring is used for doctest.
         """
+        if not self._doc_str_enabled:
+            return
+
         docstring = self._parse_docstring(node)
         if docstring:
             self._add_rawcode(docstring, node.lineno + self._lineno + 2)

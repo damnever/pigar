@@ -9,7 +9,6 @@ import functools
 import importlib
 import importlib.util
 import importlib.machinery
-import pathlib
 from typing import NamedTuple
 import asyncio
 
@@ -17,7 +16,7 @@ from .db import database
 from .log import logger
 from .helpers import (
     Color, parse_requirements, PraseRequirementError, trim_prefix, trim_suffix,
-    determine_python_sys_lib_paths
+    determine_python_sys_lib_paths, is_site_packages_path
 )
 from .parser import parse_imports, Module
 from .dist import (
@@ -45,10 +44,15 @@ class RequirementsAnalyzer(object):
         self._unknown_imports = collections.defaultdict(_Locations)
 
     def analyze_requirements(
-        self, ignores=None, dists_filter=None, follow_symbolic_links=True
+        self,
+        visit_doc_str=False,
+        ignores=None,
+        dists_filter=None,
+        follow_symbolic_links=True
     ):
         imported_modules = parse_imports(
             self._project_root,
+            visit_doc_str=visit_doc_str,
             exclude_patterns=ignores,
             followlinks=follow_symbolic_links,
         )
@@ -411,10 +415,24 @@ def sync_distributions_index_from_pypi(
 
 
 @contextlib.contextmanager
+def _exclude_sys_site_paths():
+    origin_sys_path = sys.path.copy()
+    site_paths = []
+    for path in sys.path:
+        if is_site_packages_path(path):
+            site_paths.append(path)
+    for path in site_paths:
+        sys.path.remove(path)
+    yield
+    sys.path.clear()
+    sys.path.extend(origin_sys_path)
+
+
+@contextlib.contextmanager
 def _prepend_sys_path(path: str):
     sys.path.insert(0, path)
     yield
-    sys.path.pop(0)
+    sys.path.remove(path)
 
 
 @contextlib.contextmanager
@@ -431,17 +449,18 @@ def is_user_module(module: Module, project_root: str):
 
     try:
         # FIXME(damnever): isolated environment!!
-        with _prepend_sys_path(project_root):
-            with _keep_sys_modules_clean():
-                spec = importlib.util.find_spec(
-                    module.name, os.path.dirname(module.file)
-                )
+        with _exclude_sys_site_paths():
+            with _prepend_sys_path(project_root):
+                with _keep_sys_modules_clean():
+                    spec = importlib.util.find_spec(
+                        module.name, os.path.dirname(module.file)
+                    )
         if spec.origin is None:
             return False
         return (
             spec.origin != module.file
             and os.path.commonpath([spec.origin, project_root]) == project_root
-        )
+        ) or module.name.split('.')[0] == os.path.basename(project_root)
     except Exception:
         return False
 
@@ -478,8 +497,7 @@ def check_stdlib(name: str, _sys_lib_paths=determine_python_sys_lib_paths()):
     if module_path is None or not os.path.isabs(module_path):
         return True, None
 
-    module_path_parts = pathlib.PurePath(module_path).parts
-    if 'site-packages' in module_path_parts or 'dist-packages' in module_path_parts:
+    if is_site_packages_path(module_path):
         return False, module_path
 
     for sys_path in _sys_lib_paths:

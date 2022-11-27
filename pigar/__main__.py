@@ -125,6 +125,13 @@ def gohome():
     'Whether to show differences when the requirements file is overwritten.',
 )
 @click.option(
+    '--visit-doc-string',
+    'visit_doc_string',
+    default=False,
+    is_flag=True,
+    help='Consider doctest in doc string when analyzing import statements.',
+)
+@click.option(
     '-e',
     '--exclude-glob',
     'exclude_glob',
@@ -192,8 +199,9 @@ def gohome():
 )
 def generate(
     requirement_file, with_referenced_comments, comparison_specifier,
-    show_differences, exclude_glob, follow_symbolic_links, dry_run, index_url,
-    include_prereleases, question_answer, auto_select, project_path
+    show_differences, visit_doc_string, exclude_glob, follow_symbolic_links,
+    dry_run, index_url, include_prereleases, question_answer, auto_select,
+    project_path
 ):
     '''Generate requirements.txt for the given Python project.'''
     requirement_file = os.path.abspath(requirement_file)
@@ -226,6 +234,7 @@ def generate(
 
     analyzer = RequirementsAnalyzer(project_path)
     analyzer.analyze_requirements(
+        visit_doc_str=visit_doc_string,
         ignores=exclude_glob,
         dists_filter=_dists_filter,
         follow_symbolic_links=follow_symbolic_links
