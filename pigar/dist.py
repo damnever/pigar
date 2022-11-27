@@ -366,8 +366,12 @@ class PyPIDistributions(object):
 
             version_str = None
             if path.endswith('.whl'):
-                wheel = Wheel(path)
-                version_str = wheel.version
+                try:
+                    wheel = Wheel(path)
+                    version_str = wheel.version
+                except Exception as e:
+                    logger.debug('%s ignore: %r', name, e)
+                    continue
             else:
                 info = dummy_locator.convert_url_to_download_info(url, name)
                 if info:
@@ -543,9 +547,10 @@ class PyPIDistributionsIndexSynchronizer(object):
                     'distribution "%s" has no valid versions', project_name
                 )
                 return
-            if dist is not None and dist.version == version:
+            if dist is not None and Version(dist.version) >= Version(version):
                 logger.info(
-                    'distribution "%s" version not changed', project_name
+                    'distribution "%s" version is the latest: %s',
+                    project_name, dist.version
                 )
                 return
 
@@ -609,6 +614,6 @@ class PyPIDistributionsIndexSynchronizer(object):
         if x_import_names:
             top_levels.extend(list(x_import_names))
         logger.debug(
-            'distribution %s with top levels: %r', project_name, top_levels
+            'distribution %s parsed top levels: %r', project_name, top_levels
         )
         return version, top_levels
