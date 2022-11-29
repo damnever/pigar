@@ -535,13 +535,11 @@ class PyPIDistributionsIndexSynchronizer(object):
             dist = db.query_distribution_with_top_level_modules(project_name)
 
         try:
-            with tempfile.TemporaryDirectory() as tmp_download_dir:
-                # FIXME(damnever): create temporary directory on demand.
-                version, top_levels = await self._parse_top_levels(
-                    project_name,
-                    project_url,
-                    tmp_download_dir,
-                )
+            version, project_download_url = await self._pypi_distributions.get_latest_distribution_info(
+                project_name,
+                project_url,
+                include_prereleases=False,
+            )
             if version is None:
                 logger.warn(
                     'distribution "%s" has no valid versions', project_name
@@ -552,6 +550,15 @@ class PyPIDistributionsIndexSynchronizer(object):
                     'distribution "%s" version is the latest: %s',
                     project_name, dist.version
                 )
+                return
+            with tempfile.TemporaryDirectory() as tmp_download_dir:
+                # FIXME(damnever): create temporary directory on demand.
+                top_levels = await self._parse_top_levels(
+                    project_name,
+                    project_download_url,
+                    tmp_download_dir,
+                )
+            if top_levels is None:
                 return
 
             modules_to_add = set(top_levels or [])
@@ -581,17 +588,12 @@ class PyPIDistributionsIndexSynchronizer(object):
             raise e
 
     async def _parse_top_levels(
-        self, project_name, project_url, tmp_download_dir
+        self, project_name, project_download_url, tmp_download_dir
     ):
-        version, url, dist_file = await self._pypi_distributions.get_latest_distribution(
-            project_name,
-            project_url,
-            include_prereleases=False,
-            tmp_download_dir=tmp_download_dir,
+        dist_file = await self._pypi_distributions._download_raw(
+            project_download_url, tmp_download_dir=tmp_download_dir
         )
-        if version is None:
-            return None, None
-        filename = urlparse(url).path
+        filename = urlparse(project_download_url).path
 
         event_loop = asyncio.get_event_loop()
         try:
@@ -605,7 +607,7 @@ class PyPIDistributionsIndexSynchronizer(object):
                 filename,
                 exc_info=True,
             )
-            return None, None
+            return None
         top_levels = _maybe_include_project_name_as_import_name(
             top_levels, project_name
         )
@@ -616,4 +618,4 @@ class PyPIDistributionsIndexSynchronizer(object):
         logger.debug(
             'distribution %s parsed top levels: %r', project_name, top_levels
         )
-        return version, top_levels
+        return top_levels
