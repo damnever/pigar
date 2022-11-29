@@ -5,7 +5,7 @@
   <script src='./vendor/sqljs-wasm/sql-wasm.js'></script>
   <script src='./vendor/pako/pako_inflate.min.js'></script>
   <script type="module">
-    document.getElementById("query").disabled = true
+    document.getElementById("query").disabled = true;
     const queryPlaceholder = document.getElementById("query").placeholder;
     document.getElementById("query").placeholder = "loading database...";
     const sqlPromise = initSqlJs({
@@ -18,46 +18,46 @@
     }).then(function (buffer) {
       return pako.inflate(buffer);
     });
-    const [SQL, buf] = await Promise.all([sqlPromise, dataPromise])
-    document.getElementById("query").disabled = false
+    const [SQL, buf] = await Promise.all([sqlPromise, dataPromise]);
+    document.getElementById("query").disabled = false;
     document.getElementById("query").placeholder = queryPlaceholder;
 
     const db = new SQL.Database(new Uint8Array(buf));
 
     function search() {
-      const query = document.getElementById('query').value.trim()
+      const query = document.getElementById('query').value.trim();
       if (query.length === 0) {
-        return
+        return;
       }
       const contents = db.exec(`SELECT name, version FROM distributions WHERE id IN
         (SELECT distribution_id FROM top_level_module_names WHERE name="${query}")`);
 
       const results = document.getElementById("results");
-      results.innerHTML = ''
-      const table = document.createElement('table')
-      table.setAttribute("border", "1")
+      results.innerHTML = '';
+      const table = document.createElement('table');
+      table.setAttribute("border", "1");
       if (contents.length > 0) {
-        const rows = contents[0]["values"].sort((a, b) => (a[1] > b[1]) ? 1 : -1)
+        const rows = contents[0]["values"].sort((a, b) => (a[1] > b[1]) ? 1 : -1);
         table.innerHTML = '<thead><tr> <th>Distribution</th> <th>URL</th> </tr></thead><tbody>';
         rows.forEach(function (row) {
-          let name = row[0]
-          const version = row[1]
-          const url = `https://pypi.org/project/${name}/`
+          let name = row[0];
+          const version = row[1];
+          const url = `https://pypi.org/project/${name}/`;
           if (name === query) { // Diff algorithm such as edit distance is not a good fit..
-            name = `<span style="font-weight: 900">${name}</span>`
+            name = `<span style="font-weight: 900">${name}</span>`;
           } else if (name.includes(query)) {
-            name = `<span style="font-weight: 500">${name}</span>`
+            name = `<span style="font-weight: 500">${name}</span>`;
           }
           table.innerHTML += `<tr> <td>${name}</td> <td><a href="${url}" target="_blank">${url}</a></td> </tr>`;
         })
         table.innerHTML += `</tbody>`;
       }
-      results.appendChild(table)
+      results.appendChild(table);
     }
     document.getElementById("search").addEventListener("click", search);
     document.addEventListener("keypress", function (event) {
       if (event.key === 'Enter') {
-        search()
+        search();
       }
     });
   </script>
