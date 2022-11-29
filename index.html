@@ -25,7 +25,7 @@
     const db = new SQL.Database(new Uint8Array(buf));
 
     function search() {
-      const query = document.getElementById('query').value.trim().toLowerCase()
+      const query = document.getElementById('query').value.trim()
       if (query.length === 0) {
         return
       }
@@ -75,15 +75,15 @@
       <ul dir="auto">
         <li>Handling the difference between different Python versions.</li>
         <li>Jupyter notebook (<code>*.ipynb</code>) support.</li>
-        <li>Including the import statements from <code>exec</code>/<code>eval</code>/<code>importlib</code>, doctest of docstring, etc.</li>
+        <li>Including the import statements/magic from <code>exec</code>/<code>eval</code>/<code>importlib</code>, doctest of docstring, etc.</li>
       </ul>
     </li>
-    <li>Searching Python package/distributions by the top-level import/module names.</li>
+    <li>Searching ditributions(packages) by the top level import/module names.</li>
     <li>Checking the latest versions of requirements.</li>
   </ul>
   Further information can be found <a href="https://github.com/damnever/pigar">here</a>.
   <hr />
-  <h2>Search Python Package/Distributions by the Top-level Import/Module Name</h2>
+  <h2>Search Python Packages/Distributions by the Top-level Import/Module Name</h2>
   <p>Powered by <a href="https://github.com/sql-js/sql.js">sql.js</a> and <a href="https://github.com/damnever/pigar/blob/main/pigar/.db.sqlite3">the pigar index database</a>.</p>
   <div>
     <input name="query" type="text" placeholder="e.g. requests" size="50" id="query" />
