@@ -1,5 +1,10 @@
 ### Change Logs
 
+#### Version 2.0.1 (2022.12.03)
+
+Make absolute import more reliable by searching parent directory as well.
+
+
 #### Version 2.0.0 (2022.12.02)
 
 This version has changed a lot of things, most of them are **BREAKING CHANGE**s!
