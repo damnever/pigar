@@ -431,8 +431,13 @@ def _exclude_sys_site_paths():
 @contextlib.contextmanager
 def _prepend_sys_path(path: str):
     sys.path.insert(0, path)
+    parent = os.path.dirname(path)
+    if parent:
+        sys.path.insert(1, parent)
     yield
     sys.path.remove(path)
+    if parent:
+        sys.path.remove(parent)
 
 
 @contextlib.contextmanager
@@ -443,24 +448,32 @@ def _keep_sys_modules_clean():
         sys.modules.pop(name)
 
 
+# FIXME: this function is full of magic!
 def is_user_module(module: Module, project_root: str):
     if module.name.startswith("."):
         return True
 
+    root_module_name = module.name.split('.')[0]
     try:
         # FIXME(damnever): isolated environment!!
+        spec = None
         with _exclude_sys_site_paths():
             with _prepend_sys_path(project_root):
                 with _keep_sys_modules_clean():
-                    spec = importlib.util.find_spec(
-                        module.name, os.path.dirname(module.file)
-                    )
+                    for name in [module.name, root_module_name]:
+                        try:
+                            spec = importlib.util.find_spec(
+                                name, os.path.dirname(module.file)
+                            )
+                            break
+                        except Exception:
+                            pass
         if spec.origin is None:
             return False
         return (
             spec.origin != module.file
             and os.path.commonpath([spec.origin, project_root]) == project_root
-        ) or module.name.split('.')[0] == os.path.basename(project_root)
+        ) or root_module_name == os.path.basename(project_root)
     except Exception:
         return False
 
