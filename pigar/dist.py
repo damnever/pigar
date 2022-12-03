@@ -97,10 +97,16 @@ class FrozenRequirement(object):
         modules = set()
         editable = isinstance(dist, EggInfoDistribution)
         url = ''
+        comments = []
         installed_files = []
         if editable:
-            req, comments = _get_editable_info(dist)
-            url = req
+            try:
+                req, comments = _get_editable_info(dist)
+                url = req
+            except Exception as e:
+                logger.error(
+                    'distribution "%s" may be not editable: %r', dist.name, e
+                )
             top_level_file = pathlib.join(dist.path, 'top_level.txt')
             if os.path.exists(top_level_file):
                 with open(top_level_file, 'rb') as f:
@@ -116,7 +122,6 @@ class FrozenRequirement(object):
             installed_files = [
                 finfo[0] for finfo in dist.list_installed_files()
             ]
-            comments = []
             modules = set(dist.modules)
             modules = _maybe_include_project_name_as_import_name(
                 modules, dist.name
@@ -129,6 +134,9 @@ class FrozenRequirement(object):
         code_paths = set()
         code_file_dir = os.pardir
         for file in installed_files:
+            file = file.strip()
+            if not file or os.path.isabs(file):
+                continue
             if not any(
                 [
                     os.path.commonpath([code_file_dir, file]) ==
@@ -140,6 +148,9 @@ class FrozenRequirement(object):
                 ]
             ):
                 code_file_dir = trim_prefix(file, os.sep).split(os.sep)[0]
+                if not code_file_dir or os.path.isabs(code_file_dir):
+                    code_file_dir = os.pardir
+                    continue
                 code_path = os.path.join(root_dir, code_file_dir)
                 if os.path.exists(code_path):
                     code_paths.add(code_path)
@@ -166,7 +177,7 @@ class FrozenRequirement(object):
         self, operator: str = '==', spaces_around_operator: str = ''
     ) -> str:
         req = ""
-        if self.editable:
+        if self.editable and self.url:
             req = f"-e {self.url}"
         else:
             req = f"{self.name}{spaces_around_operator}{operator}{spaces_around_operator}{self.version}"
