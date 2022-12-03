@@ -33,9 +33,9 @@ DEFAULT_PYPI_INDEX_URL = 'https://pypi.org/simple/'
 # TODO: use custom configuration rather than hard-code mapping.
 # Special distributions top level import name: Distribution name -> import names.
 _hardcode_distributions_with_import_names = {
-    "dogpile-cache": set("dogpile.cache", ),
-    "dogpile-core": set("dogpile.core", ),
-    "ruamel-yaml": set("ruamel.yaml", ),
+    "dogpile-cache": set(["dogpile.cache"]),
+    "dogpile-core": set(["dogpile.core"]),
+    "ruamel-yaml": set(["ruamel.yaml"]),
 }
 
 
