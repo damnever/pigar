@@ -317,7 +317,10 @@ async def check_requirements_latest_versions(
                 logger.error(
                     'search latest version for %s failed: %r', req.name, e
                 )
-        return (req.name, req.specifier, local_version, latest_version)
+        return (
+            req.name, req.specifier, local_version or '', latest_version
+            or '<unknown>'
+        )
 
     async with PyPIDistributions(index_url=pypi_index_url) as pypi_dists:
         tasks = []
