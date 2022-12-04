@@ -1,5 +1,13 @@
 ### Change Logs
 
+#### Version 2.0.2 (2022.12.04)
+
+- Ignore absolute path in [distributions' installed files](https://peps.python.org/pep-0627/#clarifications-in-the-record-file).
+- Ignore vcs exception when parsing information for EggInfoDistribution.
+- Sort searched results, print unknown if version not found.
+- Fix dirty records in the index database.
+
+
 #### Version 2.0.1 (2022.12.03)
 
 Make absolute import more reliable by searching parent directory as well.
