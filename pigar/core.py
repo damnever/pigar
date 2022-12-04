@@ -388,6 +388,7 @@ async def search_distributions_by_top_level_import_names(
             *[_collect(pypi_dists, name) for name in names],
             return_exceptions=True
         )
+
     return results, not_found
 
 

@@ -423,7 +423,8 @@ def search(names, index_url, include_prereleases):
             )
         )
         print_table(
-            results[name], headers=['DISTRIBUTION', 'VERSION', 'WHERE']
+            sorted(results[name], key=lambda item: item[0].lower()),
+            headers=['DISTRIBUTION', 'VERSION', 'WHERE']
         )
     if not_found:
         msg = '"{0}" not found.'.format(Color.RED(', '.join(not_found)))
