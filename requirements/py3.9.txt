@@ -7,7 +7,7 @@ aiohttp==3.8.3
 CacheControl==0.12.11
 # pigar/_vendor/pip/_internal/build_env.py: 15
 # pigar/_vendor/pip/_internal/commands/debug.py: 11
-certifi==2022.9.24
+certifi==2022.12.7
 # pigar/__main__.py: 22
 # pigar/tests/test_cli.py: 9
 click==8.1.3

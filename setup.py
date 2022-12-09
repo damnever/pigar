@@ -43,7 +43,7 @@ install_requires = [
     "pep517==0.13.0",
     "platformdirs==2.5.2",
     "requests==2.28.1",
-    "certifi==2022.09.24",
+    "certifi==2022.12.7",
     "urllib3==1.26.12",
     "rich==12.5.1",
     "resolvelib==0.8.1",
