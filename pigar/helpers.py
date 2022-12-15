@@ -307,11 +307,18 @@ def determine_python_sys_lib_paths() -> List[str]:
         parts = pathlib.PurePath(path).parts
         if 'site-packages' in parts or 'dist-packages' in parts:
             continue
-        if os.path.commonpath(
-            [path, py_sys_path_prefix]
-        ) == py_sys_path_prefix:
+        if is_commonpath([path, py_sys_path_prefix], py_sys_path_prefix):
             lib_paths.append(path)
     return lib_paths
+
+
+def is_commonpath(paths: List[str], target: str) -> bool:
+    try:
+        return os.path.commonpath(paths) == target
+    except ValueError:
+        # Raise ValueError if paths contain both absolute and relative pathnames,
+        # the paths are on the different drives or if *paths* is empty.
+        return False
 
 
 def is_site_packages_path(path: str) -> bool:

@@ -13,7 +13,7 @@ import concurrent.futures
 import asyncio
 
 from .log import logger
-from .helpers import cmp_to_key, trim_prefix, trim_suffix, InMemoryOrDiskFile
+from .helpers import cmp_to_key, trim_prefix, trim_suffix, InMemoryOrDiskFile, is_commonpath
 from .unpack import parse_top_levels
 from .db import database
 from .version import version
@@ -139,11 +139,11 @@ class FrozenRequirement(object):
                 continue
             if not any(
                 [
-                    os.path.commonpath([code_file_dir, file]) ==
-                    code_file_dir,  # Fast path to skip the same path prefix.
-                    os.path.commonpath([dist_info_dir, file]) == dist_info_dir,
-                    os.path.commonpath([os.pardir, file]) == os.pardir,
-                    os.path.commonpath([os.curdir, file]) == os.curdir,
+                    is_commonpath([code_file_dir, file], code_file_dir
+                                  ),  # Fast path to skip the same path prefix.
+                    is_commonpath([dist_info_dir, file], dist_info_dir),
+                    is_commonpath([os.pardir, file], os.pardir),
+                    is_commonpath([os.curdir, file], os.curdir),
                     file.startswith('__')
                 ]
             ):
@@ -169,7 +169,7 @@ class FrozenRequirement(object):
         if not self.code_paths or not file:
             return False
         for code_path in self.code_paths:
-            if code_path == os.path.commonpath([code_path, file]):
+            if is_commonpath([code_path, file], code_path):
                 return True
         return False
 

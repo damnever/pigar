@@ -16,7 +16,7 @@ from .db import database
 from .log import logger
 from .helpers import (
     Color, parse_requirements, PraseRequirementError, trim_prefix, trim_suffix,
-    determine_python_sys_lib_paths, is_site_packages_path
+    is_commonpath, determine_python_sys_lib_paths, is_site_packages_path
 )
 from .parser import parse_imports, Module
 from .dist import (
@@ -476,7 +476,7 @@ def is_user_module(module: Module, project_root: str):
             return False
         return (
             spec.origin != module.file
-            and os.path.commonpath([spec.origin, project_root]) == project_root
+            and is_commonpath([spec.origin, project_root], project_root)
         ) or root_module_name == os.path.basename(project_root)
     except Exception:
         return False
@@ -518,7 +518,7 @@ def check_stdlib(name: str, _sys_lib_paths=determine_python_sys_lib_paths()):
         return False, module_path
 
     for sys_path in _sys_lib_paths:
-        if os.path.commonpath([sys_path, module_path]) == sys_path:
+        if is_commonpath([sys_path, module_path], sys_path):
             return True, None
 
     return False, module_path
