@@ -1,5 +1,13 @@
 ### Change Logs
 
+#### Version 2.0.3 (2022.12.15)
+
+- Bump certifi from 2022.9.24 to 2022.12.7 (ref: https://github.com/advisories/GHSA-43fp-rhv2-5gv8)
+- Fixed os.path.commonpath raises ValueError for different drives.
+
+See what’s changed in detail [between v2.0.2 and v2.0.3](https://github.com/damnever/pigar/compare/v2.0.2...v2.0.3).
+
+
 #### Version 2.0.2 (2022.12.04)
 
 - Ignore absolute path in [distributions' installed files](https://peps.python.org/pep-0627/#clarifications-in-the-record-file).
