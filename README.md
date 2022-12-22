@@ -1,6 +1,6 @@
 ## pigar
 
-[![](https://img.shields.io/github/workflow/status/damnever/pigar/PyCI?style=flat-square)](https://github.com/damnever/pigar/actions) [![](https://img.shields.io/pypi/v/pigar.svg?style=flat-square)](https://pypi.org/project/pigar)
+[![](https://img.shields.io/github/actions/workflow/status/damnever/pigar/ci.yml?branch=main&style=flat-square)](https://github.com/damnever/pigar/actions) [![](https://img.shields.io/pypi/v/pigar.svg?style=flat-square)](https://pypi.org/project/pigar)
 
 
 - Generating requirements.txt for Python project.

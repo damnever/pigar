@@ -13,9 +13,6 @@ if not version:
     raise RuntimeError('Cannot find version information')
 
 long_description = """
-[![](https://img.shields.io/github/workflow/status/damnever/pigar/PyCI?style=flat-square)](https://github.com/damnever/pigar/actions)
-
-
 - Generating requirements.txt for Python project.
    - Handling the difference between different Python versions.
    - Jupyter notebook (`*.ipynb`) support.
