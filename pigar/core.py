@@ -502,12 +502,18 @@ def check_stdlib(name: str, _sys_lib_paths=determine_python_sys_lib_paths()):
             spec = importlib.util.find_spec(name)
         except ImportError:
             spec = None
+        except Exception as e:
+            logger.error('find_spec(%s) got unexpected error: %r', name, e)
+            spec = None
         if spec is None:
             try:
                 # __import__(name)
                 importlib.import_module(name)
                 spec = importlib.util.find_spec(name)
             except ImportError:
+                return False, None
+            except Exception as e:
+                logger.error('find_spec(%s) got unexpected error: %r', name, e)
                 return False, None
 
     module_path = spec.origin
