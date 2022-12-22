@@ -1,5 +1,11 @@
 ### Change Logs
 
+
+#### Version 2.0.4 (2022.12.22)
+
+See what’s changed in detail [between v2.0.3 and v2.0.4](https://github.com/damnever/pigar/compare/v2.0.3...v2.0.4).
+
+
 #### Version 2.0.3 (2022.12.15)
 
 - Bump certifi from 2022.9.24 to 2022.12.7 (ref: https://github.com/advisories/GHSA-43fp-rhv2-5gv8)
