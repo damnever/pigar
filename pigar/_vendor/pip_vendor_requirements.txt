@@ -10,6 +10,6 @@ certifi==2022.09.24
 urllib3==1.26.12
 rich==12.5.1
 resolvelib==0.8.1
-setuptools==44.0.0
+setuptools==65.5.1
 tenacity==8.1.0
 tomli==2.0.1
