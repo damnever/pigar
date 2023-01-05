@@ -300,24 +300,46 @@ def _get_editable_info(dist: EggInfoDistribution) -> _EditableInfo:
     )
 
 
+class _URLElement(object):
+
+    def __init__(self, name='', url=''):
+        self.name = name
+        self.url = url
+
+
 def _parse_urls_from_html(html, base_url, put):
 
     class _HrefParser(HTMLParser):
 
+        def __init__(self):
+            self._url_element = None
+            super(_HrefParser, self).__init__()
+
         def handle_starttag(self, tag, attrs):
-            if tag == 'a':
-                href = dict(attrs).get('href', None)
-                if href is not None:
-                    url = urljoin(base_url, href)
-                    if url:
-                        put(url)
+            self._url_element = None
+
+            if tag != 'a':
+                return
+            attrs = dict(attrs)
+            href = attrs.get('href', None)
+            if href is not None:
+                url = urljoin(base_url, href)
+                if url:
+                    self._url_element = _URLElement(url=url)
+
+        def handle_data(self, data):
+            if self._url_element is not None:
+                self._url_element.name = data
+
+                if not self._url_element.name:
+                    parsed = urlparse(self._url_element.url)
+                    self._url_element.name = parsed.path.rstrip("/").split(
+                        "/"
+                    )[-1]
+                put(self._url_element)
+                self._url_element = None
 
     _HrefParser().feed(html)
-
-
-def _parse_project_name_from_url(url):
-    parsed = urlparse(url)
-    return parsed.path.rstrip("/").split("/")[-1]
 
 
 class PyPIDistributions(object):
@@ -358,7 +380,9 @@ class PyPIDistributions(object):
             url = urljoin(self._index_url, quote(name) + '/')
         html = await self._download_text(url)
         download_urls = []
-        _parse_urls_from_html(html, url, download_urls.append)
+        _parse_urls_from_html(
+            html, url, lambda url_elem: download_urls.append(url_elem.url)
+        )
         return self._choose_distribution_url_with_latest_version(
             name,
             download_urls,
@@ -532,14 +556,15 @@ class PyPIDistributionsIndexSynchronizer(object):
 
     async def _worker(self):
         while True:
-            project_url = await self._queue.get()
+            project = await self._queue.get()
             try:
-                await self._sync_project(project_url)
+                await self._sync_project(project)
             finally:  # Avoid blocking on exceptions.
                 self._queue.task_done()
 
-    async def _sync_project(self, project_url):
-        project_name = _parse_project_name_from_url(project_url)
+    async def _sync_project(self, project: _URLElement):
+        project_name = project.name
+        project_url = project.url
         logger.info('processing distribution: %s', project_name)
         dist = None
         with database() as db:
