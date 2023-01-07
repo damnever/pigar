@@ -282,14 +282,20 @@ class RequirementsAnalyzer(object):
         assert (hasattr(distributions[0], 'name'))
 
         best_match = None
+        casefold_match = None
         contains = []
         for dist in distributions:
             if dist.name == import_name:
                 best_match = dist
                 break
+            if dist.name.lower() == import_name.lower():
+                casefold_match = dist
+                break
             if dist.name.startswith(import_name
                                     ) or dist.name.endswith(import_name):
                 contains.append(dist)
+        if best_match is None and casefold_match is not None:
+            best_match = casefold_match
         if best_match is None and len(contains) == 1:
             best_match = contains[0]
         return dists_filter(import_name, locations, distributions, best_match)
