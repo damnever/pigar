@@ -306,6 +306,9 @@ class _URLElement(object):
         self.name = name
         self.url = url
 
+    def __str__(self) -> str:
+        return f'[{self.name}]({self.url})'
+
 
 def _parse_urls_from_html(html, base_url, put):
 
