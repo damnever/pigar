@@ -43,7 +43,7 @@
           let name = row[0];
           const version = row[1];
           const url = `https://pypi.org/project/${name}/`;
-          if (name === query) { // Diff algorithm such as edit distance is not a good fit..
+          if (name === query || name.toLowerCase() == query.toLowerCase()) { // Diff algorithm such as edit distance is not a good fit..
             name = `<span style="font-weight: 900">${name}</span>`;
           } else if (name.includes(query)) {
             name = `<span style="font-weight: 500">${name}</span>`;
