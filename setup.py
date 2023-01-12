@@ -20,6 +20,7 @@ long_description = """
 - Searching ditributions(packages) by the top level import/module names.
 - Checking the latest versions of requirements.
 
+Note that pigar is not a package management tool.
 
 You can find more information on [GitHub](https://github.com/damnever/pigar).
 """  # noqa
