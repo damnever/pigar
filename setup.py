@@ -28,23 +28,23 @@ with codecs.open('CHANGELOG.md', encoding='utf-8') as f:
     change_logs = f.read()
 
 install_requires = [
-    'click>=8.1.3',
+    'click>=8.1',
     'nbformat>=4.4.0',
-    'aiohttp>=3.8.3',
+    'aiohttp>=3.8',
     # The following distributions: ./pigar/_vendor/pip_vendor_requirements.txt
     "CacheControl==0.12.11",
-    "colorama==0.4.5",
+    "colorama>=0.4.5",
     "distlib==0.3.6",
     "distro==1.7.0",
     "packaging==21.3",
     "pep517==0.13.0",
     "platformdirs==2.5.2",
-    "requests==2.28.1",
-    "certifi==2022.12.7",
-    "urllib3==1.26.12",
-    "rich==12.5.1",
+    "requests>=2.28",
+    "certifi",  # No need to pin it, required by requests.
+    "urllib3",  # No need to pin it, required by requests.
+    "rich>=12.5",
     "resolvelib==0.8.1",
-    "setuptools>50.0.0",  # DO NOT PIN IT.
+    "setuptools>=50",  # DO NOT PIN IT.
     "tenacity==8.1.0",
     "tomli==2.0.1",
 ]
