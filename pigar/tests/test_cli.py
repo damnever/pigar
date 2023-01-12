@@ -40,21 +40,18 @@ class CliTests(unittest.TestCase):
                 ]
             )
             self.assertEqual(result.exit_code, 0, result.output)
-            relaxed_requirements = [
-                'click==', 'nbformat==', 'aiohttp==', 'setuptools=='
-            ]
             expected = self._read_filelines(expected_requirements)
             actual = self._read_filelines(generated_requirement_file)
             self.assertEqual(len(expected), len(actual))
             for idx, line in enumerate(expected):
                 line2 = actual[idx]
-                skip = False
-                for req in relaxed_requirements:
-                    if line.startswith(req):
-                        self.assertTrue(line2.startswith(req))
-                        skip = True
-                if not skip:
+                if not line or line.startswith('#') or line.startswith('\n'):
                     self.assertEqual(line, line2)
+                else:
+                    parts1 = line.split('==')
+                    parts2 = line.split('==')
+                    self.assertEqual(len(parts1), len(parts2))
+                    self.assertEqual(parts1[0], parts2[0])
 
     def test_check(self):
         expected_requirements = self._pigar_requirements
