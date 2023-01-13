@@ -49,7 +49,7 @@ class CliTests(unittest.TestCase):
                     self.assertEqual(line, line2)
                 else:
                     parts1 = line.split('==')
-                    parts2 = line.split('==')
+                    parts2 = line2.split('==')
                     self.assertEqual(len(parts1), len(parts2))
                     self.assertEqual(parts1[0], parts2[0])
 
