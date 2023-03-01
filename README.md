@@ -10,7 +10,7 @@
 - Searching ditributions(packages) by the top level import/module names.
 - Checking the latest versions of requirements.
 
-**NOTE**: [Pipenv](https://packaging.python.org/tutorials/managing-dependencies/#managing-dependencies) or other tools is recommended for improving your development flow.
+**NOTE**: [Pipenv or other tools](https://packaging.python.org/tutorials/managing-dependencies/#managing-dependencies) is recommended for improving your development flow.
 
 
 ### Installation
@@ -32,7 +32,7 @@ pip install git+https://github.com/damnever/pigar.git@[main or other branch] --u
 
 ### Usage
 
-- `pigar` can consider most kinds of complicated situations(see [FAQ](#faq)). For example, this project has different [requirements](./requirements/) for different Python versions (`pigar v1` has [py2_requirements.txt](https://github.com/damnever/pigar/blob/c68d372fba4a6f98228ec3cf8e273f59d68d0e3c/py2_requirements.txt) and [py3_requirements.txt](https://github.com/damnever/pigar/blob/c68d372fba4a6f98228ec3cf8e273f59d68d0e3c/py3_requirements.txt)).
+- `pigar` can consider most kinds of complicated situations(see [FAQ](#faq)). For example, `pigar v1` has [py2_requirements.txt](https://github.com/damnever/pigar/blob/c68d372fba4a6f98228ec3cf8e273f59d68d0e3c/py2_requirements.txt) and [py3_requirements.txt](https://github.com/damnever/pigar/blob/c68d372fba4a6f98228ec3cf8e273f59d68d0e3c/py3_requirements.txt) for different Python versions.
 
     ```
     # Generate requirements.txt for current directory.

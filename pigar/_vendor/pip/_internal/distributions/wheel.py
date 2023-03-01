@@ -1,4 +1,4 @@
-from packaging.utils import canonicalize_name
+from pigar._vendor.pip._vendor.packaging.utils import canonicalize_name
 
 from pigar._vendor.pip._internal.distributions.base import AbstractDistribution
 from pigar._vendor.pip._internal.index.package_finder import PackageFinder

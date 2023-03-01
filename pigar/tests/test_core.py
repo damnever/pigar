@@ -6,7 +6,7 @@ from ..core import RequirementsAnalyzer, check_stdlib, _LocatableRequirements, _
 from ..dist import FrozenRequirement
 from .helper import py_version
 
-from packaging.version import Version
+from .._vendor.pip._vendor.packaging.version import Version
 
 
 class RequirementsAnalyzerTests(unittest.TestCase):

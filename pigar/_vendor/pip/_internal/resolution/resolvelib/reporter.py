@@ -2,7 +2,7 @@ from collections import defaultdict
 from logging import getLogger
 from typing import Any, DefaultDict
 
-from resolvelib.reporters import BaseReporter
+from pigar._vendor.pip._vendor.resolvelib.reporters import BaseReporter
 
 from .base import Candidate, Requirement
 

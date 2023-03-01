@@ -10,7 +10,7 @@ import os
 import sys
 from typing import List
 
-import platformdirs as _appdirs
+from pigar._vendor.pip._vendor import platformdirs as _appdirs
 
 
 def user_cache_dir(appname: str) -> str:

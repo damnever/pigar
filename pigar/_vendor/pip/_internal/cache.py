@@ -8,8 +8,8 @@ import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
-from packaging.tags import Tag, interpreter_name, interpreter_version
-from packaging.utils import canonicalize_name
+from pigar._vendor.pip._vendor.packaging.tags import Tag, interpreter_name, interpreter_version
+from pigar._vendor.pip._vendor.packaging.utils import canonicalize_name
 
 from pigar._vendor.pip._internal.exceptions import InvalidWheelFilename
 from pigar._vendor.pip._internal.models.direct_url import DirectUrl

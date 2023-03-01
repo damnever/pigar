@@ -3,8 +3,8 @@ import logging
 import os
 from typing import Container, Dict, Generator, Iterable, List, NamedTuple, Optional, Set
 
-from packaging.utils import canonicalize_name
-from packaging.version import Version
+from pigar._vendor.pip._vendor.packaging.utils import canonicalize_name
+from pigar._vendor.pip._vendor.packaging.version import Version
 
 from pigar._vendor.pip._internal.exceptions import BadCommand, InstallationError
 from pigar._vendor.pip._internal.metadata import BaseDistribution, get_environment

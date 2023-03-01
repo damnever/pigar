@@ -14,9 +14,9 @@ from ._vendor.pip._internal.req.constructors import parse_req_from_line
 from ._vendor.pip._internal.network.session import PipSession
 from ._vendor.pip._internal.exceptions import InstallationError
 
-from packaging.version import Version
+from ._vendor.pip._vendor.packaging.version import Version
 try:
-    import colorama
+    from ._vendor.pip._vendor import colorama
 except ImportError:
     colorama = None
 

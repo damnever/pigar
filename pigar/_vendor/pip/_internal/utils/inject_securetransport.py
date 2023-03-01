@@ -25,7 +25,7 @@ def inject_securetransport() -> None:
         return
 
     try:
-        from urllib3.contrib import securetransport
+        from pigar._vendor.pip._vendor.urllib3.contrib import securetransport
     except (ImportError, OSError):
         return
 

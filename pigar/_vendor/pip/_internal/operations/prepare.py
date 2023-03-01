@@ -10,7 +10,7 @@ import os
 import shutil
 from typing import Dict, Iterable, List, Optional
 
-from packaging.utils import canonicalize_name
+from pigar._vendor.pip._vendor.packaging.utils import canonicalize_name
 
 from pigar._vendor.pip._internal.distributions import make_distribution_for_install_requirement
 from pigar._vendor.pip._internal.distributions.installed import InstalledDistribution

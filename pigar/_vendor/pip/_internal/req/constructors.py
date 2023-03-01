@@ -13,9 +13,9 @@ import os
 import re
 from typing import Any, Dict, Optional, Set, Tuple, Union
 
-from packaging.markers import Marker
-from packaging.requirements import InvalidRequirement, Requirement
-from packaging.specifiers import Specifier
+from pigar._vendor.pip._vendor.packaging.markers import Marker
+from pigar._vendor.pip._vendor.packaging.requirements import InvalidRequirement, Requirement
+from pigar._vendor.pip._vendor.packaging.specifiers import Specifier
 
 from pigar._vendor.pip._internal.exceptions import InstallationError
 from pigar._vendor.pip._internal.models.index import PyPI, TestPyPI

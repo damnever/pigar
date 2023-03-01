@@ -12,13 +12,13 @@ from enum import Enum
 from optparse import Values
 from typing import Any, Collection, Dict, Iterable, List, Optional, Sequence, Union
 
-from packaging.markers import Marker
-from packaging.requirements import Requirement
-from packaging.specifiers import SpecifierSet
-from packaging.utils import canonicalize_name
-from packaging.version import Version
-from packaging.version import parse as parse_version
-from pep517.wrappers import Pep517HookCaller
+from pigar._vendor.pip._vendor.packaging.markers import Marker
+from pigar._vendor.pip._vendor.packaging.requirements import Requirement
+from pigar._vendor.pip._vendor.packaging.specifiers import SpecifierSet
+from pigar._vendor.pip._vendor.packaging.utils import canonicalize_name
+from pigar._vendor.pip._vendor.packaging.version import Version
+from pigar._vendor.pip._vendor.packaging.version import parse as parse_version
+from pigar._vendor.pip._vendor.pyproject_hooks import BuildBackendHookCaller
 
 from pigar._vendor.pip._internal.build_env import BuildEnvironment, NoOpBuildEnvironment
 from pigar._vendor.pip._internal.exceptions import InstallationError, LegacyInstallFailure
@@ -51,7 +51,7 @@ from pigar._vendor.pip._internal.utils.direct_url_helpers import (
 )
 from pigar._vendor.pip._internal.utils.hashes import Hashes
 from pigar._vendor.pip._internal.utils.misc import (
-    ConfiguredPep517HookCaller,
+    ConfiguredBuildBackendHookCaller,
     ask_path_exists,
     backup_dir,
     display_path,
@@ -173,7 +173,7 @@ class InstallRequirement:
         self.requirements_to_check: List[str] = []
 
         # The PEP 517 backend we should use to build the project
-        self.pep517_backend: Optional[Pep517HookCaller] = None
+        self.pep517_backend: Optional[BuildBackendHookCaller] = None
 
         # Are we using PEP 517 for this requirement?
         # After pyproject.toml has been loaded, the only valid values are True
@@ -195,7 +195,11 @@ class InstallRequirement:
         else:
             s = "<InstallRequirement>"
         if self.satisfied_by is not None:
-            s += " in {}".format(display_path(self.satisfied_by.location))
+            if self.satisfied_by.location is not None:
+                location = display_path(self.satisfied_by.location)
+            else:
+                location = "<memory>"
+            s += f" in {location}"
         if self.comes_from:
             if isinstance(self.comes_from, str):
                 comes_from: Optional[str] = self.comes_from
@@ -482,7 +486,7 @@ class InstallRequirement:
         requires, backend, check, backend_path = pyproject_toml_data
         self.requirements_to_check = check
         self.pyproject_requires = requires
-        self.pep517_backend = ConfiguredPep517HookCaller(
+        self.pep517_backend = ConfiguredBuildBackendHookCaller(
             self,
             self.unpacked_source_directory,
             backend,

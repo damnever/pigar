@@ -22,10 +22,10 @@ from typing import (
     Union,
 )
 
-from packaging.requirements import Requirement
-from packaging.specifiers import InvalidSpecifier, SpecifierSet
-from packaging.utils import NormalizedName
-from packaging.version import LegacyVersion, Version
+from pigar._vendor.pip._vendor.packaging.requirements import Requirement
+from pigar._vendor.pip._vendor.packaging.specifiers import InvalidSpecifier, SpecifierSet
+from pigar._vendor.pip._vendor.packaging.utils import NormalizedName
+from pigar._vendor.pip._vendor.packaging.version import LegacyVersion, Version
 
 from pigar._vendor.pip._internal.exceptions import NoneMetadataError
 from pigar._vendor.pip._internal.locations import site_packages, user_site

@@ -3,10 +3,10 @@ import logging
 import os
 from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple, cast
 
-from packaging.utils import canonicalize_name
-from resolvelib import BaseReporter, ResolutionImpossible
-from resolvelib import Resolver as RLResolver
-from resolvelib.structs import DirectedGraph
+from pigar._vendor.pip._vendor.packaging.utils import canonicalize_name
+from pigar._vendor.pip._vendor.resolvelib import BaseReporter, ResolutionImpossible
+from pigar._vendor.pip._vendor.resolvelib import Resolver as RLResolver
+from pigar._vendor.pip._vendor.resolvelib.structs import DirectedGraph
 
 from pigar._vendor.pip._internal.cache import WheelCache
 from pigar._vendor.pip._internal.index.package_finder import PackageFinder
@@ -24,7 +24,7 @@ from .base import Candidate, Requirement
 from .factory import Factory
 
 if TYPE_CHECKING:
-    from resolvelib.resolvers import Result as RLResult
+    from pigar._vendor.pip._vendor.resolvelib.resolvers import Result as RLResult
 
     Result = RLResult[Requirement, Candidate, str]
 

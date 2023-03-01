@@ -8,7 +8,7 @@ import zipfile
 import zipimport
 from typing import Iterator, List, Optional, Sequence, Set, Tuple
 
-from packaging.utils import NormalizedName, canonicalize_name
+from pigar._vendor.pip._vendor.packaging.utils import NormalizedName, canonicalize_name
 
 from pigar._vendor.pip._internal.metadata.base import BaseDistribution, BaseEnvironment
 from pigar._vendor.pip._internal.models.wheel import Wheel
@@ -108,7 +108,7 @@ class _DistributionFinder:
                 yield Distribution(dist, info_location, path)
 
     def _find_eggs_in_dir(self, location: str) -> Iterator[BaseDistribution]:
-        from pkg_resources import find_distributions
+        from pigar._vendor.pip._vendor.pkg_resources import find_distributions
 
         from pigar._vendor.pip._internal.metadata import pkg_resources as legacy
 
@@ -120,7 +120,7 @@ class _DistributionFinder:
                     yield legacy.Distribution(dist)
 
     def _find_eggs_in_zip(self, location: str) -> Iterator[BaseDistribution]:
-        from pkg_resources import find_eggs_in_zip
+        from pigar._vendor.pip._vendor.pkg_resources import find_eggs_in_zip
 
         from pigar._vendor.pip._internal.metadata import pkg_resources as legacy
 

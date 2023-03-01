@@ -10,7 +10,7 @@ import traceback
 from optparse import Values
 from typing import Any, Callable, List, Optional, Tuple
 
-from rich import traceback as rich_traceback
+from pigar._vendor.pip._vendor.rich import traceback as rich_traceback
 
 from pigar._vendor.pip._internal.cli import cmdoptions
 from pigar._vendor.pip._internal.cli.command_context import CommandContextMixIn

@@ -7,7 +7,7 @@ from email.parser import Parser
 from typing import Tuple
 from zipfile import BadZipFile, ZipFile
 
-from packaging.utils import canonicalize_name
+from pigar._vendor.pip._vendor.packaging.utils import canonicalize_name
 
 from pigar._vendor.pip._internal.exceptions import UnsupportedWheel
 

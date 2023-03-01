@@ -11,15 +11,15 @@ from typing import (
     Union,
 )
 
-from resolvelib.providers import AbstractProvider
+from pigar._vendor.pip._vendor.resolvelib.providers import AbstractProvider
 
 from .base import Candidate, Constraint, Requirement
 from .candidates import REQUIRES_PYTHON_IDENTIFIER
 from .factory import Factory
 
 if TYPE_CHECKING:
-    from resolvelib.providers import Preference
-    from resolvelib.resolvers import RequirementInformation
+    from pigar._vendor.pip._vendor.resolvelib.providers import Preference
+    from pigar._vendor.pip._vendor.resolvelib.resolvers import RequirementInformation
 
     PreferenceInformation = RequirementInformation[Requirement, Candidate]
 

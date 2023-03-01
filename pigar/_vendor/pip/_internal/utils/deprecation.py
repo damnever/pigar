@@ -6,7 +6,7 @@ import logging
 import warnings
 from typing import Any, Optional, TextIO, Type, Union
 
-from packaging.version import parse
+from pigar._vendor.pip._vendor.packaging.version import parse
 
 from pigar._vendor.pip import __version__ as current_version  # NOTE: tests patch this name.
 

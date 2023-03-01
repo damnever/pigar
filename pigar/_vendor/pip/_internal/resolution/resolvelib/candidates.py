@@ -2,8 +2,8 @@ import logging
 import sys
 from typing import TYPE_CHECKING, Any, FrozenSet, Iterable, Optional, Tuple, Union, cast
 
-from packaging.utils import NormalizedName, canonicalize_name
-from packaging.version import Version
+from pigar._vendor.pip._vendor.packaging.utils import NormalizedName, canonicalize_name
+from pigar._vendor.pip._vendor.packaging.version import Version
 
 from pigar._vendor.pip._internal.exceptions import (
     HashError,

@@ -14,21 +14,13 @@ protected-files = [
 
 [tool.vendoring.transformations]
 substitute = [
-  # pkg_resource's vendored packages are directly vendored in pip.
   { match = 'import pip\._internal', replace = "import pigar._vendor.pip._internal" },
-  { match = 'import pip\._vendor\.', replace = "import " },
-  { match = 'from pip\._vendor\.', replace = "from " },
-  { match = 'from pip\._vendor import', replace = "import" },
-  { match = 'import pip\._vendor', replace = "" },
+  { match = 'import pip\._vendor\.', replace = "import pigar._vendor.pip._vendor." },
+  { match = 'from pip\._vendor\.', replace = "from pigar._vendor.pip._vendor." },
+  { match = 'from pip\._vendor import', replace = "from pigar._vendor.pip._vendor import" },
+  { match = 'import pip\._vendor', replace = "import pigar._vendor.pip._vendor" },
 ]
-drop = [
-  "pip/_vendor",
-  # contains unnecessary scripts
-  "bin/",
-  # unneeded parts of setuptools
-  "easy_install.py",
-  "setuptools",
-]
+drop = ["bin/"]
 
 [tool.vendoring.typing-stubs]
 
@@ -36,3 +28,6 @@ drop = [
 
 [tool.vendoring.license.fallback-urls]
 pip = "https://raw.githubusercontent.com/pypa/pip/main/LICENSE.txt"
+CacheControl = "https://raw.githubusercontent.com/ionrock/cachecontrol/v0.12.6/LICENSE.txt"
+distlib = "https://bitbucket.org/pypa/distlib/raw/master/LICENSE.txt"
+webencodings = "https://github.com/SimonSapin/python-webencodings/raw/master/LICENSE"

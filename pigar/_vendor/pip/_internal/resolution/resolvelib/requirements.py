@@ -1,5 +1,5 @@
-from packaging.specifiers import SpecifierSet
-from packaging.utils import NormalizedName, canonicalize_name
+from pigar._vendor.pip._vendor.packaging.specifiers import SpecifierSet
+from pigar._vendor.pip._vendor.packaging.utils import NormalizedName, canonicalize_name
 
 from pigar._vendor.pip._internal.req.req_install import InstallRequirement
 

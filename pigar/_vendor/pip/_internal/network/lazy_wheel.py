@@ -8,8 +8,8 @@ from tempfile import NamedTemporaryFile
 from typing import Any, Dict, Generator, List, Optional, Tuple
 from zipfile import BadZipfile, ZipFile
 
-from packaging.utils import canonicalize_name
-from requests.models import CONTENT_CHUNK_SIZE, Response
+from pigar._vendor.pip._vendor.packaging.utils import canonicalize_name
+from pigar._vendor.pip._vendor.requests.models import CONTENT_CHUNK_SIZE, Response
 
 from pigar._vendor.pip._internal.metadata import BaseDistribution, MemoryWheel, get_wheel_distribution
 from pigar._vendor.pip._internal.network.session import PipSession

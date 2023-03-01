@@ -1,6 +1,6 @@
 from typing import Dict, Generator
 
-from requests.models import CONTENT_CHUNK_SIZE, Response
+from pigar._vendor.pip._vendor.requests.models import CONTENT_CHUNK_SIZE, Response
 
 from pigar._vendor.pip._internal.exceptions import NetworkConnectionError
 

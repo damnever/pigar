@@ -6,7 +6,7 @@ import mimetypes
 import os
 from typing import Iterable, Optional, Tuple
 
-from requests.models import CONTENT_CHUNK_SIZE, Response
+from pigar._vendor.pip._vendor.requests.models import CONTENT_CHUNK_SIZE, Response
 
 from pigar._vendor.pip._internal.cli.progress_bars import get_download_progress_renderer
 from pigar._vendor.pip._internal.exceptions import NetworkConnectionError

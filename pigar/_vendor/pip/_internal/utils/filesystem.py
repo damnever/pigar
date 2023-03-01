@@ -7,7 +7,7 @@ from contextlib import contextmanager
 from tempfile import NamedTemporaryFile
 from typing import Any, BinaryIO, Generator, List, Union, cast
 
-from tenacity import retry, stop_after_delay, wait_fixed
+from pigar._vendor.pip._vendor.tenacity import retry, stop_after_delay, wait_fixed
 
 from pigar._vendor.pip._internal.utils.compat import get_path_uid
 from pigar._vendor.pip._internal.utils.misc import format_size
