@@ -75,13 +75,20 @@ def _click_prompt_choose_multiple_or_all(choices):
     help='Show given level log messages.',
     type=click.Choice(['ERROR', 'WARNING', 'INFO', 'DEBUG']),
 )
-def cli(log_level):
+@click.option(
+    '--logs-from-other-packages',
+    'logs_from_other_packages',
+    default=False,
+    help='Show log messages from other packages.',
+    is_flag=True,
+)
+def cli(log_level, logs_from_other_packages):
     '''A tool to generate requirements.txt for your Python project,
     and more than that.
 
     NOTE that pigar is not a package/dependency management tool.
     '''
-    enable_pretty_logging(log_level)
+    enable_pretty_logging(log_level, logs_from_other_packages)
 
 
 @click.command(name='gohome')

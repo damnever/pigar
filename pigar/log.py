@@ -1,15 +1,17 @@
 import logging
-import logging.handlers
 
 from .helpers import Color
 
-logger = logging.getLogger('pigar')
+_LOGGER_NAME = 'pigar'
+logger = logging.getLogger(_LOGGER_NAME)
 
 
-def enable_pretty_logging(log_level='info', logger=logger):
+def enable_pretty_logging(log_level='info', with_others=False, logger=logger):
     logger.setLevel(getattr(logging, log_level.upper()))
     sh = logging.StreamHandler()
     sh.setFormatter(_LogFormatter())
+    if not with_others:
+        sh.addFilter(_LogFilter("pigar"))
     logger.addHandler(sh)
 
 
@@ -38,7 +40,7 @@ class _LogFormatter(logging.Formatter):
         self._datecolor = datecolor
         self._levelcolors = levelcolors
 
-    def format(self, record):
+    def format(self, record: logging.LogRecord):
         record.asctime = self._datecolor(self.formatTime(record, self.datefmt))
 
         color = self._levelcolors.get(record.levelno, lambda x: x)
@@ -52,3 +54,9 @@ class _LogFormatter(logging.Formatter):
 
         formatted = self._fmt % record.__dict__
         return formatted.replace('\n', '\n    ')
+
+
+class _LogFilter(logging.Filter):
+
+    def filter(self, record: logging.LogRecord):
+        return record.name == _LOGGER_NAME
