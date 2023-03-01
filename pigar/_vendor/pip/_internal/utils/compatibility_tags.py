@@ -4,7 +4,7 @@
 import re
 from typing import List, Optional, Tuple
 
-from packaging.tags import (
+from pigar._vendor.pip._vendor.packaging.tags import (
     PythonVersion,
     Tag,
     compatible_tags,

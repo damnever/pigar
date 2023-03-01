@@ -3,7 +3,7 @@ import logging
 from optparse import Values
 from typing import TYPE_CHECKING, Generator, List, Optional, Sequence, Tuple, cast
 
-from packaging.utils import canonicalize_name
+from pigar._vendor.pip._vendor.packaging.utils import canonicalize_name
 
 from pigar._vendor.pip._internal.cli import cmdoptions
 from pigar._vendor.pip._internal.cli.req_command import IndexGroupCommand

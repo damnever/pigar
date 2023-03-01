@@ -2,7 +2,7 @@ import logging
 from optparse import Values
 from typing import Generator, Iterable, Iterator, List, NamedTuple, Optional
 
-from packaging.utils import canonicalize_name
+from pigar._vendor.pip._vendor.packaging.utils import canonicalize_name
 
 from pigar._vendor.pip._internal.cli.base_command import Command
 from pigar._vendor.pip._internal.cli.status_codes import ERROR, SUCCESS
@@ -53,6 +53,7 @@ class _PackageInfo(NamedTuple):
     name: str
     version: str
     location: str
+    editable_project_location: Optional[str]
     requires: List[str]
     required_by: List[str]
     installer: str
@@ -120,6 +121,7 @@ def search_packages_info(query: List[str]) -> Generator[_PackageInfo, None, None
             name=dist.raw_name,
             version=str(dist.version),
             location=dist.location or "",
+            editable_project_location=dist.editable_project_location,
             requires=requires,
             required_by=required_by,
             installer=dist.installer,
@@ -158,6 +160,10 @@ def print_results(
         write_output("Author-email: %s", dist.author_email)
         write_output("License: %s", dist.license)
         write_output("Location: %s", dist.location)
+        if dist.editable_project_location is not None:
+            write_output(
+                "Editable project location: %s", dist.editable_project_location
+            )
         write_output("Requires: %s", ", ".join(dist.requires))
         write_output("Required-by: %s", ", ".join(dist.required_by))
 

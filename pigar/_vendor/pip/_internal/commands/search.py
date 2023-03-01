@@ -7,7 +7,7 @@ from collections import OrderedDict
 from optparse import Values
 from typing import TYPE_CHECKING, Dict, List, Optional
 
-from packaging.version import parse as parse_version
+from pigar._vendor.pip._vendor.packaging.version import parse as parse_version
 
 from pigar._vendor.pip._internal.cli.base_command import Command
 from pigar._vendor.pip._internal.cli.req_command import SessionCommandMixin

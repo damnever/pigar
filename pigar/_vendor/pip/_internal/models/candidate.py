@@ -1,4 +1,4 @@
-from packaging.version import parse as parse_version
+from pigar._vendor.pip._vendor.packaging.version import parse as parse_version
 
 from pigar._vendor.pip._internal.models.link import Link
 from pigar._vendor.pip._internal.utils.models import KeyBasedCompareMixin

@@ -14,9 +14,9 @@ from typing import (
     cast,
 )
 
-from packaging.requirements import Requirement
-from packaging.utils import NormalizedName, canonicalize_name
-from packaging.version import parse as parse_version
+from pigar._vendor.pip._vendor.packaging.requirements import Requirement
+from pigar._vendor.pip._vendor.packaging.utils import NormalizedName, canonicalize_name
+from pigar._vendor.pip._vendor.packaging.version import parse as parse_version
 
 from pigar._vendor.pip._internal.exceptions import InvalidWheel, UnsupportedWheel
 from pigar._vendor.pip._internal.metadata.base import (

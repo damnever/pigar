@@ -7,8 +7,8 @@ import re
 import shutil
 from typing import Callable, Iterable, List, Optional, Tuple
 
-from packaging.utils import canonicalize_name, canonicalize_version
-from packaging.version import InvalidVersion, Version
+from pigar._vendor.pip._vendor.packaging.utils import canonicalize_name, canonicalize_version
+from pigar._vendor.pip._vendor.packaging.version import InvalidVersion, Version
 
 from pigar._vendor.pip._internal.cache import WheelCache
 from pigar._vendor.pip._internal.exceptions import InvalidWheelFilename, UnsupportedWheel

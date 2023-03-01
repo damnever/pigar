@@ -1,6 +1,6 @@
 from typing import FrozenSet, Optional, Set
 
-from packaging.utils import canonicalize_name
+from pigar._vendor.pip._vendor.packaging.utils import canonicalize_name
 
 from pigar._vendor.pip._internal.exceptions import CommandError
 

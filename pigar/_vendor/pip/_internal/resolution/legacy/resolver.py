@@ -19,8 +19,8 @@ from collections import defaultdict
 from itertools import chain
 from typing import DefaultDict, Iterable, List, Optional, Set, Tuple
 
-from packaging import specifiers
-from packaging.requirements import Requirement
+from pigar._vendor.pip._vendor.packaging import specifiers
+from pigar._vendor.pip._vendor.packaging.requirements import Requirement
 
 from pigar._vendor.pip._internal.cache import WheelCache
 from pigar._vendor.pip._internal.exceptions import (

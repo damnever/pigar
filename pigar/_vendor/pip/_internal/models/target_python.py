@@ -1,7 +1,7 @@
 import sys
 from typing import List, Optional, Tuple
 
-from packaging.tags import Tag
+from pigar._vendor.pip._vendor.packaging.tags import Tag
 
 from pigar._vendor.pip._internal.utils.compatibility_tags import get_supported, version_info_to_nodot
 from pigar._vendor.pip._internal.utils.misc import normalize_version_info

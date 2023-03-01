@@ -18,10 +18,10 @@ from typing import (
     cast,
 )
 
-from packaging.requirements import InvalidRequirement
-from packaging.specifiers import SpecifierSet
-from packaging.utils import NormalizedName, canonicalize_name
-from resolvelib import ResolutionImpossible
+from pigar._vendor.pip._vendor.packaging.requirements import InvalidRequirement
+from pigar._vendor.pip._vendor.packaging.specifiers import SpecifierSet
+from pigar._vendor.pip._vendor.packaging.utils import NormalizedName, canonicalize_name
+from pigar._vendor.pip._vendor.resolvelib import ResolutionImpossible
 
 from pigar._vendor.pip._internal.cache import CacheEntry, WheelCache
 from pigar._vendor.pip._internal.exceptions import (

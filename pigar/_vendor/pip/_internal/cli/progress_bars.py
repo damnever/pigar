@@ -1,7 +1,7 @@
 import functools
 from typing import Callable, Generator, Iterable, Iterator, Optional, Tuple
 
-from rich.progress import (
+from pigar._vendor.pip._vendor.rich.progress import (
     BarColumn,
     DownloadColumn,
     FileSizeColumn,

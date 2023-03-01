@@ -35,8 +35,9 @@ class CliTests(unittest.TestCase):
                 cli, [
                     'gen', '--with-referenced-comments',
                     '--dont-show-differences', '--exclude-glob',
-                    '**/tests/data', '-f', generated_requirement_file,
-                    project_path
+                    '**/tests/data/*', '--exclude-glob',
+                    '**/_vendor/pip/_vendor/*', '-f',
+                    generated_requirement_file, project_path
                 ]
             )
             self.assertEqual(result.exit_code, 0, result.output)

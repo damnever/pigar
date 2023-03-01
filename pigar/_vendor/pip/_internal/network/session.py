@@ -28,14 +28,14 @@ from typing import (
     Union,
 )
 
-import requests, urllib3
-from cachecontrol import CacheControlAdapter as _BaseCacheControlAdapter
-from requests.adapters import DEFAULT_POOLBLOCK, BaseAdapter
-from requests.adapters import HTTPAdapter as _BaseHTTPAdapter
-from requests.models import PreparedRequest, Response
-from requests.structures import CaseInsensitiveDict
-from urllib3.connectionpool import ConnectionPool
-from urllib3.exceptions import InsecureRequestWarning
+from pigar._vendor.pip._vendor import requests, urllib3
+from pigar._vendor.pip._vendor.cachecontrol import CacheControlAdapter as _BaseCacheControlAdapter
+from pigar._vendor.pip._vendor.requests.adapters import DEFAULT_POOLBLOCK, BaseAdapter
+from pigar._vendor.pip._vendor.requests.adapters import HTTPAdapter as _BaseHTTPAdapter
+from pigar._vendor.pip._vendor.requests.models import PreparedRequest, Response
+from pigar._vendor.pip._vendor.requests.structures import CaseInsensitiveDict
+from pigar._vendor.pip._vendor.urllib3.connectionpool import ConnectionPool
+from pigar._vendor.pip._vendor.urllib3.exceptions import InsecureRequestWarning
 
 from pigar._vendor.pip import __version__
 from pigar._vendor.pip._internal.metadata import get_default_environment
@@ -52,7 +52,7 @@ from pigar._vendor.pip._internal.utils.urls import url_to_path
 if TYPE_CHECKING:
     from ssl import SSLContext
 
-    from urllib3.poolmanager import PoolManager
+    from pigar._vendor.pip._vendor.urllib3.poolmanager import PoolManager
 
 
 logger = logging.getLogger(__name__)
@@ -135,7 +135,7 @@ def user_agent() -> str:
         data["implementation"]["version"] = platform.python_version()
 
     if sys.platform.startswith("linux"):
-        import distro
+        from pigar._vendor.pip._vendor import distro
 
         linux_distribution = distro.name(), distro.version(), distro.codename()
         distro_infos: Dict[str, Any] = dict(

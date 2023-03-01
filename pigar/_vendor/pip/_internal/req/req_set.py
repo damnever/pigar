@@ -2,7 +2,7 @@ import logging
 from collections import OrderedDict
 from typing import Dict, List
 
-from packaging.utils import canonicalize_name
+from pigar._vendor.pip._vendor.packaging.utils import canonicalize_name
 
 from pigar._vendor.pip._internal.req.req_install import InstallRequirement
 

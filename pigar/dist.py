@@ -19,12 +19,12 @@ from .db import database
 from .version import version
 from ._vendor.pip._internal.vcs.versioncontrol import RemoteNotFoundError, RemoteNotValidError, vcs
 from ._vendor.pip._internal.exceptions import BadCommand, InstallationError
+from ._vendor.pip._vendor.distlib.database import DistributionPath, Distribution, EggInfoDistribution
+from ._vendor.pip._vendor.packaging.version import Version, InvalidVersion
+from ._vendor.pip._vendor.distlib.locators import SimpleScrapingLocator
+from ._vendor.pip._vendor.distlib.wheel import Wheel
+from ._vendor.pip._vendor.packaging.utils import canonicalize_name
 
-from distlib.database import DistributionPath, Distribution, EggInfoDistribution
-from packaging.version import Version, InvalidVersion
-from distlib.locators import SimpleScrapingLocator
-from distlib.wheel import Wheel
-from packaging.utils import canonicalize_name
 import aiohttp
 
 DEFAULT_PYPI_INDEX_URL = 'https://pypi.org/simple/'

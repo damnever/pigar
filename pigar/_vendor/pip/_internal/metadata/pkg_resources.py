@@ -5,10 +5,10 @@ import os
 import zipfile
 from typing import Collection, Iterable, Iterator, List, Mapping, NamedTuple, Optional
 
-import pkg_resources
-from packaging.requirements import Requirement
-from packaging.utils import NormalizedName, canonicalize_name
-from packaging.version import parse as parse_version
+from pigar._vendor.pip._vendor import pkg_resources
+from pigar._vendor.pip._vendor.packaging.requirements import Requirement
+from pigar._vendor.pip._vendor.packaging.utils import NormalizedName, canonicalize_name
+from pigar._vendor.pip._vendor.packaging.version import parse as parse_version
 
 from pigar._vendor.pip._internal.exceptions import InvalidWheel, NoneMetadataError, UnsupportedWheel
 from pigar._vendor.pip._internal.utils.egg_link import egg_link_path_from_location

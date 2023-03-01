@@ -36,9 +36,9 @@ from typing import (
 )
 from zipfile import ZipFile, ZipInfo
 
-from distlib.scripts import ScriptMaker
-from distlib.util import get_export_entry
-from packaging.utils import canonicalize_name
+from pigar._vendor.pip._vendor.distlib.scripts import ScriptMaker
+from pigar._vendor.pip._vendor.distlib.util import get_export_entry
+from pigar._vendor.pip._vendor.packaging.utils import canonicalize_name
 
 from pigar._vendor.pip._internal.exceptions import InstallationError
 from pigar._vendor.pip._internal.locations import get_major_minor_version

@@ -2,7 +2,7 @@ import logging
 from optparse import Values
 from typing import Any, Iterable, List, Optional, Union
 
-from packaging.version import LegacyVersion, Version
+from pigar._vendor.pip._vendor.packaging.version import LegacyVersion, Version
 
 from pigar._vendor.pip._internal.cli import cmdoptions
 from pigar._vendor.pip._internal.cli.req_command import IndexGroupCommand
@@ -24,6 +24,7 @@ class IndexCommand(IndexGroupCommand):
     Inspect information available from package indexes.
     """
 
+    ignore_require_venv = True
     usage = """
         %prog versions <package>
     """

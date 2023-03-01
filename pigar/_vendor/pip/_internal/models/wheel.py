@@ -4,7 +4,7 @@ name that have meaning.
 import re
 from typing import Dict, Iterable, List
 
-from packaging.tags import Tag
+from pigar._vendor.pip._vendor.packaging.tags import Tag
 
 from pigar._vendor.pip._internal.exceptions import InvalidWheelFilename
 

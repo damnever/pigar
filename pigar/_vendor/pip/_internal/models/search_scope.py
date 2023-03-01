@@ -5,7 +5,7 @@ import posixpath
 import urllib.parse
 from typing import List
 
-from packaging.utils import canonicalize_name
+from pigar._vendor.pip._vendor.packaging.utils import canonicalize_name
 
 from pigar._vendor.pip._internal.models.index import PyPI
 from pigar._vendor.pip._internal.utils.compat import has_tls

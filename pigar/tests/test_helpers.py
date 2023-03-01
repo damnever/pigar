@@ -8,8 +8,8 @@ from ..helpers import (
     compare_version, cmp_to_key
 )
 
-from packaging.requirements import Requirement
-from packaging.markers import Marker
+from .._vendor.pip._vendor.packaging.requirements import Requirement
+from .._vendor.pip._vendor.packaging.markers import Marker
 
 
 class DictTests(unittest.TestCase):

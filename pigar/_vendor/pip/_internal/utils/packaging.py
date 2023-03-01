@@ -3,8 +3,8 @@ import logging
 import re
 from typing import NewType, Optional, Tuple, cast
 
-from packaging import specifiers, version
-from packaging.requirements import Requirement
+from pigar._vendor.pip._vendor.packaging import specifiers, version
+from pigar._vendor.pip._vendor.packaging.requirements import Requirement
 
 NormalizedExtra = NewType("NormalizedExtra", str)
 

@@ -10,7 +10,7 @@ from io import TextIOWrapper
 from logging import Filter
 from typing import Any, ClassVar, Generator, List, Optional, TextIO, Type
 
-from rich.console import (
+from pigar._vendor.pip._vendor.rich.console import (
     Console,
     ConsoleOptions,
     ConsoleRenderable,
@@ -18,10 +18,10 @@ from rich.console import (
     RenderResult,
     RichCast,
 )
-from rich.highlighter import NullHighlighter
-from rich.logging import RichHandler
-from rich.segment import Segment
-from rich.style import Style
+from pigar._vendor.pip._vendor.rich.highlighter import NullHighlighter
+from pigar._vendor.pip._vendor.rich.logging import RichHandler
+from pigar._vendor.pip._vendor.rich.segment import Segment
+from pigar._vendor.pip._vendor.rich.style import Style
 
 from pigar._vendor.pip._internal.utils._log import VERBOSE, getLogger
 from pigar._vendor.pip._internal.utils.compat import WINDOWS

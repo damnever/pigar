@@ -5,9 +5,9 @@ import os
 from contextlib import contextmanager
 from typing import Generator, Optional
 
-from cachecontrol.cache import BaseCache
-from cachecontrol.caches import FileCache
-from requests.models import Response
+from pigar._vendor.pip._vendor.cachecontrol.cache import BaseCache
+from pigar._vendor.pip._vendor.cachecontrol.caches import FileCache
+from pigar._vendor.pip._vendor.requests.models import Response
 
 from pigar._vendor.pip._internal.utils.filesystem import adjacent_tmp_file, replace
 from pigar._vendor.pip._internal.utils.misc import ensure_dir

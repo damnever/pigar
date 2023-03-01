@@ -1,8 +1,8 @@
 from typing import FrozenSet, Iterable, Optional, Tuple, Union
 
-from packaging.specifiers import SpecifierSet
-from packaging.utils import NormalizedName, canonicalize_name
-from packaging.version import LegacyVersion, Version
+from pigar._vendor.pip._vendor.packaging.specifiers import SpecifierSet
+from pigar._vendor.pip._vendor.packaging.utils import NormalizedName, canonicalize_name
+from pigar._vendor.pip._vendor.packaging.version import LegacyVersion, Version
 
 from pigar._vendor.pip._internal.models.link import Link, links_equivalent
 from pigar._vendor.pip._internal.req.req_install import InstallRequirement
