@@ -119,9 +119,16 @@ class FrozenRequirement(object):
                     installed_files = f.readlines()
         else:
             # read from RECORD file
-            installed_files = [
-                finfo[0] for finfo in dist.list_installed_files()
-            ]
+            try:
+                installed_files = [
+                    finfo[0] for finfo in dist.list_installed_files()
+                ]
+            except Exception as e:
+                logger.error(
+                    'distribution "%s" seems does not have a RECORD file: %r',
+                    dist.name, e
+                )
+                installed_files = []
             modules = set(dist.modules)
             modules = _maybe_include_project_name_as_import_name(
                 modules, dist.name
