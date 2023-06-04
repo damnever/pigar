@@ -2,6 +2,7 @@ import os
 import os.path
 import sys
 import io
+import json
 import codecs
 import glob
 import asyncio
@@ -18,6 +19,7 @@ from .core import (
     sync_distributions_index_from_pypi,
 )
 from .dist import DEFAULT_PYPI_INDEX_URL
+from ._vendor.pip._vendor.packaging.specifiers import Specifier
 
 import click
 
@@ -364,7 +366,16 @@ def generate(
     is_flag=True,
     help='Include pre-release and development versions.',
 )
-def check(requirement_file, index_url, include_prereleases):
+@click.option(
+    '--format',
+    'format',
+    show_default=True,
+    default='table',
+    type=click.Choice(['table', 'requirements', 'json']),
+    help=
+    'Specify the output structure format. NOTE that `requirements` format can not handle complex cases, such as `abc>=1.2.0,<1.3.0`.',
+)
+def check(requirement_file, index_url, include_prereleases, format):
     '''Check latest versions for packages/distributions from requirements.txt.'''
     files = []
     cwd = os.getcwd()
@@ -382,14 +393,36 @@ def check(requirement_file, index_url, include_prereleases):
         )
         return
 
-    res = asyncio.run(
+    reqs = asyncio.run(
         check_requirements_latest_versions(
             files,
             pypi_index_url=index_url,
             include_prereleases=include_prereleases
         )
     )
-    print_table(res, headers=['DISTRIBUTION', 'SPEC', 'LOCAL', 'LATEST'])
+    if format == 'requirements':
+        for req in reqs:
+            operator = '=='
+            if req.specifier:
+                try:
+                    operator = Specifier(req.specifier).operator
+                except Exception as e:
+                    raise ValueError(
+                        f'{req.specifier} is invalid or too complex'
+                    ) from e
+            print(
+                f'{req.name}{operator}{req.latest_version or req.local_version}'
+            )
+    elif format == 'json':
+        print(json.dumps([r.asdict() for r in reqs]))
+    else:
+        print_table(
+            [
+                (r.name, r.specifier, r.local_version, r.latest_version)
+                for r in reqs
+            ],
+            headers=['DISTRIBUTION', 'SPEC', 'LOCAL', 'LATEST']
+        )
 
 
 @click.command(name='search')

@@ -7,7 +7,7 @@ import re
 import difflib
 import urllib.parse
 import contextlib
-from typing import Optional, List
+from typing import Optional, List, Generator
 
 from ._vendor.pip._internal.req.req_file import get_file_content
 from ._vendor.pip._internal.req.constructors import parse_req_from_line
@@ -99,7 +99,40 @@ PIP_INSTALL_OPTIONS_RE = re.compile(
 SCHEME_RE = re.compile(r"^(http|https|file):", re.I)
 
 
-def parse_requirements(fpath):
+class ParsedRequirementParts(object):
+
+    def __init__(
+        self,
+        requirement,
+        url,
+        markers,
+        extras,
+    ):
+        self.requirement = requirement
+        self.url = url
+        self.markers = markers
+        self.extras = extras
+
+    @property
+    def has_name(self):
+        return self.requirement is not None
+
+    @property
+    def name(self):
+        if self.requirement is not None:
+            return self.requirement.name
+        return self.url
+
+    @property
+    def specifier(self):
+        if self.requirement is not None:
+            spec = str(self.requirement.specifier)
+            if spec != '':
+                return spec
+        return self.url
+
+
+def parse_requirements(fpath) -> Generator[ParsedRequirementParts, None, None]:
     """Parse requirements file."""
     referenced_files = set()
 
@@ -154,39 +187,6 @@ def parse_requirements(fpath):
     for rfile in referenced_files:
         for req in parse_requirements(rfile):
             yield req
-
-
-class ParsedRequirementParts(object):
-
-    def __init__(
-        self,
-        requirement,
-        url,
-        markers,
-        extras,
-    ):
-        self.requirement = requirement
-        self.url = url
-        self.markers = markers
-        self.extras = extras
-
-    @property
-    def has_name(self):
-        return self.requirement is not None
-
-    @property
-    def name(self):
-        if self.requirement is not None:
-            return self.requirement.name
-        return self.url
-
-    @property
-    def specifier(self):
-        if self.requirement is not None:
-            spec = str(self.requirement.specifier)
-            if spec != '':
-                return spec
-        return self.url
 
 
 def cmp_to_key(cmp_func):
