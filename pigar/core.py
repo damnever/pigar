@@ -9,7 +9,7 @@ import functools
 import importlib
 import importlib.util
 import importlib.machinery
-from typing import NamedTuple
+from typing import NamedTuple, List, Dict, Any
 import asyncio
 
 from .db import database
@@ -301,11 +301,21 @@ class RequirementsAnalyzer(object):
         return dists_filter(import_name, locations, distributions, best_match)
 
 
+class LocalRequirementWithLatestVersion(NamedTuple):
+    name: str
+    specifier: str
+    local_version: str
+    latest_version: str
+
+    def asdict(self) -> Dict[str, Any]:
+        return self._asdict()
+
+
 async def check_requirements_latest_versions(
     requirement_files,
     pypi_index_url=DEFAULT_PYPI_INDEX_URL,
     include_prereleases=False,
-):
+) -> List[LocalRequirementWithLatestVersion]:
     installed_dists = installed_distributions()
 
     async def _collect(pypi_dists, req):
@@ -323,9 +333,8 @@ async def check_requirements_latest_versions(
                 logger.error(
                     'search latest version for %s failed: %r', req.name, e
                 )
-        return (
-            req.name, req.specifier, local_version or '', latest_version
-            or '<unknown>'
+        return LocalRequirementWithLatestVersion(
+            req.name, req.specifier, local_version or '', latest_version or ''
         )
 
     async with PyPIDistributions(index_url=pypi_index_url) as pypi_dists:
@@ -338,7 +347,7 @@ async def check_requirements_latest_versions(
             except PraseRequirementError as e:
                 logger.error('parse %s failed: %r', file, e)
         res = await asyncio.gather(*tasks, return_exceptions=True)
-    return sorted(res, key=lambda item: item[0].lower())
+    return sorted(res, key=lambda item: item.name.lower())
 
 
 async def search_distributions_by_top_level_import_names(
