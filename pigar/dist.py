@@ -599,11 +599,20 @@ class PyPIDistributionsIndexSynchronizer(object):
                 return
             with tempfile.TemporaryDirectory() as tmp_download_dir:
                 # FIXME(damnever): create temporary directory on demand.
-                top_levels = await self._parse_top_levels(
-                    project_name,
-                    project_download_url,
-                    tmp_download_dir,
-                )
+                try:
+                    top_levels = await self._parse_top_levels(
+                        project_name,
+                        project_download_url,
+                        tmp_download_dir,
+                    )
+                except Exception:
+                    logger.error(
+                        'distribution "%s" top levels parsing got unexpected error',
+                        project_name,
+                        exc_info=True,
+                    )
+                    top_levels = None
+
             if top_levels is None:
                 return
 
@@ -639,6 +648,7 @@ class PyPIDistributionsIndexSynchronizer(object):
         dist_file = await self._pypi_distributions._download_raw(
             project_download_url, tmp_download_dir=tmp_download_dir
         )
+
         filename = urlparse(project_download_url).path
 
         event_loop = asyncio.get_event_loop()
