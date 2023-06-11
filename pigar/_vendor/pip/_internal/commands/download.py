@@ -8,10 +8,7 @@ from pigar._vendor.pip._internal.cli.cmdoptions import make_target_python
 from pigar._vendor.pip._internal.cli.req_command import RequirementCommand, with_cleanup
 from pigar._vendor.pip._internal.cli.status_codes import SUCCESS
 from pigar._vendor.pip._internal.operations.build.build_tracker import get_build_tracker
-from pigar._vendor.pip._internal.req.req_install import (
-    LegacySetupPyOptionsCheckMode,
-    check_legacy_setup_py_options,
-)
+from pigar._vendor.pip._internal.req.req_install import check_legacy_setup_py_options
 from pigar._vendor.pip._internal.utils.misc import ensure_dir, normalize_path, write_output
 from pigar._vendor.pip._internal.utils.temp_dir import TempDirectory
 
@@ -79,7 +76,6 @@ class DownloadCommand(RequirementCommand):
 
     @with_cleanup
     def run(self, options: Values, args: List[str]) -> int:
-
         options.ignore_installed = True
         # editable doesn't really make sense for `pip download`, but the bowels
         # of the RequirementSet code require that property.
@@ -109,9 +105,7 @@ class DownloadCommand(RequirementCommand):
         )
 
         reqs = self.get_requirements(args, options, finder, session)
-        check_legacy_setup_py_options(
-            options, reqs, LegacySetupPyOptionsCheckMode.DOWNLOAD
-        )
+        check_legacy_setup_py_options(options, reqs)
 
         preparer = self.make_requirement_preparer(
             temp_build_dir=directory,
