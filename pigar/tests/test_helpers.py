@@ -4,40 +4,12 @@ import random
 
 from .helper import CaptureOutput
 from ..helpers import (
-    Dict, print_table, ParsedRequirementParts, parse_requirements,
-    compare_version, cmp_to_key
+    print_table, ParsedRequirementParts, parse_requirements, compare_version,
+    cmp_to_key
 )
 
 from .._vendor.pip._vendor.packaging.requirements import Requirement
 from .._vendor.pip._vendor.packaging.markers import Marker
-
-
-class DictTests(unittest.TestCase):
-
-    def test_init_with_kwargs(self):
-        d = Dict(foo='foo', bar='bar')
-        self.assertIn('foo', d)
-        self.assertIn('bar', d)
-
-    def test_init_with_zip_list(self):
-        d = Dict(zip(('foo', 'bar'), ('bar', 'foo')))
-        self.assertIn('foo', d)
-        self.assertIn('bar', d)
-
-    def test_init_with_dict(self):
-        d = Dict({'foo': 'foo', 'bar': 'bar'})
-        self.assertIn('foo', d)
-        self.assertIn('bar', d)
-
-    def test_getattr(self):
-        d = Dict(foo='bar', bar='foo')
-        self.assertEqual(d.foo, 'bar')
-        self.assertEqual(d.bar, 'foo')
-
-    def test_attr_error(self):
-        d = Dict({'foo': 'bar'})
-        with self.assertRaises(AttributeError):
-            d.bar
 
 
 class PrintTableTests(unittest.TestCase):

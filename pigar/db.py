@@ -1,8 +1,8 @@
 import os
 import sqlite3
 import contextlib
-
-from .helpers import Dict
+import dataclasses
+from typing import Optional, Iterator, List, Dict, Set
 
 _DB_INIT_SCRIPT = '''BEGIN;
 
@@ -24,6 +24,17 @@ COMMIT;
 '''
 
 
+@dataclasses.dataclass
+class Distribution:
+    name: str
+    version: str
+
+
+@dataclasses.dataclass
+class DistributionWithModules(Distribution):
+    modules: List[str]
+
+
 class Database(object):
     _DB_PATH = os.path.join(os.path.dirname(__file__), '.db.sqlite3')
     _TABLE_DISTRIBUTIONS = 'distributions'
@@ -32,7 +43,7 @@ class Database(object):
     def __init__(self, path=_DB_PATH):
         exist = os.path.isfile(path)
         self._db = path
-        self._conn = None
+        self._conn: Optional[sqlite3.Connection] = None
         self._reconnect()
         if not exist:
             self._init()
@@ -43,6 +54,7 @@ class Database(object):
             top_level_module_names=self._TABLE_TOP_LEVEL_MODULE_NAMES,
         )
 
+        assert (self._conn is not None)
         cursor = self._conn.cursor()
         try:
             cursor.executescript(script)
@@ -63,11 +75,12 @@ class Database(object):
 
     def store_distribution_with_top_level_modules(
         self,
-        distribution,
-        version,
-        modules_to_add,
-        modules_to_delete=None,
+        distribution: str,
+        version: str,
+        modules_to_add: Set[str],
+        modules_to_delete: Optional[Set[str]] = None,
     ):
+        assert (self._conn is not None)
         cursor = self._conn.cursor()
         # conn = self._conn
         distributions_table = self._TABLE_DISTRIBUTIONS
@@ -89,7 +102,7 @@ class Database(object):
                         sql_insert_top_level_modules,
                         (distribution_id, module_name)
                     )
-                if modules_to_delete:
+                if modules_to_delete is not None:
                     for module_name in modules_to_delete:
                         cursor.execute(
                             sql_delete_top_level_modules,
@@ -108,14 +121,19 @@ class Database(object):
         finally:
             cursor.close()
 
-    def query_distributions_by_top_level_module(self, module_name):
+    def query_distributions_by_top_level_module(
+        self, module_name: str
+    ) -> Optional[List[Distribution]]:
         distributions_table = self._TABLE_DISTRIBUTIONS
         top_level_modules_table = self._TABLE_TOP_LEVEL_MODULE_NAMES
         sql = f'''SELECT name, version FROM {distributions_table} WHERE id IN
         (SELECT distribution_id FROM {top_level_modules_table} WHERE name=?)'''
-        return self._query(sql, module_name)
+        rows = self._query(sql, module_name)
+        return [Distribution(**r) for r in rows] if rows else None
 
-    def query_distribution_with_top_level_modules(self, dist_name):
+    def query_distribution_with_top_level_modules(
+        self, dist_name: str
+    ) -> Optional[DistributionWithModules]:
         distributions_table = self._TABLE_DISTRIBUTIONS
         top_level_modules_table = self._TABLE_TOP_LEVEL_MODULE_NAMES
 
@@ -126,27 +144,39 @@ class Database(object):
             return None
 
         sql_query_modules = f'SELECT name FROM {top_level_modules_table} WHERE distribution_id=?'
-        modules = self._query(sql_query_modules, dist.id) or []
-        dist['modules'] = [m.name for m in modules]
-        return dist
+        modules = self._query(sql_query_modules, dist['id']) or []
+        dist['modules'] = [m['name'] for m in modules]
+        dist.pop('id')
+        return DistributionWithModules(**dist)
 
-    def query_distribution_by_name(self, dist_name):
+    def query_distribution_by_name(self,
+                                   dist_name: str) -> Optional[Distribution]:
         distributions_table = self._TABLE_DISTRIBUTIONS
         sql = f'SELECT name, version FROM {distributions_table} WHERE name=?'
         rows = self._query(sql, dist_name)
-        return rows[0] if rows else None
+        return Distribution(**rows[0]) if rows else None
 
-    def query_distributions(self):
+    def query_distribution_by_name_nocase(
+        self, dist_name: str
+    ) -> Optional[Distribution]:
+        distributions_table = self._TABLE_DISTRIBUTIONS
+        sql = f'SELECT name, version FROM {distributions_table} WHERE name=? COLLATE NOCASE'
+        rows = self._query(sql, dist_name)
+        return Distribution(**rows[0]) if rows else None
+
+    def query_distributions(self) -> Optional[List[Distribution]]:
         distributions_table = self._TABLE_DISTRIBUTIONS
         sql = f'SELECT name, version FROM {distributions_table}'
-        return self._query(sql)
+        rows = self._query(sql)
+        return [Distribution(**r) for r in rows] if rows else None
 
-    def _query(self, sql, *parameters):
+    def _query(self, sql: str, *parameters) -> Optional[List[Dict]]:
+        assert (self._conn is not None)
         cursor = self._conn.cursor()
         try:
             res = cursor.execute(sql, parameters)
             rows = res.fetchall()
-            return [Dict(r) for r in rows] if rows else None
+            return [dict(r) for r in rows] if rows else None
         except sqlite3.OperationalError:
             self._reconnect()
             raise
@@ -155,7 +185,7 @@ class Database(object):
 
 
 @contextlib.contextmanager
-def database():
+def database() -> Iterator[Database]:
     """A Database shortcut can auto close."""
     db = Database()
     yield db

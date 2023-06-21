@@ -1,6 +1,7 @@
 from .dist import DEFAULT_PYPI_INDEX_URL
 
 import os
+import io
 import os.path
 import sys
 import collections
@@ -9,7 +10,7 @@ import functools
 import importlib
 import importlib.util
 import importlib.machinery
-from typing import NamedTuple, List, Dict, Any
+from typing import NamedTuple, List, Dict, Any, Optional
 import asyncio
 
 from .db import database
@@ -22,10 +23,111 @@ from .parser import parse_imports, Module
 from .dist import (
     installed_distributions_by_top_level_import_names, installed_distributions,
     FrozenRequirement, _all_hardcode_import_names, DEFAULT_PYPI_INDEX_URL,
-    PyPIDistributions, PyPIDistributionsIndexSynchronizer
+    PyPIDistributions, PyPIDistributionsIndexSynchronizer, canonicalize_name
 )
 
 _special_import_names = _all_hardcode_import_names()
+
+
+class _Locations(dict):
+    """_Locations store code locations(file, linenos)."""
+
+    def __init__(self):
+        super(_Locations, self).__init__()
+        self._sorted = None
+
+    @classmethod
+    def build_from(cls, file, lineno):
+        self = cls()
+        self.add(file, lineno)
+        return self
+
+    def add(self, file, lineno):
+        if file in self and lineno not in self[file]:
+            self[file].append(lineno)
+        else:
+            self[file] = [lineno]
+
+    def extend(self, obj):
+        for file, linenos in obj.items():
+            for lineno in linenos:
+                self.add(file, lineno)
+
+    def sorted_items(self):
+        if self._sorted is None:
+            self._sorted = [
+                '{0}: {1}'.format(f, ','.join([str(n) for n in sorted(ls)]))
+                for f, ls in sorted(self.items())
+            ]
+        return self._sorted
+
+
+class _LocatableRequirements(dict):
+
+    class _Requirement(NamedTuple):
+        req: FrozenRequirement
+        locations: _Locations
+        from_annotation: bool
+
+        def format_as_text(
+            self,
+            package_root_parent: str,
+            with_locations: bool = False,
+            operator: str = '=='
+        ):
+            comments = ''
+            if with_locations and len(self.locations) > 0:
+                if self.from_annotation:
+                    comments += '# FROM `requirement-annotations`\n'
+                comments += '\n'.join(
+                    '# {0}'.format(trim_prefix(c, package_root_parent))
+                    for c in self.locations.sorted_items()
+                )
+                comments += '\n'
+
+            return comments + self.req.as_requirement(operator=operator) + '\n'
+
+    def __init__(self):
+        super(_LocatableRequirements, self).__init__()
+        self._sorted = None
+
+    def add_locs(
+        self,
+        req: FrozenRequirement,
+        locs: _Locations,
+        from_annotation: bool = False,
+    ):
+        if req.name in self:
+            self[req.name].locations.extend(locs)
+        else:
+            self[req.name] = self._Requirement(req, locs, from_annotation)
+
+    def add(
+        self,
+        req: FrozenRequirement,
+        file: str,
+        lineno: int,
+        from_annotation: bool = False,
+    ):
+        if req.name in self:
+            self[req.name].locations.add(file, lineno)
+        else:
+            loc = _Locations()
+            loc.add(file, lineno)
+            self[req.name] = self._Requirement(req, loc, from_annotation)
+
+    def sorted_items(self):
+        if self._sorted is None:
+            self._sorted = sorted(
+                self.items(), key=lambda item: item[0].lower()
+            )
+        return self._sorted
+
+    def remove(self, *names):
+        for name in names:
+            if name in self:
+                self.pop(name)
+        self._sorted = None
 
 
 class RequirementsAnalyzer(object):
@@ -42,37 +144,44 @@ class RequirementsAnalyzer(object):
             _LocatableRequirements
         )  # Multiple requirements for same import name.
         self._unknown_imports = collections.defaultdict(_Locations)
+        self._unknown_imports_from_annotations = dict()
+        self._unknown_dists_from_annotaions = collections.defaultdict(
+            _Locations
+        )
 
     def analyze_requirements(
         self,
         visit_doc_str=False,
         ignores=None,
         dists_filter=None,
-        follow_symbolic_links=True
+        follow_symbolic_links=True,
+        enable_requirement_annotations=False,
     ):
-        imported_modules = parse_imports(
+        imported_modules, annotations = parse_imports(
             self._project_root,
             visit_doc_str=visit_doc_str,
             exclude_patterns=ignores,
             followlinks=follow_symbolic_links,
+            parse_requirement_annotations=enable_requirement_annotations,
         )
 
         importables = dict()
         tryimports = set()
         importlib.invalidate_caches()
-        for module in imported_modules:
+
+        def _resolve(module: Module, from_annotation: bool):
             name = module.name
             if is_user_module(module, self._project_root):
                 logger.debug(
                     "ignore import name from user module: %s", module.name
                 )
-                continue
+                return
             is_stdlib, code_path = check_stdlib(name)
             if not is_stdlib:
                 is_stdlib, code_path = check_stdlib(name.split('.')[0])
             if is_stdlib:
                 logger.debug("ignore import name from stdlib: %s", module.name)
-                continue
+                return
 
             names = []
             special_name = '.'.join(name.split('.')[:2])
@@ -96,13 +205,42 @@ class RequirementsAnalyzer(object):
                     reqs = self._maybe_filter_distributions_with_same_import_name(
                         name, locs, reqs, dists_filter
                     )
-                    self._record_requirements(name, locs, reqs)
+                    self._record_requirements(
+                        name, locs, reqs, from_annotation
+                    )
                 else:
                     if code_path is not None:
                         importables[name] = code_path
                     if module.try_:
                         tryimports.add(name)
                     self._unknown_imports[name].add(module.file, module.lineno)
+                    self._unknown_imports_from_annotations[name
+                                                           ] = from_annotation
+
+        for module in imported_modules:
+            _resolve(module, False)
+        for annotation in annotations:
+            if annotation.top_level_import_name is not None:
+                module = Module(
+                    name=annotation.top_level_import_name,
+                    file=annotation.file,
+                    lineno=annotation.lineno,
+                    try_=False
+                )
+                _resolve(module, True)
+            elif annotation.distribution_name is not None:
+                req = self._installed_dists.get(
+                    canonicalize_name(annotation.distribution_name), None
+                )
+                if req is not None:
+                    locs = _Locations.build_from(
+                        annotation.file, annotation.lineno
+                    )
+                    self._record_requirements(None, locs, [req], True)
+                else:
+                    self._unknown_dists_from_annotaions[
+                        annotation.distribution_name
+                    ].add(annotation.file, annotation.lineno)
 
         resolved = set()
         for name, locs in self._unknown_imports.items():
@@ -122,7 +260,7 @@ class RequirementsAnalyzer(object):
                     if req.contains_file(code_path):
                         # XXX: there is an issue if multiple distributions has the same path..
                         # reqs = self._maybe_filter_distributions_with_same_import_name( name, locs, reqs, dists_filter)
-                        self._record_requirements(name, locs, [req])
+                        self._record_requirements(name, locs, [req], False)
                         logger.debug(
                             "the import name is importable(no top levels contains it): %s",
                             name
@@ -133,12 +271,18 @@ class RequirementsAnalyzer(object):
         for name in resolved:
             del self._unknown_imports[name]
 
-    def _record_requirements(self, import_name, locs, reqs):
+    def _record_requirements(
+        self,
+        import_name: Optional[str],
+        locs: _Locations,
+        reqs: List[FrozenRequirement],
+        from_annotation: bool,
+    ):
         requirements = self._requirements
-        if len(reqs) > 1:
+        if import_name is not None and len(reqs) > 1:
             requirements = self._uncertain_requirements[import_name]
         for req in reqs:
-            requirements.add_locs(req, locs)
+            requirements.add_locs(req, locs, from_annotation=from_annotation)
 
     def search_unknown_imports_from_index(
         self,
@@ -148,25 +292,33 @@ class RequirementsAnalyzer(object):
     ):
         found = set()
 
-        async def _get_latest_version(pypi_dists, dist):
+        async def _get_latest_version(
+            pypi_dists: PyPIDistributions, dist_name: str
+        ):
             try:
                 latest = await pypi_dists.get_latest_distribution_version(
-                    dist.name,
+                    dist_name,
                     include_prereleases=include_prereleases,
                 )
-                return FrozenRequirement(dist.name, latest or '0.0.0')
+                return FrozenRequirement(dist_name, latest or '0.0.0')
             except Exception as e:
-                logger.error('checking %s failed: %r', dist.name, e)
+                logger.error('checking %s failed: %r', dist_name, e)
 
-        async def _collect(pypi_dists, name, locs, distributions):
+        async def _collect(
+            pypi_dists: PyPIDistributions,
+            module_name: Optional[str],
+            locs: _Locations,
+            dist_names: List[str],
+            from_annotation: bool,
+        ):
             reqs = await asyncio.gather(
                 *[
-                    _get_latest_version(pypi_dists, dist)
-                    for dist in distributions
+                    _get_latest_version(pypi_dists, dist_name)
+                    for dist_name in dist_names
                 ],
                 return_exceptions=True
             )
-            self._record_requirements(name, locs, reqs)
+            self._record_requirements(module_name, locs, reqs, from_annotation)
 
         async def _main():
             async with PyPIDistributions(
@@ -174,6 +326,8 @@ class RequirementsAnalyzer(object):
             ) as pypi_dists:
                 tasks = []
                 for name, locs in self._unknown_imports.items():
+                    from_annotation = self._unknown_imports_from_annotations[
+                        name]
                     logger.info(
                         'search distributions for import name %s ...', name
                     )
@@ -188,7 +342,22 @@ class RequirementsAnalyzer(object):
                     )
                     found.add(name)
                     tasks.append(
-                        _collect(pypi_dists, name, locs, distributions)
+                        _collect(
+                            pypi_dists,
+                            name,
+                            locs,
+                            [dist.name for dist in distributions],
+                            from_annotation=from_annotation,
+                        )
+                    )
+                for name, locs in self._unknown_dists_from_annotaions.items():
+                    tasks.append(
+                        _collect(
+                            pypi_dists,
+                            None,
+                            locs, [name],
+                            from_annotation=True
+                        )
                     )
                 await asyncio.gather(*tasks, return_exceptions=True)
 
@@ -199,7 +368,7 @@ class RequirementsAnalyzer(object):
 
     def write_requirements(
         self,
-        stream,
+        stream: io.IOBase,
         with_ref_comments=False,
         comparison_specifier='==',
         with_banner=True,
@@ -543,89 +712,3 @@ def check_stdlib(name: str, _sys_lib_paths=determine_python_sys_lib_paths()):
             return True, None
 
     return False, module_path
-
-
-class _Locations(dict):
-    """_Locations store code locations(file, linenos)."""
-
-    def __init__(self):
-        super(_Locations, self).__init__()
-        self._sorted = None
-
-    @classmethod
-    def build_from(cls, file, lineno):
-        self = cls()
-        self.add(file, lineno)
-        return self
-
-    def add(self, file, lineno):
-        if file in self and lineno not in self[file]:
-            self[file].append(lineno)
-        else:
-            self[file] = [lineno]
-
-    def extend(self, obj):
-        for file, linenos in obj.items():
-            for lineno in linenos:
-                self.add(file, lineno)
-
-    def sorted_items(self):
-        if self._sorted is None:
-            self._sorted = [
-                '{0}: {1}'.format(f, ','.join([str(n) for n in sorted(ls)]))
-                for f, ls in sorted(self.items())
-            ]
-        return self._sorted
-
-
-class _LocatableRequirements(dict):
-
-    class _Requirement(NamedTuple):
-        req: FrozenRequirement
-        locations: _Locations
-
-        def format_as_text(
-            self,
-            package_root_parent: str,
-            with_locations: bool = False,
-            operator: str = '=='
-        ):
-            comments = ''
-            if with_locations and len(self.locations) > 0:
-                comments = '\n'.join(
-                    '# {0}'.format(trim_prefix(c, package_root_parent))
-                    for c in self.locations.sorted_items()
-                )
-                comments += '\n'
-            return comments + self.req.as_requirement(operator=operator) + '\n'
-
-    def __init__(self):
-        super(_LocatableRequirements, self).__init__()
-        self._sorted = None
-
-    def add_locs(self, req: FrozenRequirement, locs: _Locations):
-        if req.name in self:
-            self[req.name].locations.extend(locs)
-        else:
-            self[req.name] = self._Requirement(req, locs)
-
-    def add(self, req: FrozenRequirement, file: str, lineno: int):
-        if req.name in self:
-            self[req.name].locations.add(file, lineno)
-        else:
-            loc = _Locations()
-            loc.add(file, lineno)
-            self[req.name] = self._Requirement(req, loc)
-
-    def sorted_items(self):
-        if self._sorted is None:
-            self._sorted = sorted(
-                self.items(), key=lambda item: item[0].lower()
-            )
-        return self._sorted
-
-    def remove(self, *names):
-        for name in names:
-            if name in self:
-                self.pop(name)
-        self._sorted = None

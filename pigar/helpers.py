@@ -7,7 +7,8 @@ import re
 import difflib
 import urllib.parse
 import contextlib
-from typing import Optional, List, Generator
+import dataclasses
+from typing import Optional, List, Generator, Callable
 
 from ._vendor.pip._internal.req.req_file import get_file_content
 from ._vendor.pip._internal.req.constructors import parse_req_from_line
@@ -20,23 +21,6 @@ try:
 except ImportError:
     colorama = None
 
-
-class Dict(dict):
-    """Convert dict key object to attribute."""
-
-    def __init__(self, *args, **kwargs):
-        super(Dict, self).__init__(*args, **kwargs)
-
-    def __getattr__(self, name):
-        try:
-            return self[name]
-        except KeyError:
-            raise AttributeError('"{0}"'.format(name))
-
-    def __setattr__(self, name, value):
-        self[name] = value
-
-
 # Color functions, win8 ...
 _NONE = lambda text: text  # noqa
 if colorama and not sys.platform.startswith('win'):
@@ -48,7 +32,18 @@ if colorama and not sys.platform.startswith('win'):
 else:
     _GREEN = _YELLOW = _RED = _BLUE = _WHITE = _NONE
 
-Color = Dict(
+_ColorFunc = Callable[[str], str]
+Color = dataclasses.make_dataclass(
+    'Color',
+    [
+        ('GREEN', _ColorFunc),
+        ('YELLOW', _ColorFunc),
+        ('RED', _ColorFunc),
+        ('BLUE', _ColorFunc),
+        ('WHITE', _ColorFunc),
+        ('NONE', _ColorFunc),
+    ],
+)(
     GREEN=_GREEN,
     YELLOW=_YELLOW,
     RED=_RED,

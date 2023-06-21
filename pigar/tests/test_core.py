@@ -25,6 +25,10 @@ class RequirementsAnalyzerTests(unittest.TestCase):
             ],
             'notebook': [FrozenRequirement('Notebook', '0.9.0')],
             'mainfoobar': [FrozenRequirement('min-foo-bar', '0.10.0rc0')],
+            'annotations': [FrozenRequirement('annotations', '0.0.1')],
+            'annotationsa': [FrozenRequirement('annotations-a', '0.0.1')],
+            'annotationsb': [FrozenRequirement('annotations-b', '0.0.1')],
+            'annotationsc': [FrozenRequirement('annotations-c', '0.0.1')],
         }
         self._path = os.path.abspath(
             os.path.join(os.path.dirname(__file__), 'data/imports_example/')
@@ -46,6 +50,10 @@ class RequirementsAnalyzerTests(unittest.TestCase):
             'Name': ['example1.py: 44'],
             'Notebook': ['notebook.ipynb: 3'],
             'min-foo-bar': ['mainfoobar.py: 2'],
+            'annotations-a': ['annotations.py: 1'],
+            'annotations-b': ['annotations.py: 2'],
+            'annotations-c': ['annotations.py: 2'],
+            'annotations': ['annotations.py: 3'],
         }.items():
             self._certain_requirements[k] = _abs_path(v)
 
@@ -74,7 +82,9 @@ class RequirementsAnalyzerTests(unittest.TestCase):
         }
         analyzer._installed_dists = dist_mapping
         analyzer._installed_dists_by_imports = self._installed_dists_by_imports
-        analyzer.analyze_requirements(visit_doc_str=True)
+        analyzer.analyze_requirements(
+            visit_doc_str=True, enable_requirement_annotations=True
+        )
 
         self.assertListEqual(
             sorted(list(analyzer._requirements.keys())),

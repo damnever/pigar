@@ -53,6 +53,8 @@ pip install git+https://github.com/damnever/pigar.git@[main or other branch] --u
 
     **NOTE**, `pigar` will search the packages/distributions in local environment first, then it will do further analysis and search missing packages/distributions on PyPI.
 
+    See also: [EXPERIMENTAL FEATURES](https://github.com/damnever/pigar#experimental-features).
+
 - If you do not know the import name that belongs to a specific distribution (more generally, does `Import Error: xxx` drive you crazy?), such as `bs4` which may come from `beautifulsoup4` or `MySQLdb` which could come from `mysql-python`, try searching for it:
 
     ```
@@ -76,6 +78,19 @@ pip install git+https://github.com/damnever/pigar.git@[main or other branch] --u
    ```
    pigar --help
    ```
+
+
+### EXPERIMENTAL FEATURES
+
+- `requirement-annotations`
+
+    Some packages may require optional packages/distributions to be installed depending on your usage. To make `pigar` a little bit more useful, use `pigar generate --enable-feature requirement-annotations` in conjunction with comments following the format below:
+    ```python
+    import foo # pigar: required-imports=import_name_bar,import_name_baz
+    import foo # pigar: required-packages=package-name-bar,package-name-baz # Extra comments are allowed.
+    foo(features=['bar', 'baz']) # pigar: required-distributions=package-name-bar,package-name-baz
+    ```
+    If you find the comment intrusive, you can extract those comments into a separate Python file and delete it as needed, for example, 'pigar_annotations.py'.
 
 
 ### FAQ
@@ -108,7 +123,7 @@ Related issues: [#32](https://github.com/damnever/pigar/issues/32), [#68](https:
   Why can't `pigar` find the packages/distributions that have not been explicit import?
   </summary>
 
-Some frameworks may use some magic to import the modules for users automatically, and `pigar` can not handle it, you may need to fix it manually.
+Some frameworks may use some magic to import the modules for users automatically, and `pigar` can not handle it, you may need to fix it manually or use the [EXPERIMENTAL FEATURES](https://github.com/damnever/pigar#experimental-features).
 
 Related issues: [#33](https://github.com/damnever/pigar/issues/33), [#103](https://github.com/damnever/pigar/issues/103)
 </details>

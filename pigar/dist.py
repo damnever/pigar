@@ -23,7 +23,7 @@ from ._vendor.pip._vendor.distlib.database import DistributionPath, Distribution
 from ._vendor.pip._vendor.packaging.version import Version, InvalidVersion
 from ._vendor.pip._vendor.distlib.locators import SimpleScrapingLocator
 from ._vendor.pip._vendor.distlib.wheel import Wheel
-from ._vendor.pip._vendor.packaging.utils import canonicalize_name
+from ._vendor.pip._vendor.packaging.utils import canonicalize_name, NormalizedName
 
 import aiohttp
 
@@ -212,13 +212,13 @@ def installed_distributions_by_top_level_import_names(
     return mapping
 
 
-def installed_distributions() -> Mapping[str, FrozenRequirement]:
+def installed_distributions() -> Mapping[NormalizedName, FrozenRequirement]:
     mapping = dict()
     dist_path = DistributionPath(include_egg=True)
     for distribution in dist_path.get_distributions():
         req = FrozenRequirement.from_dist(distribution)
         logger.debug('found local distribution: %r', req)
-        mapping[req.name] = req
+        mapping[req.canonical_name] = req
     return mapping
 
 
