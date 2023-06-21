@@ -1,6 +1,7 @@
 import unittest
 import os
 import tempfile
+import dataclasses
 
 from ..db import Database
 
@@ -16,12 +17,15 @@ class DBTests(unittest.TestCase):
         os.remove(self._db_path)
 
     def test_db(self):
+        # pyright: reportOptionalMemberAccess=false, reportOptionalIterable=false, reportGeneralTypeIssues=false
 
         def _assert_moduels(modules, deleted=set()):
             for module in modules:
                 rows = self._db.query_distributions_by_top_level_module(module)
+                self.assertIsNotNone(rows)
                 self.assertListEqual([r.name for r in rows], ['pigar'])
             dist = self._db.query_distribution_with_top_level_modules('pigar')
+            self.assertIsNotNone(dist)
             self.assertListEqual(sorted(modules), sorted(dist.modules))
 
             for module in deleted:
@@ -32,7 +36,13 @@ class DBTests(unittest.TestCase):
             'pigar', '1.0.0', []
         )
         row = self._db.query_distribution_by_name('pigar')
-        self.assertDictEqual(dict(row), {'name': 'pigar', 'version': '1.0.0'})
+        self.assertIsNotNone(row)
+        self.assertDictEqual(
+            dataclasses.asdict(row), {
+                'name': 'pigar',
+                'version': '1.0.0'
+            }
+        )
         modules1 = ['pigar', 'pigar1', 'pigar2']
         self._db.store_distribution_with_top_level_modules(
             'pigar', '1.9.0', modules1
@@ -50,8 +60,9 @@ class DBTests(unittest.TestCase):
         _assert_moduels(modules2, modules_to_delete)
 
         rows = self._db.query_distributions()
+        self.assertIsNotNone(rows)
         self.assertListEqual(
-            [dict(r) for r in rows], [{
+            [dataclasses.asdict(r) for r in rows], [{
                 'name': 'pigar',
                 'version': '2.0.0'
             }]

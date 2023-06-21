@@ -198,6 +198,15 @@ def gohome():
     help=
     'When multiple package/distributions are found for the same module, select the best matched one or all of them automatically, otherwise manual interaction is required.'
 )
+@click.option(
+    '--enable-feature',
+    'experimental_features',
+    default=[],
+    type=click.Choice(['requirement-annotations']),
+    multiple=True,
+    help=
+    'Whether to enable experimental features. The "requirement-annotations" feature allows you to declare implicit package/distribution or top-level import names by adding a comment like this: `# pigar: required-packages=pkg-foo,pkg-bar` or `# pigar: required-imports=foo,bar`.'
+)
 @click.argument(
     'project_path',
     default=os.curdir,
@@ -207,7 +216,7 @@ def generate(
     requirement_file, with_referenced_comments, comparison_specifier,
     show_differences, visit_doc_string, exclude_glob, follow_symbolic_links,
     dry_run, index_url, include_prereleases, question_answer, auto_select,
-    project_path
+    experimental_features, project_path
 ):
     '''Generate requirements.txt for the given Python project.'''
     requirement_file = os.path.abspath(requirement_file)
@@ -243,7 +252,10 @@ def generate(
         visit_doc_str=visit_doc_string,
         ignores=exclude_glob,
         dists_filter=_dists_filter,
-        follow_symbolic_links=follow_symbolic_links
+        follow_symbolic_links=follow_symbolic_links,
+        enable_requirement_annotations=(
+            'requirement-annotations' in experimental_features
+        ),
     )
     if analyzer.has_unknown_imports():
         msgbuf = io.StringIO()

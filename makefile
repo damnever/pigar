@@ -9,3 +9,7 @@ clean-pyc:
 
 run-tests:
 	python -m unittest discover pigar/tests/ -t . -v
+
+
+generate-requirements:
+	pigar gen --exclude-glob '**/tests/data/*' --exclude-glob '**/_vendor/pip/_vendor/*' --with-referenced-comments -f ./requirements/py$(shell python -c "import sys; v=sys.version_info; print(f'{v.major}.{v.minor}')").txt pigar
