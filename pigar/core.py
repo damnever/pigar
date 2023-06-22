@@ -10,7 +10,7 @@ import functools
 import importlib
 import importlib.util
 import importlib.machinery
-from typing import NamedTuple, List, Dict, Any, Optional
+from typing import NamedTuple, List, Dict, Any, Optional, Tuple
 import asyncio
 
 from .db import database
@@ -520,10 +520,10 @@ async def check_requirements_latest_versions(
 
 
 async def search_distributions_by_top_level_import_names(
-    names,
+    names: List[str],
     pypi_index_url=DEFAULT_PYPI_INDEX_URL,
     include_prereleases=False,
-):
+) -> Tuple[Dict[str, List[Tuple[str, str, str]]], List[str]]:
     results = collections.defaultdict(list)
     not_found = list()
 
