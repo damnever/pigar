@@ -455,8 +455,16 @@ def check(requirement_file, index_url, include_prereleases, format):
     is_flag=True,
     help='Include pre-release and development versions.',
 )
+@click.option(
+    '--format',
+    'format',
+    show_default=True,
+    default='table',
+    type=click.Choice(['table', 'json']),
+    help='Specify the output structure format.',
+)
 @click.argument('names', nargs=-1, type=str)
-def search(names, index_url, include_prereleases):
+def search(names, index_url, include_prereleases, format):
     '''Search packages/distributions by the top level import/module names'''
     results, not_found = asyncio.run(
         search_distributions_by_top_level_import_names(
@@ -465,19 +473,37 @@ def search(names, index_url, include_prereleases):
             include_prereleases=include_prereleases,
         )
     )
-    for name in results:
-        print(
-            'Found package distribution(s) for import name "{0}":'.format(
-                Color.GREEN(name)
+    if format == 'json':
+        found = [
+            {
+                'top_level_import_name': name,
+                'distributions': [
+                    {
+                        'distribution': dist[0],
+                        'version': dist[1],
+                        'where': dist[2]
+                    } for dist in dists
+                ]
+            } for name, dists in results.items()
+        ]
+        if not_found:
+            print(json.dumps({'results': found, 'not_found': not_found}))
+        else:
+            print(json.dumps({'results': found}))
+    else:
+        for name in results:
+            print(
+                'Found package distribution(s) for import name "{0}":'.format(
+                    Color.GREEN(name)
+                )
             )
-        )
-        print_table(
-            sorted(results[name], key=lambda item: item[0].lower()),
-            headers=['DISTRIBUTION', 'VERSION', 'WHERE']
-        )
-    if not_found:
-        msg = '"{0}" not found.'.format(Color.RED(', '.join(not_found)))
-        print(Color.YELLOW(msg))
+            print_table(
+                sorted(results[name], key=lambda item: item[0].lower()),
+                headers=['DISTRIBUTION', 'VERSION', 'WHERE']
+            )
+        if not_found:
+            msg = '"{0}" not found.'.format(Color.RED(', '.join(not_found)))
+            print(Color.YELLOW(msg))
 
 
 @click.group(name='indexdb')
