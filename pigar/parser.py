@@ -95,7 +95,8 @@ def parse_imports(
     return imported_modules, annotations
 
 
-def parse_file_comment_annotations(fpath: str, code: str) -> List[Annotation]:
+def parse_file_comment_annotations(fpath: str,
+                                   code: bytes) -> List[Annotation]:
     """Parse annotations in comments, the valid format is as follows:
         import foo # pigar: required-packages=pkg-bar
         import foo # pigar: required-distributions=pkg-bar # package name
@@ -103,7 +104,7 @@ def parse_file_comment_annotations(fpath: str, code: str) -> List[Annotation]:
     """
     annotations: List[Annotation] = []
     try:
-        for token in tokenize.generate_tokens(io.StringIO(code).readline):
+        for token in tokenize.tokenize(io.BytesIO(code).readline):
             if token.type != tokenize.COMMENT:
                 continue
             lineno, offset = token.start
@@ -154,7 +155,7 @@ _ipynb_magics_and_commands_regex = re.compile(
 )
 
 
-def _read_code(fpath: str) -> Optional[str]:
+def _read_code(fpath: str) -> Optional[bytes]:
     if fpath.endswith(".ipynb"):
         nb = nbformat.read(fpath, as_version=4)
         code = ""
@@ -166,17 +167,17 @@ def _read_code(fpath: str) -> Optional[str]:
                 if not (match and match.group(0) == line):
                     code += line
                 code += "\n"
-        return code
+        return code.encode(encoding="utf-8")
     elif fpath.endswith(".py"):
-        with open(fpath, 'r') as f:
+        with open(fpath, 'rb') as f:
             return f.read()
     return None
 
 
-def parse_file_imports(fpath: str,
-                       content: str,
-                       visit_doc_str: bool = False) -> List[Module]:
-    py_codes: Deque[Tuple[str, int]] = collections.deque([(content, 1)])
+def parse_file_imports(
+    fpath: str, content: bytes, visit_doc_str: bool = False
+) -> List[Module]:
+    py_codes: Deque[Tuple[bytes, int]] = collections.deque([(content, 1)])
     parser = ImportsParser(
         lambda code, lineno: py_codes.append((code, lineno)),  # noqa
         doc_str_enabled=visit_doc_str,
@@ -196,14 +197,14 @@ class ImportsParser(object):
 
     def __init__(
         self,
-        rawcode_callback: Optional[Callable[[str, int], None]] = None,
+        rawcode_callback: Optional[Callable[[bytes, int], None]] = None,
         doc_str_enabled: bool = False,
     ):
         self._modules: List[Module] = []
         self._rawcode_callback = rawcode_callback
         self._doc_str_enabled = doc_str_enabled
 
-    def parse(self, content: str, fpath: str, lineno: int):
+    def parse(self, content: bytes, fpath: str, lineno: int):
         parsed = ast.parse(content)
         self._fpath = fpath
         self._mods = fpath[:-3].split("/")
@@ -215,7 +216,7 @@ class ImportsParser(object):
             Module(name=name, try_=try_, file=self._fpath, lineno=lineno)
         )
 
-    def _add_rawcode(self, code: str, lineno: int):
+    def _add_rawcode(self, code: bytes, lineno: int):
         if self._rawcode_callback:
             self._rawcode_callback(code, lineno)
 
@@ -360,7 +361,7 @@ class ImportsParser(object):
     def _parse_docstring(
         node: Union[ast.AsyncFunctionDef, ast.FunctionDef, ast.ClassDef,
                     ast.Module]
-    ) -> Optional[str]:
+    ) -> Optional[bytes]:
         """Extract code from docstring."""
         docstring = ast.get_docstring(node)
         if docstring:
@@ -372,7 +373,8 @@ class ImportsParser(object):
                 pass
             else:
                 examples = dt.examples
-                return '\n'.join([example.source for example in examples])
+                return '\n'.join([example.source for example in examples]
+                                 ).encode(encoding="utf-8")
         return None
 
     @property
