@@ -1,5 +1,10 @@
 ### Change Logs
 
+#### Version 2.1.1 (2023.06.30)
+
+See what’s changed in detail [between v2.1.0 and v2.1.1](https://github.com/damnever/pigar/compare/v2.1.0...v2.1.1).
+
+
 #### Version 2.1.0 (2023.06.22)
 
 This release includes an [experimental feature called 'requirement-annotations'](https://github.com/damnever/pigar#experimental-features) that allows you to declare implicit packages/distributions by using comments.
