@@ -323,7 +323,7 @@ def generate(
                 with_banner=True,
                 with_unknown_imports=False
             )
-        os.rename(tmp_requirement_file, requirement_file)
+        os.replace(tmp_requirement_file, requirement_file)
     finally:
         try:
             os.remove(tmp_requirement_file)
