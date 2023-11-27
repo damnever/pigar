@@ -120,8 +120,8 @@ def gohome():
     'comparison_specifier',
     default='==',
     show_default=True,
-    type=click.Choice(['==', '~=', '>=', '>']),
-    help='Part of version specifier, e.g. `abc==1.0`(see PEP 440 for details).',
+    type=click.Choice(['==', '~=', '>=', '>', '-']),
+    help='Part of version specifier, e.g. `abc==1.0`(see PEP 440 for details). Can be `-` to completely remove version.',
 )
 @click.option(
     '--show-differences/--dont-show-differences',

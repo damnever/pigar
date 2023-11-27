@@ -183,11 +183,12 @@ class FrozenRequirement(object):
     def as_requirement(
         self, operator: str = '==', spaces_around_operator: str = ''
     ) -> str:
-        req = ""
         if self.editable and self.url:
             req = f"-e {self.url}"
         else:
-            req = f"{self.name}{spaces_around_operator}{operator}{spaces_around_operator}{self.version}"
+            req = self.name
+            if operator != '-':
+                req += f"{spaces_around_operator}{operator}{spaces_around_operator}{self.version}"
         return "\n".join(list(self.comments) + [str(req)])
 
     def __str__(self) -> str:
