@@ -188,7 +188,8 @@ class FrozenRequirement(object):
         else:
             req = self.name
             if operator != '-':
-                req += f"{spaces_around_operator}{operator}{spaces_around_operator}{self.version}"
+                req += f"{spaces_around_operator}{operator}"\
+                       f"{spaces_around_operator}{self.version}"
         return "\n".join(list(self.comments) + [str(req)])
 
     def __str__(self) -> str:
