@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=69.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pigar"
+authors = [{ name = "damnever", email = "the.xcdong@gmail.com" }]
+description = "A tool to generate requirements.txt for Python project."
+readme = "README.md"
+keywords = ["requirements.txt", "automation", "tool", "module-search"]
+license = { text = "BSD 3-Clause License" }
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "Topic :: Utilities",
+  "License :: OSI Approved :: BSD License",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+]
+requires-python = ">=3.8"
+dependencies = ["click>=8.1", "nbformat>=5.7", "aiohttp>=3.9"]
+dynamic = ["version"]
+
+[project.scripts]
+pigar = "pigar.__main__:main"
+
+[project.gui-scripts]
+pigar = "pigar.__main__:main"
+
+[project.urls]
+Documentation = "https://github.com/damnever/pigar"
+Source = "https://github.com/damnever/pigar"
+
+[tool.setuptools]
+package-dir = { "pigar" = "pigar" }
+include-package-data = true
+license-files = ["LICENSE", "pigar/_vendor/pip/LICENSE.txt"]
+
+[tool.setuptools.packages.find]
+where = ["pigar"]
+exclude = ["*.tests", "*.tests.*", "tests.*", "tests"]
+
+[tool.setuptools.dynamic]
+version = { attr = "pigar.version.__version__" }
