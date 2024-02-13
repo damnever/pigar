@@ -36,7 +36,7 @@ class CliTests(unittest.TestCase):
                     'gen', '--with-referenced-comments',
                     '--dont-show-differences', '--exclude-glob',
                     '**/tests/data/*', '--exclude-glob',
-                    '**/_vendor/pip/_vendor/*', '-f',
+                    '**/_vendor/pip/*', '-f',
                     generated_requirement_file, project_path
                 ]
             )
