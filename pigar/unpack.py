@@ -110,11 +110,19 @@ def parse_top_levels(file: InMemoryOrDiskFile) -> List[str]:
     with file as stream:
         with Archive(file.name, stream) as archive:
             top_level_file = None
+            top_level_dirs = []
             for name in archive.names:
-                if os.path.basename(name.lower()) == 'top_level.txt':
+                basename = os.path.basename(name.lower())
+                if basename == 'top_level.txt':
                     top_level_file = name
                     break
+                if basename == '__init__.py':
+                    dir = os.path.dirname(name.lower())
+                    if '' == os.path.dirname(dir):  # Root.
+                        top_level_dirs.append(dir)
             if top_level_file is None:
+                if top_level_dirs:
+                    return top_level_dirs
                 return []
 
             top_level_txt = archive.read(top_level_file).decode('utf-8')
