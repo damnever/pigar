@@ -37,12 +37,10 @@ Documentation = "https://github.com/damnever/pigar"
 Source = "https://github.com/damnever/pigar"
 
 [tool.setuptools]
-package-dir = { "pigar" = "pigar" }
 include-package-data = true
 license-files = ["LICENSE", "pigar/_vendor/pip/LICENSE.txt"]
 
 [tool.setuptools.packages.find]
-where = ["pigar"]
 exclude = ["*.tests", "*.tests.*", "tests.*", "tests"]
 
 [tool.setuptools.dynamic]
