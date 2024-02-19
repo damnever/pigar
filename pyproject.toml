@@ -29,9 +29,6 @@ dynamic = ["version"]
 [project.scripts]
 pigar = "pigar.__main__:main"
 
-[project.gui-scripts]
-pigar = "pigar.__main__:main"
-
 [project.urls]
 Documentation = "https://github.com/damnever/pigar"
 Source = "https://github.com/damnever/pigar"
