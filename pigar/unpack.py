@@ -112,12 +112,12 @@ def parse_top_levels(file: InMemoryOrDiskFile) -> List[str]:
             top_level_file = None
             top_level_dirs = []
             for name in archive.names:
-                basename = os.path.basename(name.lower())
+                basename = os.path.basename(name)
                 if basename == 'top_level.txt':
                     top_level_file = name
                     break
                 if basename == '__init__.py':
-                    dir = os.path.dirname(name.lower())
+                    dir = os.path.dirname(name)
                     if '' == os.path.dirname(dir):  # Root.
                         top_level_dirs.append(dir)
             if top_level_file is None:
