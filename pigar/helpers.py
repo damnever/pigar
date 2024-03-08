@@ -15,6 +15,7 @@ from ._vendor.pip._internal.req.constructors import parse_req_from_line
 from ._vendor.pip._internal.network.session import PipSession
 from ._vendor.pip._internal.exceptions import InstallationError
 
+from ._vendor.pip._vendor.packaging.specifiers import Specifier
 from ._vendor.pip._vendor.packaging.version import Version
 try:
     from ._vendor.pip._vendor import colorama
@@ -125,6 +126,36 @@ class ParsedRequirementParts(object):
             if spec != '':
                 return spec
         return self.url
+
+
+def format_requirement(name, url, extras, specifier, version, markers) -> str:
+    parts: List[str] = [name]
+
+    if extras:
+        formatted_extras = ",".join(sorted(extras))
+        parts.append(f"[{formatted_extras}]")
+
+    if version:
+        operator = '=='
+        if specifier:
+            try:
+                operator = Specifier(specifier).operator
+            except Exception as e:
+                raise ValueError(
+                    f'{specifier} is invalid or too complex'
+                ) from e
+        parts.append(operator)
+        parts.append(version)
+
+    if url:
+        parts.append(f"@ {url}")
+        if markers:
+            parts.append(" ")
+
+    if markers:
+        parts.append(f"; {markers}")
+
+    return "".join(parts)
 
 
 def parse_requirements(fpath) -> Generator[ParsedRequirementParts, None, None]:
