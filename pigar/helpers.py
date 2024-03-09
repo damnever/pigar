@@ -101,23 +101,23 @@ class ParsedRequirementParts(object):
         self,
         requirement,
         url,
-        markers,
+        marker,
         extras,
     ):
         self.requirement = requirement
+        if not url and requirement is not None:
+            url = requirement.url
         self.url = url
-        self.markers = markers
+        if not marker and requirement is not None:
+            marker = requirement.marker
+        self.marker = marker
+        if not extras and requirement is not None:
+            extras = requirement.extras
         self.extras = extras
 
     @property
     def has_name(self):
         return self.requirement is not None
-
-    @property
-    def name(self):
-        if self.requirement is not None:
-            return self.requirement.name
-        return self.url
 
     @property
     def specifier(self):
@@ -128,7 +128,10 @@ class ParsedRequirementParts(object):
         return self.url
 
 
-def format_requirement(name, url, extras, specifier, version, markers) -> str:
+def format_requirement(
+    name: str, url: str, extras: List[str], specifier: str, version: str,
+    markers: str
+) -> str:
     parts: List[str] = [name]
 
     if extras:

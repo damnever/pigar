@@ -16,8 +16,9 @@ import asyncio
 from .db import database
 from .log import logger
 from .helpers import (
-    Color, parse_requirements, PraseRequirementError, trim_prefix, trim_suffix,
-    is_commonpath, determine_python_sys_lib_paths, is_site_packages_path
+    Color, parse_requirements, ParsedRequirementParts, PraseRequirementError,
+    trim_prefix, trim_suffix, is_commonpath, determine_python_sys_lib_paths,
+    is_site_packages_path
 )
 from .parser import parse_imports, Module
 from .dist import (
@@ -471,13 +472,9 @@ class RequirementsAnalyzer(object):
 
 
 class LocalRequirementWithLatestVersion(NamedTuple):
-    name: str
-    specifier: str
+    req: ParsedRequirementParts
     local_version: str
     latest_version: str
-
-    def asdict(self) -> Dict[str, Any]:
-        return self._asdict()
 
 
 async def check_requirements_latest_versions(
@@ -503,7 +500,7 @@ async def check_requirements_latest_versions(
                     'search latest version for %s failed: %r', req.name, e
                 )
         return LocalRequirementWithLatestVersion(
-            req.name, req.specifier, local_version or '', latest_version or ''
+            req, local_version or '', latest_version or ''
         )
 
     async with PyPIDistributions(index_url=pypi_index_url) as pypi_dists:
@@ -516,7 +513,7 @@ async def check_requirements_latest_versions(
             except PraseRequirementError as e:
                 logger.error('parse %s failed: %r', file, e)
         res = await asyncio.gather(*tasks, return_exceptions=True)
-    return sorted(res, key=lambda item: item.name.lower())
+    return sorted(res, key=lambda item: item.req.name.lower())
 
 
 async def search_distributions_by_top_level_import_names(

@@ -10,7 +10,7 @@ import multiprocessing
 
 from .version import version
 from .log import enable_pretty_logging, logger
-from .helpers import Color, print_table, lines_diff
+from .helpers import Color, format_requirement, print_table, lines_diff
 from .parser import DEFAULT_GLOB_EXCLUDE_PATTERNS
 from .core import (
     RequirementsAnalyzer,
@@ -122,7 +122,7 @@ def gohome():
     show_default=True,
     type=click.Choice(['==', '~=', '>=', '>', '-']),
     help='Part of version specifier, e.g. `abc==1.0`(see PEP 440 for details).'
-         ' Can be `-` to completely remove version.',
+    ' Can be `-` to completely remove version.',
 )
 @click.option(
     '--show-differences/--dont-show-differences',
@@ -415,24 +415,36 @@ def check(requirement_file, index_url, include_prereleases, format):
     )
     if format == 'requirements':
         for req in reqs:
-            operator = '=='
-            if req.specifier:
-                try:
-                    operator = Specifier(req.specifier).operator
-                except Exception as e:
-                    raise ValueError(
-                        f'{req.specifier} is invalid or too complex'
-                    ) from e
             print(
-                f'{req.name}{operator}{req.latest_version or req.local_version}'
+                format_requirement(
+                    req.req.name,
+                    req.req.url,
+                    req.req.extras,
+                    req.req.specifier,
+                    req.latest_version or req.local_version,
+                    f'{req.req.markers}' if req.req.markers else '',
+                )
             )
     elif format == 'json':
-        print(json.dumps([r.asdict() for r in reqs]))
+        print(
+            json.dumps(
+                [
+                    {
+                        'name': r.req.name,
+                        'specifier': r.req.specifier,
+                        'local_version': r.local_version,
+                        'latest_version': r.latest_version,
+                    } for r in reqs
+                ]
+            )
+        )
     else:
         print_table(
             [
-                (r.name, r.specifier, r.local_version, r.latest_version)
-                for r in reqs
+                (
+                    r.req.name, r.req.specifier, r.local_version,
+                    r.latest_version
+                ) for r in reqs
             ],
             headers=['DISTRIBUTION', 'SPEC', 'LOCAL', 'LATEST']
         )

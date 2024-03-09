@@ -5,10 +5,11 @@ import random
 from .helper import CaptureOutput
 from ..helpers import (
     print_table, ParsedRequirementParts, parse_requirements, compare_version,
-    cmp_to_key
+    cmp_to_key, format_requirement
 )
 
 from .._vendor.pip._vendor.packaging.requirements import Requirement
+from .._vendor.pip._vendor.packaging.specifiers import Specifier
 from .._vendor.pip._vendor.packaging.markers import Marker
 
 
@@ -43,69 +44,105 @@ class ParseReqsTest(unittest.TestCase):
     def test_parse_requirements(self):
         path = os.path.join(os.path.dirname(__file__), 'data/fake_reqs.txt')
         expected = [
-            ParsedRequirementParts(
-                Requirement('a==4.1.4'),
-                '',
-                None,
-                set(),
-            ),
-            ParsedRequirementParts(
-                Requirement('b==2.3.0'),
-                '',
-                None,
-                set(),
-            ),
-            ParsedRequirementParts(
-                Requirement('c'),
-                '',
-                None,
-                set(),
-            ),
-            ParsedRequirementParts(
-                Requirement(
-                    'd @ https://example.com/d/d/archive/refs/tags/1.0.0.zip'
+            {
+                'parsed': ParsedRequirementParts(
+                    Requirement('a==4.1.4'),
+                    '',
+                    None,
+                    set(),
                 ),
-                '',
-                None,
-                set(),
-            ),
-            ParsedRequirementParts(
-                Requirement('e[fake] ==2.8.*,>=2.8.1'),
-                '',
-                Marker('python_version < "2.7"'),
-                set(),
-            ),
-            ParsedRequirementParts(
-                Requirement('pigar'),
-                'git+ssh://git@github.com/damnever/pigar.git@abcdef#egg=pigar',
-                None,
-                set(),
-            ),
-            ParsedRequirementParts(
-                None,
-                'git+https://git@github.com/damnever/pigar.git@abcdef',
-                None,
-                set(),
-            ),
-            ParsedRequirementParts(
-                Requirement('another-in-ref'),
-                '',
-                None,
-                set(),
-            ),
+                'formatted': 'a==4.1.4',
+            },
+            {
+                'parsed': ParsedRequirementParts(
+                    Requirement('b==2.3.0'),
+                    '',
+                    None,
+                    set(),
+                ),
+                'formatted': 'b==2.3.0',
+            },
+            {
+                'parsed': ParsedRequirementParts(
+                    Requirement('c'),
+                    '',
+                    None,
+                    set(),
+                ),
+                'formatted': 'c',
+            },
+            {
+                'parsed': ParsedRequirementParts(
+                    Requirement(
+                        'd @ https://example.com/d/d/archive/refs/tags/1.0.0.zip'
+                    ),
+                    '',
+                    None,
+                    set(),
+                ),
+                'formatted': 'd@ https://example.com/d/d/archive/refs/tags/1.0.0.zip',
+            },
+            {
+                'parsed': ParsedRequirementParts(
+                    Requirement('e[fake] ==2.8.*,>=2.8.1'),
+                    '',
+                    Marker('python_version < "2.7"'),
+                    set(['fake']),
+                ),
+                'formatted': 'e[fake] >= 2.8.1, == 2.8.* ; python_version < "2.7"',
+            },
+            {
+                'parsed': ParsedRequirementParts(
+                    Requirement('pigar'),
+                    'git+ssh://git@github.com/damnever/pigar.git@abcdef#egg=pigar',
+                    None,
+                    set(),
+                ),
+                'formatted': '-e git+ssh://git@github.com/damnever/pigar.git@abcdef#egg=pigar',
+            },
+            {
+                'parsed': ParsedRequirementParts(
+                    None,
+                    'git+https://git@github.com/damnever/pigar.git@abcdef',
+                    None,
+                    set(),
+                ),
+                'formatted': 'git+https://git@github.com/damnever/pigar.git@abcdef',
+            },
+            {
+                'parsed': ParsedRequirementParts(
+                    Requirement('another-in-ref'),
+                    '',
+                    None,
+                    set(),
+                ),
+                'formatted': 'another-in-ref',
+            },
         ]
         reqs = list(parse_requirements(path))
         self.assertEqual(len(reqs), len(expected))
         for idx, req in enumerate(reqs):
             oth = expected[idx]
             self.assertEqual(
-                str(req.requirement or ''), str(oth.requirement or ''), idx
+                str(req.requirement or ''),
+                str(oth['parsed'].requirement or ''), idx
             )
-            self.assertEqual(req.url, oth.url, idx)
+            self.assertEqual(req.url, oth['parsed'].url, idx)
             self.assertEqual(
-                str(req.markers or ''), str(oth.markers or ''), idx
+                str(req.marker or ''), str(oth['parsed'].marker or ''), idx
             )
-            self.assertEqual(req.extras, oth.extras, idx)
+            self.assertEqual(req.extras, oth['parsed'].extras, idx)
+            version = ''
+            if req.requirement:
+                specifier = str(req.requirement.specifier)
+                if specifier:
+                    version = Specifier(specifier).version
+            self.assertEqual(
+                format_requirement(
+                    req.requirement.name, req.requirement.url, req.extras,
+                    str(req.requirement.specifier or ''), version, req.marker
+                ), oth['formatted'], idx
+            )
 
 
 class CompareVersionTests(unittest.TestCase):
