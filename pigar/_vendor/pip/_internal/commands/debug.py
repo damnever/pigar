@@ -1,4 +1,3 @@
-import importlib.resources
 import locale
 import logging
 import os
@@ -17,6 +16,7 @@ from pigar._vendor.pip._internal.cli.cmdoptions import make_target_python
 from pigar._vendor.pip._internal.cli.status_codes import SUCCESS
 from pigar._vendor.pip._internal.configuration import Configuration
 from pigar._vendor.pip._internal.metadata import get_environment
+from pigar._vendor.pip._internal.utils.compat import open_text_resource
 from pigar._vendor.pip._internal.utils.logging import indent_log
 from pigar._vendor.pip._internal.utils.misc import get_pip_version
 
@@ -35,7 +35,7 @@ def show_sys_implementation() -> None:
 
 
 def create_vendor_txt_map() -> Dict[str, str]:
-    with importlib.resources.open_text("pip._vendor", "vendor.txt") as f:
+    with open_text_resource("pip._vendor", "vendor.txt") as f:
         # Purge non version specifying lines.
         # Also, remove any space prefix or suffixes (including comments).
         lines = [
@@ -54,7 +54,7 @@ def get_module_from_module_name(module_name: str) -> Optional[ModuleType]:
         module_name = "pkg_resources"
 
     try:
-        __import__(f"pip._vendor.{module_name}", globals(), locals(), level=0)
+        __import__(f"pigar._vendor.pip._vendor.{module_name}", globals(), locals(), level=0)
         return getattr(pip._vendor, module_name)
     except ImportError:
         # We allow 'truststore' to fail to import due
@@ -191,8 +191,8 @@ class DebugCommand(Command):
         show_value("'cert' config value", ca_bundle_info(self.parser.config))
         show_value("REQUESTS_CA_BUNDLE", os.environ.get("REQUESTS_CA_BUNDLE"))
         show_value("CURL_CA_BUNDLE", os.environ.get("CURL_CA_BUNDLE"))
-        show_value("pip._vendor.certifi.where()", where())
-        show_value("pip._vendor.DEBUNDLED", pip._vendor.DEBUNDLED)
+        show_value("pigar._vendor.pip._vendor.certifi.where()", where())
+        show_value("pigar._vendor.pip._vendor.DEBUNDLED", pigar._vendor.pip._vendor.DEBUNDLED)
 
         show_vendor_versions()
 

@@ -1,5 +1,6 @@
 """Primary application entrypoint.
 """
+
 import locale
 import logging
 import os
@@ -49,7 +50,7 @@ def main(args: Optional[List[str]] = None) -> int:
 
     # Suppress the pkg_resources deprecation warning
     # Note - we use a module of .*pkg_resources to cover
-    # the normal case (pip._vendor.pkg_resources) and the
+    # the normal case (pigar._vendor.pip._vendor.pkg_resources) and the
     # devendored case (a bare pkg_resources)
     warnings.filterwarnings(
         action="ignore", category=DeprecationWarning, module=".*pkg_resources"
