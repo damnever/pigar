@@ -7,7 +7,7 @@ from pigar._vendor.pip._vendor.rich import print_json
 
 from pigar._vendor.pip import __version__
 from pigar._vendor.pip._internal.cli import cmdoptions
-from pigar._vendor.pip._internal.cli.req_command import Command
+from pigar._vendor.pip._internal.cli.base_command import Command
 from pigar._vendor.pip._internal.cli.status_codes import SUCCESS
 from pigar._vendor.pip._internal.metadata import BaseDistribution, get_environment
 from pigar._vendor.pip._internal.utils.compat import stdlib_pkgs

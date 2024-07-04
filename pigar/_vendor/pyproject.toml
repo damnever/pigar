@@ -14,6 +14,8 @@ protected-files = [
 
 [tool.vendoring.transformations]
 substitute = [
+  # Fix all `pip._vendor` prefixes, even if they appear in comments or in magic functions like `__import__`, etc.
+  { match = 'pip\._vendor\.', replace = "pigar._vendor.pip._vendor." },
   { match = 'import pip\._internal', replace = "import pigar._vendor.pip._internal" },
   { match = 'import pip\._vendor\.', replace = "import pigar._vendor.pip._vendor." },
   { match = 'from pip\._vendor\.', replace = "from pigar._vendor.pip._vendor." },

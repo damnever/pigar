@@ -5,6 +5,10 @@ certifi.py
 This module returns the installation location of cacert.pem or its contents.
 """
 import sys
+import atexit
+
+def exit_cacert_ctx() -> None:
+    _CACERT_CTX.__exit__(None, None, None)  # type: ignore[union-attr]
 
 
 if sys.version_info >= (3, 11):
@@ -33,13 +37,14 @@ if sys.version_info >= (3, 11):
             # We also have to hold onto the actual context manager, because
             # it will do the cleanup whenever it gets garbage collected, so
             # we will also store that at the global level as well.
-            _CACERT_CTX = as_file(files("pip._vendor.certifi").joinpath("cacert.pem"))
+            _CACERT_CTX = as_file(files("pigar._vendor.pip._vendor.certifi").joinpath("cacert.pem"))
             _CACERT_PATH = str(_CACERT_CTX.__enter__())
+            atexit.register(exit_cacert_ctx)
 
         return _CACERT_PATH
 
     def contents() -> str:
-        return files("pip._vendor.certifi").joinpath("cacert.pem").read_text(encoding="ascii")
+        return files("pigar._vendor.pip._vendor.certifi").joinpath("cacert.pem").read_text(encoding="ascii")
 
 elif sys.version_info >= (3, 7):
 
@@ -68,13 +73,14 @@ elif sys.version_info >= (3, 7):
             # We also have to hold onto the actual context manager, because
             # it will do the cleanup whenever it gets garbage collected, so
             # we will also store that at the global level as well.
-            _CACERT_CTX = get_path("pip._vendor.certifi", "cacert.pem")
+            _CACERT_CTX = get_path("pigar._vendor.pip._vendor.certifi", "cacert.pem")
             _CACERT_PATH = str(_CACERT_CTX.__enter__())
+            atexit.register(exit_cacert_ctx)
 
         return _CACERT_PATH
 
     def contents() -> str:
-        return read_text("pip._vendor.certifi", "cacert.pem", encoding="ascii")
+        return read_text("pigar._vendor.pip._vendor.certifi", "cacert.pem", encoding="ascii")
 
 else:
     import os
@@ -105,4 +111,4 @@ else:
         return os.path.join(f, "cacert.pem")
 
     def contents() -> str:
-        return read_text("pip._vendor.certifi", "cacert.pem", encoding="ascii")
+        return read_text("pigar._vendor.pip._vendor.certifi", "cacert.pem", encoding="ascii")
