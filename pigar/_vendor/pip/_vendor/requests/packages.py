@@ -13,8 +13,7 @@ for package in ("urllib3", "idna"):
     for mod in list(sys.modules):
         if mod == vendored_package or mod.startswith(vendored_package + '.'):
             unprefixed_mod = mod[len("pigar._vendor.pip._vendor."):]
-            sys.modules['pigar._vendor.pip._vendor.requests.packages.' +
-                        unprefixed_mod] = sys.modules[mod]
+            sys.modules['pigar._vendor.pip._vendor.requests.packages.' + unprefixed_mod] = sys.modules[mod]
 
 if chardet is not None:
     target = chardet.__name__
