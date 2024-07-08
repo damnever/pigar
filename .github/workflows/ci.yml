@@ -25,6 +25,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           architecture: x64
+      - name: Upgrade pip
+        run: pip install --upgrade pip
       - name: Run tests with requirements.txt
         run: |
           python -m venv venv-requirements-txt
@@ -37,3 +39,4 @@ jobs:
           source venv-pip-e/bin/activate
           pip install -e .
           python -m unittest discover pigar/tests/ -t . -v
+          pigar --version

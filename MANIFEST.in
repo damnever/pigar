@@ -2,5 +2,11 @@ include pigar/.db.sqlite3
 include CHANGELOG.md
 include README.md
 include LICENSE
-include pigar/_vendor/pip/LICENSE.txt
 include makefile
+
+include pigar/_vendor/README.md
+include pigar/_vendor/vendor.txt
+recursive-include pigar/_vendor *LICENSE*
+recursive-include pigar/_vendor *COPYING*
+recursive-include pigar/_vendor *.pem
+recursive-include pigar/_vendor py.typed
