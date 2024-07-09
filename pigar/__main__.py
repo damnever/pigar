@@ -122,7 +122,7 @@ def gohome():
     show_default=True,
     type=click.Choice(['==', '~=', '>=', '>', '-']),
     help='Part of version specifier, e.g. `abc==1.0`(see PEP 440 for details).'
-         ' Can be `-` to completely remove version.',
+    ' Can be `-` to completely remove version.',
 )
 @click.option(
     '--show-differences/--dont-show-differences',
@@ -258,14 +258,14 @@ def generate(
             'requirement-annotations' in experimental_features
         ),
     )
-    if analyzer.has_unknown_imports():
+    if analyzer.has_unknown_imports_or_uninstalled_annotations():
         msgbuf = io.StringIO()
         yes = False
         if question_answer == 'ask':
             msgbuf.write(
                 Color.RED('The following module(s) are not found yet:\n')
             )
-            analyzer.format_unknown_imports(msgbuf)
+            analyzer.format_unknown_imports_or_uninstalled_annotations(msgbuf)
             msgbuf.write('\n')
             msgbuf.write(
                 Color.RED(
@@ -286,9 +286,11 @@ def generate(
                 pypi_index_url=index_url,
                 include_prereleases=include_prereleases,
             )
-            if analyzer.has_unknown_imports():
+            if analyzer.has_unknown_imports_or_uninstalled_annotations():
                 print(Color.RED('These module(s) are still not found:'))
-                analyzer.format_unknown_imports(sys.stdout)
+                analyzer.format_unknown_imports_or_uninstalled_annotations(
+                    sys.stdout
+                )
                 sys.stdout.flush()
                 # print(Color.RED('Maybe or you need update database.'))
 
