@@ -283,6 +283,8 @@ class RequirementsAnalyzer(object):
             requirements = self._uncertain_requirements[import_name]
         for req in reqs:
             requirements.add_locs(req, locs, from_annotation=from_annotation)
+            # FIXME: treat this the same as _unknown_imports
+            self._unknown_dists_from_annotaions.pop(req.name, None)
 
     def search_unknown_imports_from_index(
         self,
@@ -429,15 +431,27 @@ class RequirementsAnalyzer(object):
                 else:
                     stream.write(f'# {import_name}\n')
 
-    def has_unknown_imports(self):
-        return len(self._unknown_imports) > 0
+    def has_unknown_imports_or_uninstalled_annotations(self):
+        return len(self._unknown_imports
+                   ) > 0 or len(self._unknown_dists_from_annotaions) > 0
 
-    def format_unknown_imports(self, stream):
+    def format_unknown_imports_or_uninstalled_annotations(self, stream):
+        has_unknown_imports = len(self._unknown_imports) > 0
         for idx, (name, locs) in enumerate(self._unknown_imports.items()):
             if idx > 0:
                 stream.write('\n')
             stream.write(
                 '  {0} referenced from:\n    {1}'.format(
+                    Color.YELLOW(name), '\n    '.join(locs.sorted_items())
+                )
+            )
+        for idx, (name, locs) in enumerate(
+            self._unknown_dists_from_annotaions.items()
+        ):
+            if idx > 0 or has_unknown_imports:
+                stream.write('\n')
+            stream.write(
+                '  {0} annotated at:\n    {1}'.format(
                     Color.YELLOW(name), '\n    '.join(locs.sorted_items())
                 )
             )
