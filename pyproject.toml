@@ -23,7 +23,7 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
 ]
 requires-python = ">=3.8"
-dependencies = ["click>=8.1", "nbformat>=5.7", "aiohttp>=3.9"]
+dependencies = ["click>=8.1", "nbformat>=5.7", "aiohttp>=3.9", "colorama"]
 dynamic = ["version"]
 
 [project.scripts]

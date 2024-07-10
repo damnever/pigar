@@ -17,7 +17,7 @@ from ._vendor.pip._internal.exceptions import InstallationError
 
 from ._vendor.pip._vendor.packaging.version import Version
 try:
-    from ._vendor.pip._vendor import colorama
+    import colorama
 except ImportError:
     colorama = None
 
