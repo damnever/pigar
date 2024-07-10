@@ -19,12 +19,16 @@ jobs:
           - "3.12"
     name: Python ${{ matrix.python-version }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
       - name: Setup python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           architecture: x64
+      - name: Check if Git LFS is working"
+        run: '[ $(stat -c%s "pigar/.db.sqlite3") -gt $((1024 * 1024)) ] || { echo "File is not larger than 1MiB"; exit 1; }'
       - name: Upgrade pip
         run: pip install --upgrade pip
       - name: Run tests with requirements.txt
