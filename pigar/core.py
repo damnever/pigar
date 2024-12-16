@@ -140,6 +140,7 @@ class RequirementsAnalyzer(object):
             distributions=self._installed_dists.values()
         )
         self._requirements = _LocatableRequirements()
+        self._cached_choices = dict()
         self._uncertain_requirements = collections.defaultdict(
             _LocatableRequirements
         )  # Multiple requirements for same import name.
@@ -394,7 +395,7 @@ class RequirementsAnalyzer(object):
 
         if self._uncertain_requirements:
             stream.write(
-                '\nWARNING(pigar): some manual fixes are required since pigar has found duplicate requirements for the same import name.\n'
+                '\n# WARNING(pigar): some manual fixes might be required as pigar has detected duplicate requirements for the same import name (possibly for different submodules).\n'  # noqa: E501
             )
             uncertain_requirements = sorted(
                 self._uncertain_requirements.items(),
@@ -402,7 +403,7 @@ class RequirementsAnalyzer(object):
             )
             for import_name, reqs in uncertain_requirements:
                 stream.write(
-                    f'# WARNING(pigar): the following duplicate requirements are for import name: {import_name}\n'
+                    f'# WARNING(pigar): the following duplicate requirements are for the import name: {import_name}\n'  # noqa: E501
                 )
                 with_ref_comments_once = with_ref_comments
                 for _, req in reqs.sorted_items():
@@ -461,6 +462,10 @@ class RequirementsAnalyzer(object):
     ):
         if dists_filter is None or len(distributions) <= 1:
             return distributions
+        # We can use `functools.cache` in later versions of Python.
+        existing = self._cached_choices.get(import_name, None)
+        if existing is not None:
+            return existing
 
         assert (hasattr(distributions[0], 'name'))
 
@@ -481,7 +486,11 @@ class RequirementsAnalyzer(object):
             best_match = casefold_match
         if best_match is None and len(contains) == 1:
             best_match = contains[0]
-        return dists_filter(import_name, locations, distributions, best_match)
+        choosed = dists_filter(
+            import_name, locations, distributions, best_match
+        )
+        self._cached_choices[import_name] = choosed
+        return choosed
 
 
 class LocalRequirementWithLatestVersion(NamedTuple):
