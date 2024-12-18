@@ -2,7 +2,12 @@
 
 #### Version 2.1.6 (2024.07.10)
 
-See what’s changed in detail [between v2.1.4 and v2.1.6](https://github.com/damnever/pigar/compare/v2.1.4...v2.1.6).
+See what’s changed in detail [between v2.1.6 and v2.1.7](https://github.com/damnever/pigar/compare/v2.1.6...v2.1.7).
+
+
+#### Version 2.1.6 (2024.07.10)
+
+See what’s changed in detail [between v2.1.5 and v2.1.6](https://github.com/damnever/pigar/compare/v2.1.5...v2.1.6).
 
 
 #### Version 2.1.5 (2024.07.10) - Invalid
