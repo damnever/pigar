@@ -16,13 +16,13 @@ classifiers = [
   "License :: OSI Approved :: BSD License",
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dependencies = ["click>=8.1", "nbformat>=5.7", "aiohttp>=3.9", "colorama"]
 dynamic = ["version"]
 

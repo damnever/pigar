@@ -15,7 +15,7 @@
 
 ### Installation
 
-`pigar` can run on Python 3.7+.
+`pigar` can run on Python 3.9+.
 
 To install it with `pip`, use:
 ```
