@@ -1,30 +1,39 @@
-from .dist import DEFAULT_PYPI_INDEX_URL
-
-import os
-import io
-import os.path
-import sys
+import asyncio
 import collections
 import contextlib
 import functools
 import importlib
-import importlib.util
 import importlib.machinery
-from typing import NamedTuple, List, Dict, Any, Optional, Tuple
-import asyncio
+import importlib.util
+import io
+import os
+import os.path
+import sys
+from typing import Any, NamedTuple, Optional
 
 from .db import database
-from .log import logger
-from .helpers import (
-    Color, parse_requirements, PraseRequirementError, trim_prefix, trim_suffix,
-    is_commonpath, determine_python_sys_lib_paths, is_site_packages_path
-)
-from .parser import parse_imports, Module
 from .dist import (
-    installed_distributions_by_top_level_import_names, installed_distributions,
-    FrozenRequirement, _all_hardcode_import_names, DEFAULT_PYPI_INDEX_URL,
-    PyPIDistributions, PyPIDistributionsIndexSynchronizer, canonicalize_name
+    DEFAULT_PYPI_INDEX_URL,
+    FrozenRequirement,
+    PyPIDistributions,
+    PyPIDistributionsIndexSynchronizer,
+    _all_hardcode_import_names,
+    canonicalize_name,
+    installed_distributions,
+    installed_distributions_by_top_level_import_names,
 )
+from .helpers import (
+    Color,
+    PraseRequirementError,
+    determine_python_sys_lib_paths,
+    is_commonpath,
+    is_site_packages_path,
+    parse_requirements,
+    trim_prefix,
+    trim_suffix,
+)
+from .log import logger
+from .parser import Module, parse_imports
 
 _special_import_names = _all_hardcode_import_names()
 
@@ -33,7 +42,7 @@ class _Locations(dict):
     """_Locations store code locations(file, linenos)."""
 
     def __init__(self):
-        super(_Locations, self).__init__()
+        super().__init__()
         self._sorted = None
 
     @classmethod
@@ -56,14 +65,13 @@ class _Locations(dict):
     def sorted_items(self):
         if self._sorted is None:
             self._sorted = [
-                '{0}: {1}'.format(f, ','.join([str(n) for n in sorted(ls)]))
+                '{}: {}'.format(f, ','.join([str(n) for n in sorted(ls)]))
                 for f, ls in sorted(self.items())
             ]
         return self._sorted
 
 
 class _LocatableRequirements(dict):
-
     class _Requirement(NamedTuple):
         req: FrozenRequirement
         locations: _Locations
@@ -73,14 +81,14 @@ class _LocatableRequirements(dict):
             self,
             package_root_parent: str,
             with_locations: bool = False,
-            operator: str = '=='
+            operator: str = '==',
         ):
             comments = ''
             if with_locations and len(self.locations) > 0:
                 if self.from_annotation:
                     comments += '# FROM `requirement-annotations`\n'
                 comments += '\n'.join(
-                    '# {0}'.format(trim_prefix(c, package_root_parent))
+                    f'# {trim_prefix(c, package_root_parent)}'
                     for c in self.locations.sorted_items()
                 )
                 comments += '\n'
@@ -88,7 +96,7 @@ class _LocatableRequirements(dict):
             return comments + self.req.as_requirement(operator=operator) + '\n'
 
     def __init__(self):
-        super(_LocatableRequirements, self).__init__()
+        super().__init__()
         self._sorted = None
 
     def add_locs(
@@ -130,22 +138,23 @@ class _LocatableRequirements(dict):
         self._sorted = None
 
 
-class RequirementsAnalyzer(object):
-
+class RequirementsAnalyzer:
     def __init__(self, project_root):
         self._project_root = project_root
 
         self._installed_dists = installed_distributions()
-        self._installed_dists_by_imports = installed_distributions_by_top_level_import_names(
-            distributions=self._installed_dists.values()
+        self._installed_dists_by_imports = (
+            installed_distributions_by_top_level_import_names(
+                distributions=self._installed_dists.values()
+            )
         )
         self._requirements = _LocatableRequirements()
-        self._cached_choices = dict()
+        self._cached_choices = {}
         self._uncertain_requirements = collections.defaultdict(
             _LocatableRequirements
         )  # Multiple requirements for same import name.
         self._unknown_imports = collections.defaultdict(_Locations)
-        self._unknown_imports_from_annotations = dict()
+        self._unknown_imports_from_annotations = {}
         self._unknown_dists_from_annotaions = collections.defaultdict(
             _Locations
         )
@@ -166,7 +175,7 @@ class RequirementsAnalyzer(object):
             parse_requirement_annotations=enable_requirement_annotations,
         )
 
-        importables = dict()
+        importables = {}
         tryimports = set()
         importlib.invalidate_caches()
 
@@ -174,14 +183,14 @@ class RequirementsAnalyzer(object):
             name = module.name
             if is_user_module(module, self._project_root):
                 logger.debug(
-                    "ignore import name from user module: %s", module.name
+                    'ignore import name from user module: %s', module.name
                 )
                 return
             is_stdlib, code_path = check_stdlib(name)
             if not is_stdlib:
                 is_stdlib, code_path = check_stdlib(name.split('.')[0])
             if is_stdlib:
-                logger.debug("ignore import name from stdlib: %s", module.name)
+                logger.debug('ignore import name from stdlib: %s', module.name)
                 return
 
             names = []
@@ -203,20 +212,21 @@ class RequirementsAnalyzer(object):
                 if name in self._installed_dists_by_imports:
                     reqs = self._installed_dists_by_imports[name]
                     locs = _Locations.build_from(module.file, module.lineno)
-                    reqs = self._maybe_filter_distributions_with_same_import_name(
-                        name, locs, reqs, dists_filter
+                    reqs = (
+                        self._maybe_filter_distributions_with_same_import_name(
+                            name, locs, reqs, dists_filter
+                        )
                     )
-                    self._record_requirements(
-                        name, locs, reqs, from_annotation
-                    )
+                    self._record_requirements(name, locs, reqs, from_annotation)
                 else:
                     if code_path is not None:
                         importables[name] = code_path
                     if module.try_:
                         tryimports.add(name)
                     self._unknown_imports[name].add(module.file, module.lineno)
-                    self._unknown_imports_from_annotations[name
-                                                           ] = from_annotation
+                    self._unknown_imports_from_annotations[name] = (
+                        from_annotation
+                    )
 
         for module in imported_modules:
             _resolve(module, False)
@@ -226,7 +236,7 @@ class RequirementsAnalyzer(object):
                     name=annotation.top_level_import_name,
                     file=annotation.file,
                     lineno=annotation.lineno,
-                    try_=False
+                    try_=False,
                 )
                 _resolve(module, True)
             elif annotation.distribution_name is not None:
@@ -247,8 +257,7 @@ class RequirementsAnalyzer(object):
         for name, locs in self._unknown_imports.items():
             if name in tryimports:
                 logger.debug(
-                    "ignore import name with `try/except ImportError`: %s",
-                    name
+                    'ignore import name with `try/except ImportError`: %s', name
                 )
                 resolved.add(name)
             elif name in importables:
@@ -263,8 +272,8 @@ class RequirementsAnalyzer(object):
                         # reqs = self._maybe_filter_distributions_with_same_import_name( name, locs, reqs, dists_filter)
                         self._record_requirements(name, locs, [req], False)
                         logger.debug(
-                            "the import name is importable(no top levels contains it): %s",
-                            name
+                            'the import name is importable(no top levels contains it): %s',
+                            name,
                         )
                         resolved.add(name)
                         break
@@ -276,7 +285,7 @@ class RequirementsAnalyzer(object):
         self,
         import_name: Optional[str],
         locs: _Locations,
-        reqs: List[FrozenRequirement],
+        reqs: list[FrozenRequirement],
         from_annotation: bool,
     ):
         requirements = self._requirements
@@ -311,7 +320,7 @@ class RequirementsAnalyzer(object):
             pypi_dists: PyPIDistributions,
             module_name: Optional[str],
             locs: _Locations,
-            dist_names: List[str],
+            dist_names: list[str],
             from_annotation: bool,
         ):
             reqs = await asyncio.gather(
@@ -319,7 +328,7 @@ class RequirementsAnalyzer(object):
                     _get_latest_version(pypi_dists, dist_name)
                     for dist_name in dist_names
                 ],
-                return_exceptions=True
+                return_exceptions=True,
             )
             self._record_requirements(module_name, locs, reqs, from_annotation)
 
@@ -330,18 +339,21 @@ class RequirementsAnalyzer(object):
                 tasks = []
                 for name, locs in self._unknown_imports.items():
                     from_annotation = self._unknown_imports_from_annotations[
-                        name]
+                        name
+                    ]
                     logger.info(
                         'search distributions for import name %s ...', name
                     )
                     with database() as db:
-                        distributions = db.query_distributions_by_top_level_module(
-                            name
+                        distributions = (
+                            db.query_distributions_by_top_level_module(name)
                         )
                     if distributions is None:
                         continue
-                    distributions = self._maybe_filter_distributions_with_same_import_name(
-                        name, locs, distributions, dists_filter
+                    distributions = (
+                        self._maybe_filter_distributions_with_same_import_name(
+                            name, locs, distributions, dists_filter
+                        )
                     )
                     found.add(name)
                     tasks.append(
@@ -356,10 +368,7 @@ class RequirementsAnalyzer(object):
                 for name, locs in self._unknown_dists_from_annotaions.items():
                     tasks.append(
                         _collect(
-                            pypi_dists,
-                            None,
-                            locs, [name],
-                            from_annotation=True
+                            pypi_dists, None, locs, [name], from_annotation=True
                         )
                     )
                 await asyncio.gather(*tasks, return_exceptions=True)
@@ -377,9 +386,9 @@ class RequirementsAnalyzer(object):
         with_banner=True,
         with_unknown_imports=False,
     ):
-        package_root_parent = os.path.dirname(
-            trim_suffix(self._project_root, os.sep)
-        ) + os.sep
+        package_root_parent = (
+            os.path.dirname(trim_suffix(self._project_root, os.sep)) + os.sep
+        )
 
         if with_banner:
             stream.write(
@@ -388,29 +397,31 @@ class RequirementsAnalyzer(object):
         for _, req in self._requirements.sorted_items():
             stream.write(
                 req.format_as_text(
-                    package_root_parent, with_ref_comments,
-                    comparison_specifier
+                    package_root_parent, with_ref_comments, comparison_specifier
                 )
             )
 
         if self._uncertain_requirements:
             stream.write(
-                '\n# WARNING(pigar): some manual fixes might be required as pigar has detected duplicate requirements for the same import name (possibly for different submodules).\n'  # noqa: E501
+                '\n# WARNING(pigar): some manual fixes might be required as '
+                'pigar has detected duplicate requirements for the same import '
+                'name (possibly for different submodules).\n'
             )
             uncertain_requirements = sorted(
                 self._uncertain_requirements.items(),
-                key=lambda item: item[0].lower()
+                key=lambda item: item[0].lower(),
             )
             for import_name, reqs in uncertain_requirements:
                 stream.write(
-                    f'# WARNING(pigar): the following duplicate requirements are for the import name: {import_name}\n'  # noqa: E501
+                    f'# WARNING(pigar): the following duplicate requirements are for the import name: {import_name}\n'
                 )
                 with_ref_comments_once = with_ref_comments
                 for _, req in reqs.sorted_items():
                     stream.write(
                         req.format_as_text(
-                            package_root_parent, with_ref_comments_once,
-                            comparison_specifier
+                            package_root_parent,
+                            with_ref_comments_once,
+                            comparison_specifier,
                         )
                     )
                     with_ref_comments_once = False
@@ -420,8 +431,7 @@ class RequirementsAnalyzer(object):
                 '\n# WARNING(pigar): pigar can not find requirements for the following import names.\n'
             )
             unknown_imports = sorted(
-                self._unknown_imports.items(),
-                key=lambda item: item[0].lower()
+                self._unknown_imports.items(), key=lambda item: item[0].lower()
             )
             for import_name, locs in unknown_imports:
                 if with_ref_comments:
@@ -433,8 +443,10 @@ class RequirementsAnalyzer(object):
                     stream.write(f'# {import_name}\n')
 
     def has_unknown_imports_or_uninstalled_annotations(self):
-        return len(self._unknown_imports
-                   ) > 0 or len(self._unknown_dists_from_annotaions) > 0
+        return (
+            len(self._unknown_imports) > 0
+            or len(self._unknown_dists_from_annotaions) > 0
+        )
 
     def format_unknown_imports_or_uninstalled_annotations(self, stream):
         has_unknown_imports = len(self._unknown_imports) > 0
@@ -442,7 +454,7 @@ class RequirementsAnalyzer(object):
             if idx > 0:
                 stream.write('\n')
             stream.write(
-                '  {0} referenced from:\n    {1}'.format(
+                '  {} referenced from:\n    {}'.format(
                     Color.YELLOW(name), '\n    '.join(locs.sorted_items())
                 )
             )
@@ -452,7 +464,7 @@ class RequirementsAnalyzer(object):
             if idx > 0 or has_unknown_imports:
                 stream.write('\n')
             stream.write(
-                '  {0} annotated at:\n    {1}'.format(
+                '  {} annotated at:\n    {}'.format(
                     Color.YELLOW(name), '\n    '.join(locs.sorted_items())
                 )
             )
@@ -467,7 +479,7 @@ class RequirementsAnalyzer(object):
         if existing is not None:
             return existing
 
-        assert (hasattr(distributions[0], 'name'))
+        assert hasattr(distributions[0], 'name')
 
         best_match = None
         casefold_match = None
@@ -479,8 +491,9 @@ class RequirementsAnalyzer(object):
             if dist.name.lower() == import_name.lower():
                 casefold_match = dist
                 break
-            if dist.name.startswith(import_name
-                                    ) or dist.name.endswith(import_name):
+            if dist.name.startswith(import_name) or dist.name.endswith(
+                import_name
+            ):
                 contains.append(dist)
         if best_match is None and casefold_match is not None:
             best_match = casefold_match
@@ -499,7 +512,7 @@ class LocalRequirementWithLatestVersion(NamedTuple):
     local_version: str
     latest_version: str
 
-    def asdict(self) -> Dict[str, Any]:
+    def asdict(self) -> dict[str, Any]:
         return self._asdict()
 
 
@@ -507,7 +520,7 @@ async def check_requirements_latest_versions(
     requirement_files,
     pypi_index_url=DEFAULT_PYPI_INDEX_URL,
     include_prereleases=False,
-) -> List[LocalRequirementWithLatestVersion]:
+) -> list[LocalRequirementWithLatestVersion]:
     installed_dists = installed_distributions()
 
     async def _collect(pypi_dists, req):
@@ -517,9 +530,11 @@ async def check_requirements_latest_versions(
             if req.name in installed_dists:
                 local_version = installed_dists[req.name].version
             try:
-                latest_version = await pypi_dists.get_latest_distribution_version(
-                    req.name,
-                    include_prereleases=include_prereleases,
+                latest_version = (
+                    await pypi_dists.get_latest_distribution_version(
+                        req.name,
+                        include_prereleases=include_prereleases,
+                    )
                 )
             except Exception as e:
                 logger.error(
@@ -543,12 +558,12 @@ async def check_requirements_latest_versions(
 
 
 async def search_distributions_by_top_level_import_names(
-    names: List[str],
+    names: list[str],
     pypi_index_url=DEFAULT_PYPI_INDEX_URL,
     include_prereleases=False,
-) -> Tuple[Dict[str, List[Tuple[str, str, str]]], List[str]]:
+) -> tuple[dict[str, list[tuple[str, str, str]]], list[str]]:
     results = collections.defaultdict(list)
-    not_found = list()
+    not_found = []
 
     installed_dists = installed_distributions_by_top_level_import_names()
 
@@ -565,10 +580,7 @@ async def search_distributions_by_top_level_import_names(
             logger.error('checking %s failed: %r', distribution.name, e)
 
     async def _collect(pypi_dists, import_name):
-        logger.debug(
-            'searching package distributions for "{0}" ...'.
-            format(import_name)
-        )
+        logger.debug(f'searching package distributions for "{import_name}" ...')
         # If exists in local environment, do not check on the PyPI.
         if import_name in installed_dists:
             for req in installed_dists[import_name]:
@@ -585,7 +597,7 @@ async def search_distributions_by_top_level_import_names(
                         _get_latest_version(pypi_dists, dist, import_name)
                         for dist in distributions
                     ],
-                    return_exceptions=True
+                    return_exceptions=True,
                 )
             else:
                 not_found.append(import_name)
@@ -593,7 +605,7 @@ async def search_distributions_by_top_level_import_names(
     async with PyPIDistributions(index_url=pypi_index_url) as pypi_dists:
         await asyncio.gather(
             *[_collect(pypi_dists, name) for name in names],
-            return_exceptions=True
+            return_exceptions=True,
         )
 
     return results, not_found
@@ -617,7 +629,7 @@ def sync_distributions_index_from_pypi(
                 print(Color.BLUE('Operation canceled!'))
             except Exception as e:
                 await synchronizer.cancel()
-                logger.error("Unexpected error: ", exc_info=True)
+                logger.error('Unexpected error: ', exc_info=True)
                 print(Color.BLUE('Operation aborted!'), e)
             else:
                 print(Color.GREEN('Operation done!'))
@@ -661,24 +673,26 @@ def _keep_sys_modules_clean():
 
 # FIXME: this function is full of magic!
 def is_user_module(module: Module, project_root: str):
-    if module.name.startswith("."):
+    if module.name.startswith('.'):
         return True
 
     root_module_name = module.name.split('.')[0]
     try:
         # FIXME(damnever): isolated environment!!
         spec = None
-        with _exclude_sys_site_paths():
-            with _prepend_sys_path(project_root):
-                with _keep_sys_modules_clean():
-                    for name in [module.name, root_module_name]:
-                        try:
-                            spec = importlib.util.find_spec(
-                                name, os.path.dirname(module.file)
-                            )
-                            break
-                        except Exception:
-                            pass
+        with (
+            _exclude_sys_site_paths(),
+            _prepend_sys_path(project_root),
+            _keep_sys_modules_clean(),
+        ):
+            for name in [module.name, root_module_name]:
+                try:
+                    spec = importlib.util.find_spec(
+                        name, os.path.dirname(module.file)
+                    )
+                    break
+                except Exception:
+                    pass
         if spec.origin is None:
             return False
         return (
@@ -690,7 +704,7 @@ def is_user_module(module: Module, project_root: str):
 
 
 def _cache_check_stdlib(func):
-    checked = dict()
+    checked = {}
 
     @functools.wraps(func)
     def _wrapper(name):
@@ -702,8 +716,11 @@ def _cache_check_stdlib(func):
 
 
 @_cache_check_stdlib
-def check_stdlib(name: str, _sys_lib_paths=determine_python_sys_lib_paths()):
+def check_stdlib(name: str, _sys_lib_paths: Optional[list[str]] = None):
     """Check whether it is stdlib module."""
+    if _sys_lib_paths is None:
+        _sys_lib_paths = determine_python_sys_lib_paths()
+
     with _keep_sys_modules_clean():
         try:
             spec = importlib.util.find_spec(name)

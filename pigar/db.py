@@ -1,10 +1,11 @@
-import os
-import sqlite3
 import contextlib
 import dataclasses
-from typing import Optional, Iterator, List, Dict, Set
+import os
+import sqlite3
+from collections.abc import Iterator
+from typing import Optional
 
-_DB_INIT_SCRIPT = '''BEGIN;
+_DB_INIT_SCRIPT = """BEGIN;
 
 CREATE TABLE IF NOT EXISTS {distributions} (
     id INTEGER PRIMARY KEY,
@@ -21,7 +22,7 @@ CREATE TABLE IF NOT EXISTS {top_level_module_names} (
 CREATE UNIQUE INDEX `_uidx_{top_level_module_names}_distribution_id_name_` ON `{top_level_module_names}` (`distribution_id`, `name`);
 
 COMMIT;
-'''
+"""
 
 
 @dataclasses.dataclass
@@ -32,10 +33,10 @@ class Distribution:
 
 @dataclasses.dataclass
 class DistributionWithModules(Distribution):
-    modules: List[str]
+    modules: list[str]
 
 
-class Database(object):
+class Database:
     _DB_PATH = os.path.join(os.path.dirname(__file__), '.db.sqlite3')
     _TABLE_DISTRIBUTIONS = 'distributions'
     _TABLE_TOP_LEVEL_MODULE_NAMES = 'top_level_module_names'
@@ -54,7 +55,7 @@ class Database(object):
             top_level_module_names=self._TABLE_TOP_LEVEL_MODULE_NAMES,
         )
 
-        assert (self._conn is not None)
+        assert self._conn is not None
         cursor = self._conn.cursor()
         try:
             cursor.executescript(script)
@@ -77,16 +78,18 @@ class Database(object):
         self,
         distribution: str,
         version: str,
-        modules_to_add: Set[str],
-        modules_to_delete: Optional[Set[str]] = None,
+        modules_to_add: set[str],
+        modules_to_delete: Optional[set[str]] = None,
     ):
-        assert (self._conn is not None)
+        assert self._conn is not None
         cursor = self._conn.cursor()
         # conn = self._conn
         distributions_table = self._TABLE_DISTRIBUTIONS
         top_level_modules_table = self._TABLE_TOP_LEVEL_MODULE_NAMES
         sql_insert_distribution = f'INSERT OR REPLACE INTO {distributions_table} (name, version) VALUES(?, ?)'
-        sql_select_distribution_id = f'SELECT id FROM {distributions_table} WHERE name = ?'
+        sql_select_distribution_id = (
+            f'SELECT id FROM {distributions_table} WHERE name = ?'
+        )
         sql_insert_top_level_modules = f'INSERT OR IGNORE INTO {top_level_modules_table} (distribution_id, name) VALUES(?, ?)'
         sql_delete_top_level_modules = f'DELETE FROM {top_level_modules_table} WHERE distribution_id=? and name=?'
         try:
@@ -94,28 +97,26 @@ class Database(object):
             cursor.execute(sql_insert_distribution, (distribution, version))
             if modules_to_add or modules_to_delete:
                 res = cursor.execute(
-                    sql_select_distribution_id, (distribution, )
+                    sql_select_distribution_id, (distribution,)
                 )
                 distribution_id = res.fetchone()[0]
                 for module_name in modules_to_add:
                     cursor.execute(
                         sql_insert_top_level_modules,
-                        (distribution_id, module_name)
+                        (distribution_id, module_name),
                     )
                 if modules_to_delete is not None:
                     for module_name in modules_to_delete:
                         cursor.execute(
                             sql_delete_top_level_modules,
-                            (distribution_id, module_name)
+                            (distribution_id, module_name),
                         )
             cursor.execute('COMMIT')
             # conn.commit()
         except sqlite3.OperationalError:
-            try:
+            with contextlib.suppress(Exception):
                 # conn.rollback()
                 cursor.execute('ROLLBACK')
-            except Exception:
-                pass
             self._reconnect()
             raise
         finally:
@@ -123,11 +124,11 @@ class Database(object):
 
     def query_distributions_by_top_level_module(
         self, module_name: str
-    ) -> Optional[List[Distribution]]:
+    ) -> Optional[list[Distribution]]:
         distributions_table = self._TABLE_DISTRIBUTIONS
         top_level_modules_table = self._TABLE_TOP_LEVEL_MODULE_NAMES
-        sql = f'''SELECT name, version FROM {distributions_table} WHERE id IN
-        (SELECT distribution_id FROM {top_level_modules_table} WHERE name=?)'''
+        sql = f"""SELECT name, version FROM {distributions_table} WHERE id IN
+        (SELECT distribution_id FROM {top_level_modules_table} WHERE name=?)"""
         rows = self._query(sql, module_name)
         return [Distribution(**r) for r in rows] if rows else None
 
@@ -137,7 +138,9 @@ class Database(object):
         distributions_table = self._TABLE_DISTRIBUTIONS
         top_level_modules_table = self._TABLE_TOP_LEVEL_MODULE_NAMES
 
-        sql_query_dist = f'SELECT id, name, version FROM {distributions_table} WHERE name=?'
+        sql_query_dist = (
+            f'SELECT id, name, version FROM {distributions_table} WHERE name=?'
+        )
         dists = self._query(sql_query_dist, dist_name)
         dist = dists[0] if dists else None
         if dist is None:
@@ -149,8 +152,9 @@ class Database(object):
         dist.pop('id')
         return DistributionWithModules(**dist)
 
-    def query_distribution_by_name(self,
-                                   dist_name: str) -> Optional[Distribution]:
+    def query_distribution_by_name(
+        self, dist_name: str
+    ) -> Optional[Distribution]:
         distributions_table = self._TABLE_DISTRIBUTIONS
         sql = f'SELECT name, version FROM {distributions_table} WHERE name=?'
         rows = self._query(sql, dist_name)
@@ -164,14 +168,14 @@ class Database(object):
         rows = self._query(sql, dist_name)
         return Distribution(**rows[0]) if rows else None
 
-    def query_distributions(self) -> Optional[List[Distribution]]:
+    def query_distributions(self) -> Optional[list[Distribution]]:
         distributions_table = self._TABLE_DISTRIBUTIONS
         sql = f'SELECT name, version FROM {distributions_table}'
         rows = self._query(sql)
         return [Distribution(**r) for r in rows] if rows else None
 
-    def _query(self, sql: str, *parameters) -> Optional[List[Dict]]:
-        assert (self._conn is not None)
+    def _query(self, sql: str, *parameters) -> Optional[list[dict]]:
+        assert self._conn is not None
         cursor = self._conn.cursor()
         try:
             res = cursor.execute(sql, parameters)

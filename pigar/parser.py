@@ -1,18 +1,25 @@
-import os
-import re
-import io
 import ast
-import tokenize
-import doctest
 import collections
+import doctest
 import fnmatch
+import io
+import os
 import os.path as pathlib
-from typing import List, NamedTuple, Optional, Callable, Deque, Tuple, Iterable, Union
-
-from .log import logger
-from .helpers import trim_prefix
+import re
+import tokenize
+from collections import deque
+from collections.abc import Iterable
+from typing import (
+    Callable,
+    NamedTuple,
+    Optional,
+    Union,
+)
 
 import nbformat
+
+from .helpers import trim_prefix
+from .log import logger
 
 
 class Module(NamedTuple):
@@ -29,54 +36,50 @@ class Annotation(NamedTuple):
     lineno: int
 
 
-def _match_exclude_patterns(
-    name: str, patterns: Iterable[str], root: str = ""
-) -> bool:
+def _match_exclude_patterns(name: str, patterns: Iterable[str]) -> bool:
     # name = trim_prefix(trim_prefix(name, root), "/")
-    for pattern in patterns:
-        if fnmatch.fnmatch(name, pattern):
-            return True
-    return False
+    return any(fnmatch.fnmatch(name, pattern) for pattern in patterns)
 
 
 DEFAULT_GLOB_EXCLUDE_PATTERNS = (
-    "**/.git",
-    "**/.hg",
-    "**/.svn",
-    "**/__pycache__",
-    "*venv*",
+    '**/.git',
+    '**/.hg',
+    '**/.svn',
+    '**/__pycache__',
+    '*venv*',
 )
 
 
 def parse_imports(
     project_root: str,
     visit_doc_str: bool = False,
-    exclude_patterns: Optional[List[str]] = None,
+    exclude_patterns: Optional[list[str]] = None,
     followlinks: bool = True,
     parse_requirement_annotations: bool = False,
-) -> Tuple[List[Module], List[Annotation]]:
+) -> tuple[list[Module], list[Annotation]]:
     """package_root must be a absolute path to package root,
     e.g. /path/to/pigar/pigar."""
-    exclude_pattern_set = set(trim_prefix(p, './') for p in exclude_patterns
-                              ) if exclude_patterns else set()
+    exclude_pattern_set = (
+        {trim_prefix(p, './') for p in exclude_patterns}
+        if exclude_patterns
+        else set()
+    )
     exclude_pattern_set |= set(DEFAULT_GLOB_EXCLUDE_PATTERNS)
 
-    imported_modules: List[Module] = []
-    annotations: List[Annotation] = []
+    imported_modules: list[Module] = []
+    annotations: list[Annotation] = []
 
     for dirpath, subdirs, files in os.walk(
         project_root, followlinks=followlinks
     ):
-        if _match_exclude_patterns(dirpath, exclude_pattern_set, project_root):
+        if _match_exclude_patterns(dirpath, exclude_pattern_set):
             logger.debug('excluded by glob patterns: %s', dirpath)
             subdirs.clear()
             continue
 
         for fn in files:
             fpath = pathlib.join(dirpath, fn)
-            if _match_exclude_patterns(
-                fpath, exclude_pattern_set, project_root
-            ):
+            if _match_exclude_patterns(fpath, exclude_pattern_set):
                 logger.debug('excluded by glob patterns: %s', fpath)
                 continue
             logger.debug('analyzing file: %s', fpath)
@@ -84,9 +87,7 @@ def parse_imports(
             code = _read_code(fpath)
             if code:
                 imported_modules.extend(
-                    parse_file_imports(
-                        fpath, code, visit_doc_str=visit_doc_str
-                    )
+                    parse_file_imports(fpath, code, visit_doc_str=visit_doc_str)
                 )
                 if parse_requirement_annotations:
                     annotations.extend(
@@ -95,52 +96,51 @@ def parse_imports(
     return imported_modules, annotations
 
 
-def parse_file_comment_annotations(fpath: str,
-                                   code: bytes) -> List[Annotation]:
+def parse_file_comment_annotations(fpath: str, code: bytes) -> list[Annotation]:
     """Parse annotations in comments, the valid format is as follows:
-        import foo # pigar: required-packages=pkg-bar
-        import foo # pigar: required-distributions=pkg-bar # package name
-        import foo # pigar: required-imports=bar # top level import name
+    import foo # pigar: required-packages=pkg-bar
+    import foo # pigar: required-distributions=pkg-bar # package name
+    import foo # pigar: required-imports=bar # top level import name
     """
-    annotations: List[Annotation] = []
+    annotations: list[Annotation] = []
     try:
         for token in tokenize.tokenize(io.BytesIO(code).readline):
             if token.type != tokenize.COMMENT:
                 continue
             lineno, offset = token.start
             comment = token.line[offset:]
-            if not comment.startswith("#"):
+            if not comment.startswith('#'):
                 continue
-            comment = comment.lstrip("#").strip()
-            if not comment.startswith("pigar:"):
+            comment = comment.lstrip('#').strip()
+            if not comment.startswith('pigar:'):
                 continue
-            annotation = comment.lstrip("pigar:").strip().split("#", 1)[0]
-            parts = annotation.split("=", 1)
+            annotation = comment.lstrip('pigar:').strip().split('#', 1)[0]
+            parts = annotation.split('=', 1)
             if len(parts) != 2:
                 continue
             # No empty space allowed in parts.
-            if parts[0] in ("required-packages", "required-distributions"):
-                for name in parts[1].split(","):
+            if parts[0] in ('required-packages', 'required-distributions'):
+                for name in parts[1].split(','):
                     annotations.append(
                         Annotation(
                             distribution_name=name,
                             top_level_import_name=None,
                             file=fpath,
-                            lineno=lineno
+                            lineno=lineno,
                         )
                     )
-            elif parts[0] == "required-imports":
-                for name in parts[1].split(","):
+            elif parts[0] == 'required-imports':
+                for name in parts[1].split(','):
                     annotations.append(
                         Annotation(
                             distribution_name=None,
                             top_level_import_name=name,
                             file=fpath,
-                            lineno=lineno
+                            lineno=lineno,
                         )
                     )
     except Exception as e:
-        logger.error("parse %s failed: %r", fpath, e)
+        logger.error('parse %s failed: %r', fpath, e)
     return annotations
 
 
@@ -151,24 +151,24 @@ def parse_file_comment_annotations(fpath: str,
 #  - https://ipython.readthedocs.io/en/stable/interactive/magics.html
 #  - https://ipython.org/ipython-doc/3/interactive/shell.html
 _ipynb_magics_and_commands_regex = re.compile(
-    r"[^#]*\s*(!|%)[{a-zA-Z][a-zA-Z0-9_-]*.*"
+    r'[^#]*\s*(!|%)[{a-zA-Z][a-zA-Z0-9_-]*.*'
 )
 
 
 def _read_code(fpath: str) -> Optional[bytes]:
-    if fpath.endswith(".ipynb"):
+    if fpath.endswith('.ipynb'):
         nb = nbformat.read(fpath, as_version=4)
-        code = ""
+        code = ''
         for cell in nb.cells:
-            if cell.cell_type != "code":
+            if cell.cell_type != 'code':
                 continue
             for line in cell.source.splitlines():
                 match = _ipynb_magics_and_commands_regex.match(line)
                 if not (match and match.group(0) == line):
                     code += line
-                code += "\n"
-        return code.encode(encoding="utf-8")
-    elif fpath.endswith(".py"):
+                code += '\n'
+        return code.encode(encoding='utf-8')
+    if fpath.endswith('.py'):
         with open(fpath, 'rb') as f:
             return f.read()
     return None
@@ -176,8 +176,8 @@ def _read_code(fpath: str) -> Optional[bytes]:
 
 def parse_file_imports(
     fpath: str, content: bytes, visit_doc_str: bool = False
-) -> List[Module]:
-    py_codes: Deque[Tuple[bytes, int]] = collections.deque([(content, 1)])
+) -> list[Module]:
+    py_codes: deque[tuple[bytes, int]] = collections.deque([(content, 1)])
     parser = ImportsParser(
         lambda code, lineno: py_codes.append((code, lineno)),  # noqa
         doc_str_enabled=visit_doc_str,
@@ -189,25 +189,24 @@ def parse_file_imports(
             parser.parse(code, fpath, lineno)
         except SyntaxError as e:
             # Ignore SyntaxError in Python code.
-            logger.warn("parse %s:%d failed: %r", fpath, lineno, e)
+            logger.warn('parse %s:%d failed: %r', fpath, lineno, e)
     return parser.modules
 
 
-class ImportsParser(object):
-
+class ImportsParser:
     def __init__(
         self,
         rawcode_callback: Optional[Callable[[bytes, int], None]] = None,
         doc_str_enabled: bool = False,
     ):
-        self._modules: List[Module] = []
+        self._modules: list[Module] = []
         self._rawcode_callback = rawcode_callback
         self._doc_str_enabled = doc_str_enabled
 
     def parse(self, content: bytes, fpath: str, lineno: int):
         parsed = ast.parse(content)
         self._fpath = fpath
-        self._mods = fpath[:-3].split("/")
+        self._mods = fpath[:-3].split('/')
         self._lineno = lineno - 1
         self.visit(parsed)
 
@@ -234,18 +233,18 @@ class ImportsParser(object):
         mod_name = node.module
         level = node.level
         if mod_name is not None:
-            name = level*"." + mod_name
+            name = level * '.' + mod_name
             lineno = node.lineno + self._lineno
             self._add_module(name, try_, lineno)
             return
 
         # Handle cases like: from .. import a
         level -= 1
-        mod_name = ""
+        mod_name = ''
         for alias in node.names:
             name = mod_name
-            if level > 0 or mod_name == "":
-                name = level*"." + mod_name + "." + alias.name
+            if level > 0 or mod_name == '':
+                name = level * '.' + mod_name + '.' + alias.name
             lineno = node.lineno + self._lineno
             self._add_module(name, try_, lineno)
 
@@ -276,9 +275,11 @@ class ImportsParser(object):
             self._add_rawcode(node.body.s, node.lineno + self._lineno)
         # PR#13: https://github.com/damnever/pigar/pull/13
         # Sometimes exec statement may be called with tuple in Py2.7.6
-        elif hasattr(node.body, 'elts') and len(
-            node.body.elts
-        ) >= 1 and hasattr(node.body.elts[0], 's'):
+        elif (
+            hasattr(node.body, 'elts')
+            and len(node.body.elts) >= 1
+            and hasattr(node.body.elts[0], 's')
+        ):
             self._add_rawcode(node.body.elts[0].s, node.lineno + self._lineno)
 
     def visit_Expr(self, node: ast.Expr):
@@ -297,19 +298,15 @@ class ImportsParser(object):
             lineno = node.lineno + self._lineno
             if hasattr(value.func, 'id'):
                 if (
-                    value.func.id == 'eval'
-                    and hasattr(node.value.args[0], 's')
-                ):
-                    self._add_rawcode(node.value.args[0].s, lineno)
-                # **`exec` function in Python 3.**
-                elif (
-                    value.func.id == 'exec'
-                    and hasattr(node.value.args[0], 's')
+                    value.func.id == 'eval' and hasattr(node.value.args[0], 's')
+                ) or (
+                    value.func.id == 'exec' and hasattr(node.value.args[0], 's')
                 ):
                     self._add_rawcode(node.value.args[0].s, lineno)
                 # `__import__` function.
                 elif (
-                    value.func.id == '__import__' and len(node.value.args) > 0
+                    value.func.id == '__import__'
+                    and len(node.value.args) > 0
                     and hasattr(node.value.args[0], 's')
                 ):
                     self._add_module(node.value.args[0].s, False, lineno)
@@ -353,30 +350,32 @@ class ImportsParser(object):
 
     def visit(self, node: ast.AST):
         """Visit a node, no recursively."""
-        for node in ast.walk(node):
-            method = 'visit_' + node.__class__.__name__
-            getattr(self, method, lambda x: x)(node)
+        for _node in ast.walk(node):
+            method = 'visit_' + _node.__class__.__name__
+            getattr(self, method, lambda x: x)(_node)
 
     @staticmethod
     def _parse_docstring(
-        node: Union[ast.AsyncFunctionDef, ast.FunctionDef, ast.ClassDef,
-                    ast.Module]
+        node: Union[
+            ast.AsyncFunctionDef, ast.FunctionDef, ast.ClassDef, ast.Module
+        ],
     ) -> Optional[bytes]:
         """Extract code from docstring."""
         docstring = ast.get_docstring(node)
         if docstring:
             parser = doctest.DocTestParser()
             try:
-                dt = parser.get_doctest(docstring, {}, "", None, None)
+                dt = parser.get_doctest(docstring, {}, '', None, None)
             except ValueError:
                 # >>> 'abc'
                 pass
             else:
                 examples = dt.examples
-                return '\n'.join([example.source for example in examples]
-                                 ).encode(encoding="utf-8")
+                return '\n'.join(
+                    [example.source for example in examples]
+                ).encode(encoding='utf-8')
         return None
 
     @property
-    def modules(self) -> List[Module]:
+    def modules(self) -> list[Module]:
         return self._modules

@@ -1,17 +1,17 @@
+import asyncio
+import codecs
+import contextlib
+import glob
+import io
+import json
+import multiprocessing
 import os
 import os.path
 import sys
-import io
-import json
-import codecs
-import glob
-import asyncio
-import multiprocessing
 
-from .version import version
-from .log import enable_pretty_logging, logger
-from .helpers import Color, print_table, lines_diff
-from .parser import DEFAULT_GLOB_EXCLUDE_PATTERNS
+import click
+
+from ._vendor.pip._vendor.packaging.specifiers import Specifier
 from .core import (
     RequirementsAnalyzer,
     check_requirements_latest_versions,
@@ -19,33 +19,32 @@ from .core import (
     sync_distributions_index_from_pypi,
 )
 from .dist import DEFAULT_PYPI_INDEX_URL
-from ._vendor.pip._vendor.packaging.specifiers import Specifier
-
-import click
+from .helpers import Color, lines_diff, print_table
+from .log import enable_pretty_logging, logger
+from .parser import DEFAULT_GLOB_EXCLUDE_PATTERNS
+from .version import version
 
 
 # Ref: https://click.palletsprojects.com/en/5.x/advanced/
 class AliasedGroup(click.Group):
-
     def get_command(self, ctx, cmd_name):
         rv = click.Group.get_command(self, ctx, cmd_name)
         if rv is not None:
             return rv
-        matches = [
-            x for x in self.list_commands(ctx) if x.startswith(cmd_name)
-        ]
+        matches = [x for x in self.list_commands(ctx) if x.startswith(cmd_name)]
         if not matches:
             return None
-        elif len(matches) == 1:
+        if len(matches) == 1:
             return click.Group.get_command(self, ctx, matches[0])
         ctx.fail(
-            'Too commands has the same prefix: %s' %
-            ', '.join(sorted(matches))
+            'Too commands has the same prefix: {}'.format(
+                ', '.join(sorted(matches))
+            )
         )
+        return None
 
 
 def _click_prompt_choose_multiple_or_all(choices):
-
     def _value_proc(input):
         input = input.strip()
         if input == '*':
@@ -62,10 +61,10 @@ def _click_prompt_choose_multiple_or_all(choices):
 
 @click.group(
     cls=AliasedGroup,
-    context_settings=dict(
-        help_option_names=['-h', '--help'],
-        max_content_width=120,
-    ),
+    context_settings={
+        'help_option_names': ['-h', '--help'],
+        'max_content_width': 120,
+    },
 )
 @click.version_option(version=version)
 @click.option(
@@ -74,25 +73,21 @@ def _click_prompt_choose_multiple_or_all(choices):
     'log_level',
     default='WARNING',
     show_default=True,
-    help=
-    'Show given level log messages. The DEBUG level will print log messages from third party packages.',
+    help='Show given level log messages. The DEBUG level will print log messages from third party packages.',
     type=click.Choice(['ERROR', 'WARNING', 'INFO', 'DEBUG']),
 )
 def cli(log_level):
-    '''A tool to generate requirements.txt for your Python project,
+    """A tool to generate requirements.txt for your Python project,
     and more than that.
 
     NOTE that pigar is not a package/dependency management tool.
-    '''
-    enable_pretty_logging(
-        log_level,
-        log_level.casefold() == "DEBUG".casefold()
-    )
+    """
+    enable_pretty_logging(log_level, log_level.casefold() == 'DEBUG'.casefold())
 
 
 @click.command(name='gohome')
 def gohome():
-    '''Go to the project home page to report a BUG or find more information.'''
+    """Go to the project home page to report a BUG or find more information."""
     click.launch('https://github.com/damnever/pigar')
 
 
@@ -128,8 +123,7 @@ def gohome():
     '--show-differences/--dont-show-differences',
     'show_differences',
     default=True,
-    help=
-    'Whether to show differences when the requirements file is overwritten.',
+    help='Whether to show differences when the requirements file is overwritten.',
 )
 @click.option(
     '--visit-doc-string',
@@ -146,8 +140,7 @@ def gohome():
     show_default=True,
     multiple=True,
     type=str,
-    help=
-    'Exclude files and directories for searching that match the given glob.',
+    help='Exclude files and directories for searching that match the given glob.',
 )
 @click.option(
     '--follow-symbolic-links/--dont-follow-symbolic-links',
@@ -161,8 +154,7 @@ def gohome():
     'dry_run',
     default=False,
     is_flag=True,
-    help=
-    'Don\'t actually write a requirements file, just print the file content.',
+    help="Don't actually write a requirements file, just print the file content.",
 )
 @click.option(
     '-i',
@@ -170,8 +162,7 @@ def gohome():
     'index_url',
     default=DEFAULT_PYPI_INDEX_URL,
     show_default=True,
-    help=
-    'Base URL of the Python Package Index, this should point to a repository compliant with PEP 503 (the simple repository API)',
+    help='Base URL of the Python Package Index, this should point to a repository compliant with PEP 503 (the simple repository API)',
 )
 @click.option(
     '--include-prereleases',
@@ -187,8 +178,7 @@ def gohome():
     default='ask',
     show_default=True,
     type=click.Choice(['ask', 'yes', 'no']),
-    help=
-    'Whether to answer all possible questions with yes or no, otherwise manual confirmation is required.'
+    help='Whether to answer all possible questions with yes or no, otherwise manual confirmation is required.',
 )
 @click.option(
     '--auto-select',
@@ -196,8 +186,7 @@ def gohome():
     default=False,
     show_default=True,
     is_flag=True,
-    help=
-    'When multiple package/distributions are found for the same module, select the best matched one or all of them automatically, otherwise manual interaction is required.'
+    help='When multiple package/distributions are found for the same module, select the best matched one or all of them automatically, otherwise manual interaction is required.',
 )
 @click.option(
     '--enable-feature',
@@ -205,25 +194,34 @@ def gohome():
     default=[],
     type=click.Choice(['requirement-annotations']),
     multiple=True,
-    help=
-    'Whether to enable experimental features. The "requirement-annotations" feature allows you to declare implicit package/distribution or top-level import names by adding a comment like this: `# pigar: required-packages=pkg-foo,pkg-bar` or `# pigar: required-imports=foo,bar`.'
+    help='Whether to enable experimental features. The "requirement-annotations" feature allows you to declare implicit package/distribution or top-level import names by adding a comment like this: `# pigar: required-packages=pkg-foo,pkg-bar` or `# pigar: required-imports=foo,bar`.',
 )
 @click.argument(
     'project_path',
     default=os.curdir,
-    type=click.Path(file_okay=False, exists=True)
+    type=click.Path(file_okay=False, exists=True),
 )
 def generate(
-    requirement_file, with_referenced_comments, comparison_specifier,
-    show_differences, visit_doc_string, exclude_glob, follow_symbolic_links,
-    dry_run, index_url, include_prereleases, question_answer, auto_select,
-    experimental_features, project_path
+    requirement_file,
+    with_referenced_comments,
+    comparison_specifier,
+    show_differences,
+    visit_doc_string,
+    exclude_glob,
+    follow_symbolic_links,
+    dry_run,
+    index_url,
+    include_prereleases,
+    question_answer,
+    auto_select,
+    experimental_features,
+    project_path,
 ):
-    '''Generate requirements.txt for the given Python project.'''
+    """Generate requirements.txt for the given Python project."""
     requirement_file = os.path.abspath(requirement_file)
     project_path = os.path.abspath(project_path)
 
-    def _dists_filter(import_name, locations, distributions, best_match):
+    def _dists_filter(import_name, distributions, best_match):
         if auto_select:
             if best_match:
                 return [best_match]
@@ -233,11 +231,13 @@ def generate(
         dist_names = list(dists_mapping.keys())
         msg = 'Please select one or more packages from the below list for the module '
         msg += Color.YELLOW(f'"{import_name}"')
-        msg += f' (input * to select all, multiple values can be sperated by ",")\n'
+        msg += (
+            ' (input * to select all, multiple values can be sperated by ",")\n'
+        )
         dist_names_msg = ', '.join(dist_names)
         msg += Color.YELLOW(f'[{dist_names_msg}]\n')
         if best_match is not None:
-            msg += f'(the best match may be '
+            msg += '(the best match may be '
             msg += Color.YELLOW(f'"{best_match.name}"')
             msg += ')'
         choosed = click.prompt(
@@ -269,10 +269,8 @@ def generate(
             msgbuf.write('\n')
             msgbuf.write(
                 Color.RED(
-                    (
-                        'Some of them may be not installed in the local environment.\n'
-                        'Try to search them on PyPI for further analysis?'
-                    )
+                    'Some of them may be not installed in the local environment.\n'
+                    'Try to search them on PyPI for further analysis?'
                 )
             )
             yes = click.confirm(msgbuf.getvalue(), default=False)
@@ -301,7 +299,7 @@ def generate(
             with_ref_comments=with_referenced_comments,
             comparison_specifier=comparison_specifier,
             with_banner=False,
-            with_unknown_imports=False
+            with_unknown_imports=False,
         )
         # buf.close()
         print(Color.GREEN('\nGenerated requirements are as follows:'))
@@ -316,7 +314,7 @@ def generate(
 
     old_requirement_file_content = _read_requirement_file(requirement_file)
 
-    tmp_requirement_file = requirement_file + ".tmp"
+    tmp_requirement_file = requirement_file + '.tmp'
     try:
         with open(tmp_requirement_file, 'w+') as f:
             analyzer.write_requirements(
@@ -324,14 +322,12 @@ def generate(
                 with_ref_comments=with_referenced_comments,
                 comparison_specifier=comparison_specifier,
                 with_banner=True,
-                with_unknown_imports=False
+                with_unknown_imports=False,
             )
         os.replace(tmp_requirement_file, requirement_file)
     finally:
-        try:
+        with contextlib.suppress(FileNotFoundError):
             os.remove(tmp_requirement_file)
-        except FileNotFoundError:
-            pass
 
     if show_differences:
         msg = 'Requirements file has been overwritten, '
@@ -345,8 +341,7 @@ def generate(
             if is_diff:
                 msg += 'here is the difference:'
                 print(
-                    '{0}\n{1}'.format(Color.YELLOW(msg), ''.join(diffs)),
-                    end=''
+                    '{}\n{}'.format(Color.YELLOW(msg), ''.join(diffs)), end=''
                 )
         else:
             msg += 'no difference.'
@@ -370,8 +365,7 @@ def generate(
     'index_url',
     default=DEFAULT_PYPI_INDEX_URL,
     show_default=True,
-    help=
-    'Base URL of the Python Package Index, this should point to a repository compliant with PEP 503 (the simple repository API)',
+    help='Base URL of the Python Package Index, this should point to a repository compliant with PEP 503 (the simple repository API)',
 )
 @click.option(
     '--include-prereleases',
@@ -387,15 +381,14 @@ def generate(
     show_default=True,
     default='table',
     type=click.Choice(['table', 'requirements', 'json']),
-    help=
-    'Specify the output structure format. NOTE that `requirements` format can not handle complex cases, such as `abc>=1.2.0,<1.3.0`.',
+    help='Specify the output structure format. NOTE that `requirements` format can not handle complex cases, such as `abc>=1.2.0,<1.3.0`.',
 )
 def check(requirement_file, index_url, include_prereleases, format):
-    '''Check latest versions for packages/distributions from requirements.txt.'''
+    """Check latest versions for packages/distributions from requirements.txt."""
     files = []
     cwd = os.getcwd()
     if not requirement_file:
-        logger.debug('searching requirements file under {0} ...'.format(cwd))
+        logger.debug(f'searching requirements file under {cwd} ...')
         files.extend(glob.glob(os.path.join(cwd, '*requirements.txt')))
     else:
         requirement_file = os.path.abspath(requirement_file)
@@ -412,7 +405,7 @@ def check(requirement_file, index_url, include_prereleases, format):
         check_requirements_latest_versions(
             files,
             pypi_index_url=index_url,
-            include_prereleases=include_prereleases
+            include_prereleases=include_prereleases,
         )
     )
     if format == 'requirements':
@@ -436,7 +429,7 @@ def check(requirement_file, index_url, include_prereleases, format):
                 (r.name, r.specifier, r.local_version, r.latest_version)
                 for r in reqs
             ],
-            headers=['DISTRIBUTION', 'SPEC', 'LOCAL', 'LATEST']
+            headers=['DISTRIBUTION', 'SPEC', 'LOCAL', 'LATEST'],
         )
 
 
@@ -447,8 +440,7 @@ def check(requirement_file, index_url, include_prereleases, format):
     'index_url',
     default=DEFAULT_PYPI_INDEX_URL,
     show_default=True,
-    help=
-    'Base URL of the Python Package Index, this should point to a repository compliant with PEP 503 (the simple repository API)',
+    help='Base URL of the Python Package Index, this should point to a repository compliant with PEP 503 (the simple repository API)',
 )
 @click.option(
     '--include-prereleases',
@@ -468,7 +460,7 @@ def check(requirement_file, index_url, include_prereleases, format):
 )
 @click.argument('names', nargs=-1, type=str)
 def search(names, index_url, include_prereleases, format):
-    '''Search packages/distributions by the top level import/module names'''
+    """Search packages/distributions by the top level import/module names"""
     results, not_found = asyncio.run(
         search_distributions_by_top_level_import_names(
             names,
@@ -484,10 +476,12 @@ def search(names, index_url, include_prereleases, format):
                     {
                         'distribution': dist[0],
                         'version': dist[1],
-                        'where': dist[2]
-                    } for dist in dists
-                ]
-            } for name, dists in results.items()
+                        'where': dist[2],
+                    }
+                    for dist in dists
+                ],
+            }
+            for name, dists in results.items()
         ]
         if not_found:
             print(json.dumps({'results': found, 'not_found': not_found}))
@@ -496,22 +490,20 @@ def search(names, index_url, include_prereleases, format):
     else:
         for name in results:
             print(
-                'Found package distribution(s) for import name "{0}":'.format(
-                    Color.GREEN(name)
-                )
+                f'Found package distribution(s) for import name "{Color.GREEN(name)}":'
             )
             print_table(
                 sorted(results[name], key=lambda item: item[0].lower()),
-                headers=['DISTRIBUTION', 'VERSION', 'WHERE']
+                headers=['DISTRIBUTION', 'VERSION', 'WHERE'],
             )
         if not_found:
-            msg = '"{0}" not found.'.format(Color.RED(', '.join(not_found)))
+            msg = '"{}" not found.'.format(Color.RED(', '.join(not_found)))
             print(Color.YELLOW(msg))
 
 
 @click.group(name='indexdb')
 def indexdb():
-    '''Index database related operations.'''
+    """Index database related operations."""
     pass
 
 
@@ -522,8 +514,7 @@ def indexdb():
     'index_url',
     default=DEFAULT_PYPI_INDEX_URL,
     show_default=True,
-    help=
-    'Base URL of the Python Package Index, this should point to a repository compliant with PEP 503 (the simple repository API)',
+    help='Base URL of the Python Package Index, this should point to a repository compliant with PEP 503 (the simple repository API)',
 )
 @click.option(
     '-c',
@@ -535,7 +526,7 @@ def indexdb():
     help='The number of workers to process distributions concurrently.',
 )
 def indexdb_sync(index_url, concurrency):
-    '''Synchronize the local index database with distributions' metadata on PyPI.'''
+    """Synchronize the local index database with distributions' metadata on PyPI."""
     # TODO: garbage collection.
     sync_distributions_index_from_pypi(
         index_url=index_url, concurrency=concurrency

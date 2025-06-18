@@ -1,21 +1,22 @@
+import contextlib
+import dataclasses
+import difflib
+import io
 import os
 import os.path
 import pathlib
-import io
-import sys
 import re
-import difflib
+import sys
 import urllib.parse
-import contextlib
-import dataclasses
-from typing import Optional, List, Generator, Callable
+from collections.abc import Generator
+from typing import Callable, Optional
 
-from ._vendor.pip._internal.req.req_file import get_file_content
-from ._vendor.pip._internal.req.constructors import parse_req_from_line
-from ._vendor.pip._internal.network.session import PipSession
 from ._vendor.pip._internal.exceptions import InstallationError
-
+from ._vendor.pip._internal.network.session import PipSession
+from ._vendor.pip._internal.req.constructors import parse_req_from_line
+from ._vendor.pip._internal.req.req_file import get_file_content
 from ._vendor.pip._vendor.packaging.version import Version
+
 try:
     import colorama
 except ImportError:
@@ -53,33 +54,33 @@ Color = dataclasses.make_dataclass(
 )
 
 
-def print_table(rows, headers=[]):
+def print_table(rows, headers=None):
     """Print table. Such as:
-     PACKAGE | CURRENT | LATEST
-     --------+---------+-------
-     pigar   | 0.4.5   | 0.5.0
+    PACKAGE | CURRENT | LATEST
+    --------+---------+-------
+    pigar   | 0.4.5   | 0.5.0
     """
+    if headers is None:
+        headers = []
     end = len(headers) - 1
     hlens = [len(col) for col in headers]
     col_lens = hlens[:]
     for row in rows:
-        col_lens = [
-            max(col_lens[idx], len(col)) for idx, col in enumerate(row)
-        ]
-    width = sum(col_lens) + end*3 + 2
-    print(' ' + '='*width, end='\n ')
+        col_lens = [max(col_lens[idx], len(col)) for idx, col in enumerate(row)]
+    width = sum(col_lens) + end * 3 + 2
+    print(' ' + '=' * width, end='\n ')
     for idx, header in enumerate(headers):
         print(
-            " {0}{1}".format(header, (col_lens[idx] - hlens[idx]) * ' '),
-            end=' |' if idx != end else '\n  '
+            ' {}{}'.format(header, (col_lens[idx] - hlens[idx]) * ' '),
+            end=' |' if idx != end else '\n  ',
         )
     for idx, col_len in enumerate(col_lens):
-        print('{0}'.format(col_len * '-'), end='-+-' if idx != end else '\n ')
+        print('{}'.format(col_len * '-'), end='-+-' if idx != end else '\n ')
     for row in rows:
         for idx, col in enumerate(row):
             print(
-                ' {0}{1}'.format(col, (col_lens[idx] - len(col)) * ' '),
-                end=' |' if idx != end else '\n '
+                ' {}{}'.format(col, (col_lens[idx] - len(col)) * ' '),
+                end=' |' if idx != end else '\n ',
             )
     print('=' * width)
 
@@ -91,11 +92,10 @@ class PraseRequirementError(InstallationError):
 PIP_INSTALL_OPTIONS_RE = re.compile(
     r'^\s*(?P<opt>-r|--requirement|-e|--editable)\s*(?P<value>\S*)\s*.*'
 )
-SCHEME_RE = re.compile(r"^(http|https|file):", re.I)
+SCHEME_RE = re.compile(r'^(http|https|file):', re.I)
 
 
-class ParsedRequirementParts(object):
-
+class ParsedRequirementParts:
     def __init__(
         self,
         requirement,
@@ -163,7 +163,7 @@ def parse_requirements(fpath) -> Generator[ParsedRequirementParts, None, None]:
             # Ignore all other options..
             continue
 
-        line_source = "line {} of {}".format(lineno, fpath)
+        line_source = f'line {lineno} of {fpath}'
         try:
             req = parse_req_from_line(line, line_source)
             yield ParsedRequirementParts(
@@ -173,11 +173,11 @@ def parse_requirements(fpath) -> Generator[ParsedRequirementParts, None, None]:
                 req.extras,
             )
         except InstallationError as e:
-            raise PraseRequirementError(e.args)
+            raise PraseRequirementError(e.args) from e
         except Exception as e:
             raise PraseRequirementError(
-                "Fail to parse {} on {}: {}", origin_line, line_source, e
-            )
+                'Fail to parse {} on {}: {}', origin_line, line_source, e
+            ) from e
 
     for rfile in referenced_files:
         for req in parse_requirements(rfile):
@@ -187,8 +187,7 @@ def parse_requirements(fpath) -> Generator[ParsedRequirementParts, None, None]:
 def cmp_to_key(cmp_func):
     """Convert a cmp=function into a key=function."""
 
-    class K(object):
-
+    class K:
         def __init__(self, obj, *args):
             self.obj = obj
 
@@ -219,7 +218,7 @@ def compare_version(version1, version2):
 def lines_diff(lines1, lines2):
     """Show difference between lines."""
     is_diff = False
-    diffs = list()
+    diffs = []
 
     for line in difflib.ndiff(lines1, lines2):
         if not is_diff and line[0] in ('+', '-'):
@@ -231,26 +230,26 @@ def lines_diff(lines1, lines2):
 
 def trim_prefix(content, prefix):
     if content.startswith(prefix):
-        return content[len(prefix):]
+        return content[len(prefix) :]
     return content
 
 
 def trim_suffix(content, suffix):
     if content.endswith(suffix):
-        return content[:-len(suffix)]
+        return content[: -len(suffix)]
     return content
 
 
-class InMemoryOrDiskFile(object):
+class InMemoryOrDiskFile:
     # The instance must be picklable.
 
     def __init__(
         self,
         name: str,
         data: Optional[bytes] = None,
-        file_path: Optional[str] = None
+        file_path: Optional[str] = None,
     ):
-        assert (data is not None or file_path is not None)
+        assert data is not None or file_path is not None
         self.name = name
         self._data = data
         self._path = file_path
@@ -262,7 +261,7 @@ class InMemoryOrDiskFile(object):
 
     def open(self):
         if self._stream is not None:
-            raise IOError(f'{self.name} already opened')
+            raise OSError(f'{self.name} already opened')
 
         if self._data is not None:
             self._stream = io.BytesIO(self._data)
@@ -284,8 +283,10 @@ class InMemoryOrDiskFile(object):
         self.close()
 
 
-def determine_python_sys_lib_paths() -> List[str]:
-    pythonmmv_zip = f'python{sys.version_info.major}{sys.version_info.minor}.zip'
+def determine_python_sys_lib_paths() -> list[str]:
+    pythonmmv_zip = (
+        f'python{sys.version_info.major}{sys.version_info.minor}.zip'
+    )
     # Ref: https://docs.python.org/3/library/sys_path_init.html
     py_sys_path_prefix = ''
     for path in sys.path:
@@ -307,7 +308,7 @@ def determine_python_sys_lib_paths() -> List[str]:
     return lib_paths
 
 
-def is_commonpath(paths: List[str], target: str) -> bool:
+def is_commonpath(paths: list[str], target: str) -> bool:
     try:
         return os.path.commonpath(paths) == target
     except ValueError:

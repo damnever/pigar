@@ -11,12 +11,11 @@ def enable_pretty_logging(log_level='info', with_others=False, logger=logger):
     sh = logging.StreamHandler()
     sh.setFormatter(_LogFormatter())
     if not with_others:
-        sh.addFilter(_LogFilter("pigar"))
+        sh.addFilter(_LogFilter('pigar'))
     logger.addHandler(sh)
 
 
 class _LogFormatter(logging.Formatter):
-
     FORMAT = '%(asctime)s %(message)s'
     DATE_FORMAT = '%H:%M:%S'
     DATE_COLOR = Color.BLUE
@@ -32,7 +31,7 @@ class _LogFormatter(logging.Formatter):
         fmt=FORMAT,
         datefmt=DATE_FORMAT,
         datecolor=DATE_COLOR,
-        levelcolors=LEVEL_COLORS
+        levelcolors=LEVEL_COLORS,
     ):
         logging.Formatter.__init__(self, datefmt=datefmt)
         self._fmt = fmt
@@ -45,9 +44,8 @@ class _LogFormatter(logging.Formatter):
 
         color = self._levelcolors.get(record.levelno, lambda x: x)
         message = color(record.getMessage())
-        if record.exc_info:
-            if not record.exc_text:
-                record.exc_text = self.formatException(record.exc_info)
+        if record.exc_info and not record.exc_text:
+            record.exc_text = self.formatException(record.exc_info)
         if record.exc_text:
             message += '\n' + record.exc_text
         record.message = message
@@ -57,6 +55,5 @@ class _LogFormatter(logging.Formatter):
 
 
 class _LogFilter(logging.Filter):
-
     def filter(self, record: logging.LogRecord):
         return record.name == _LOGGER_NAME

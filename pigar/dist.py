@@ -1,31 +1,47 @@
+import asyncio
+import codecs
+import concurrent.futures
 import os
 import os.path as pathlib
 import re
-import codecs
 import tempfile
-from html.parser import HTMLParser
-from urllib.parse import urljoin, quote, urlparse
-from typing import Mapping, Set, List, NamedTuple, Optional, ValuesView
-from html.parser import HTMLParser
-from urllib.parse import urljoin
 from collections import defaultdict
-import concurrent.futures
-import asyncio
-
-from .log import logger
-from .helpers import cmp_to_key, trim_prefix, trim_suffix, InMemoryOrDiskFile, is_commonpath
-from .unpack import parse_top_levels
-from .db import database
-from .version import version
-from ._vendor.pip._internal.vcs.versioncontrol import RemoteNotFoundError, RemoteNotValidError, vcs
-from ._vendor.pip._internal.exceptions import BadCommand, InstallationError
-from ._vendor.pip._vendor.distlib.database import DistributionPath, Distribution, EggInfoDistribution
-from ._vendor.pip._vendor.packaging.version import Version, InvalidVersion
-from ._vendor.pip._vendor.distlib.locators import SimpleScrapingLocator
-from ._vendor.pip._vendor.distlib.wheel import Wheel
-from ._vendor.pip._vendor.packaging.utils import canonicalize_name, NormalizedName
+from collections.abc import Mapping, ValuesView
+from html.parser import HTMLParser
+from typing import NamedTuple, Optional
+from urllib.parse import quote, urljoin, urlparse
 
 import aiohttp
+
+from ._vendor.pip._internal.exceptions import BadCommand, InstallationError
+from ._vendor.pip._internal.vcs.versioncontrol import (
+    RemoteNotFoundError,
+    RemoteNotValidError,
+    vcs,
+)
+from ._vendor.pip._vendor.distlib.database import (
+    Distribution,
+    DistributionPath,
+    EggInfoDistribution,
+)
+from ._vendor.pip._vendor.distlib.locators import SimpleScrapingLocator
+from ._vendor.pip._vendor.distlib.wheel import Wheel
+from ._vendor.pip._vendor.packaging.utils import (
+    NormalizedName,
+    canonicalize_name,
+)
+from ._vendor.pip._vendor.packaging.version import InvalidVersion, Version
+from .db import database
+from .helpers import (
+    InMemoryOrDiskFile,
+    cmp_to_key,
+    is_commonpath,
+    trim_prefix,
+    trim_suffix,
+)
+from .log import logger
+from .unpack import parse_top_levels
+from .version import version
 
 DEFAULT_PYPI_INDEX_URL = 'https://pypi.org/simple/'
 
@@ -33,9 +49,9 @@ DEFAULT_PYPI_INDEX_URL = 'https://pypi.org/simple/'
 # TODO: use custom configuration rather than hard-code mapping.
 # Special distributions top level import name: Distribution name -> import names.
 _hardcode_distributions_with_import_names = {
-    "dogpile-cache": set(["dogpile.cache"]),
-    "dogpile-core": set(["dogpile.core"]),
-    "ruamel-yaml": set(["ruamel.yaml"]),
+    'dogpile-cache': {'dogpile.cache'},
+    'dogpile-core': {'dogpile.core'},
+    'ruamel-yaml': {'ruamel.yaml'},
 }
 
 
@@ -55,19 +71,19 @@ def _get_hardcode_distributions_import_names(name):
 def _maybe_include_project_name_as_import_name(
     top_levels,
     project_name,
-    _module_name_re=re.compile(r"^[a-zA-Z]+[a-zA-Z0-9_]*$")
+    _module_name_re=re.compile(r'^[a-zA-Z]+[a-zA-Z0-9_]*$'),
 ):
     if not top_levels and _module_name_re.fullmatch(project_name) is not None:
         if isinstance(top_levels, set):
             top_levels.add(project_name)
         elif isinstance(top_levels, tuple):
-            top_levels = (project_name, )
+            top_levels = (project_name,)
         else:
             top_levels = [project_name]
     return top_levels
 
 
-class FrozenRequirement(object):
+class FrozenRequirement:
     """
     Modified version of:
     https://github.com/pypa/pip/blob/90f51db1a32592430f2e4f6fbb9efa7a3a249423/src/pip/_internal/operations/freeze.py#L219
@@ -77,20 +93,20 @@ class FrozenRequirement(object):
         self,
         name: str,
         version: str,
-        modules: List[str] = [],
+        modules: Optional[list[str]] = None,
         editable: bool = False,
         url: str = '',
-        comments: List[str] = [],
-        code_paths: Set[str] = set(),
+        comments: Optional[list[str]] = None,
+        code_paths: Optional[set[str]] = None,
     ):
         self.name = name
         self.version = version
         self.canonical_name = canonicalize_name(name)
-        self.modules = modules
+        self.modules = modules or []
         self.editable = editable
         self.url = url
-        self.comments = comments
-        self.code_paths = code_paths
+        self.comments = comments or []
+        self.code_paths = code_paths or set()
 
     @classmethod
     def from_dist(cls, dist):
@@ -113,9 +129,7 @@ class FrozenRequirement(object):
                     modules = set(f.read().decode('utf-8').splitlines())
             sources_file = os.path.join(dist.path, 'SOURCES.txt')
             if os.path.exists(sources_file):
-                with codecs.open(
-                    sources_file, mode='r', encoding='utf-8'
-                ) as f:
+                with codecs.open(sources_file, mode='r', encoding='utf-8') as f:
                     installed_files = f.readlines()
         else:
             # read from RECORD file
@@ -126,7 +140,8 @@ class FrozenRequirement(object):
             except Exception as e:
                 logger.error(
                     'distribution "%s" seems does not have a RECORD file: %r',
-                    dist.name, e
+                    dist.name,
+                    e,
                 )
                 installed_files = []
             modules = set(dist.modules)
@@ -146,12 +161,13 @@ class FrozenRequirement(object):
                 continue
             if not any(
                 [
-                    is_commonpath([code_file_dir, file], code_file_dir
-                                  ),  # Fast path to skip the same path prefix.
+                    is_commonpath(
+                        [code_file_dir, file], code_file_dir
+                    ),  # Fast path to skip the same path prefix.
                     is_commonpath([dist_info_dir, file], dist_info_dir),
                     is_commonpath([os.pardir, file], os.pardir),
                     is_commonpath([os.curdir, file], os.curdir),
-                    file.startswith('__')
+                    file.startswith('__'),
                 ]
             ):
                 code_file_dir = trim_prefix(file, os.sep).split(os.sep)[0]
@@ -184,13 +200,15 @@ class FrozenRequirement(object):
         self, operator: str = '==', spaces_around_operator: str = ''
     ) -> str:
         if self.editable and self.url:
-            req = f"-e {self.url}"
+            req = f'-e {self.url}'
         else:
             req = self.name
             if operator != '-':
-                req += f"{spaces_around_operator}{operator}"\
-                       f"{spaces_around_operator}{self.version}"
-        return "\n".join(list(self.comments) + [str(req)])
+                req += (
+                    f'{spaces_around_operator}{operator}'
+                    f'{spaces_around_operator}{self.version}'
+                )
+        return '\n'.join([*list(self.comments), str(req)])
 
     def __str__(self) -> str:
         return self.as_requirement('==', '')
@@ -203,7 +221,7 @@ class FrozenRequirement(object):
 
 def installed_distributions_by_top_level_import_names(
     distributions: Optional[ValuesView[FrozenRequirement]] = None,
-) -> Mapping[str, List[FrozenRequirement]]:
+) -> Mapping[str, list[FrozenRequirement]]:
     """Mapping of top level import name to installed distributions."""
     mapping = defaultdict(list)
     distributions = distributions or installed_distributions().values()
@@ -215,7 +233,7 @@ def installed_distributions_by_top_level_import_names(
 
 
 def installed_distributions() -> Mapping[NormalizedName, FrozenRequirement]:
-    mapping = dict()
+    mapping = {}
     dist_path = DistributionPath(include_egg=True)
     for distribution in dist_path.get_distributions():
         req = FrozenRequirement.from_dist(distribution)
@@ -225,12 +243,12 @@ def installed_distributions() -> Mapping[NormalizedName, FrozenRequirement]:
 
 
 def _format_dist_as_name_version(dist: Distribution):
-    return "{}=={}".format(dist.name, dist.version)
+    return f'{dist.name}=={dist.version}'
 
 
 class _EditableInfo(NamedTuple):
     requirement: str
-    comments: List[str]
+    comments: list[str]
 
 
 def _get_editable_info(dist: EggInfoDistribution) -> _EditableInfo:
@@ -245,7 +263,7 @@ def _get_editable_info(dist: EggInfoDistribution) -> _EditableInfo:
     location = pathlib.normcase(pathlib.abspath(editable_project_location))
     if not pathlib.exists(location):
         return _EditableInfo(
-            requirement="", comments=[f"# Editable not found: {dist}"]
+            requirement='', comments=[f'# Editable not found: {dist}']
         )
 
     vcs_backend = vcs.get_backend_for_dir(location)
@@ -260,7 +278,7 @@ def _get_editable_info(dist: EggInfoDistribution) -> _EditableInfo:
         return _EditableInfo(
             requirement=location,
             comments=[
-                f"# Editable install with no version control ({display})"
+                f'# Editable install with no version control ({display})'
             ],
         )
 
@@ -273,7 +291,7 @@ def _get_editable_info(dist: EggInfoDistribution) -> _EditableInfo:
         return _EditableInfo(
             requirement=location,
             comments=[
-                f"# Editable {vcs_name} install with no remote ({display})"
+                f'# Editable {vcs_name} install with no remote ({display})'
             ],
         )
     except RemoteNotValidError as ex:
@@ -281,36 +299,35 @@ def _get_editable_info(dist: EggInfoDistribution) -> _EditableInfo:
         return _EditableInfo(
             requirement=location,
             comments=[
-                f"# Editable {vcs_name} install ({display}) with either a deleted "
-                f"local remote or invalid URI:",
+                f'# Editable {vcs_name} install ({display}) with either a deleted '
+                f'local remote or invalid URI:',
                 f"# '{ex.url}'",
             ],
         )
     except BadCommand:
         logger.warning(
-            "cannot determine version of editable source in %s "
-            "(%s command not found in path)",
+            'cannot determine version of editable source in %s '
+            '(%s command not found in path)',
             location,
             vcs_backend.name,
         )
         return _EditableInfo(requirement=location, comments=[])
     except InstallationError as exc:
         logger.warning(
-            "Error when trying to get requirement for VCS system %s", exc
+            'Error when trying to get requirement for VCS system %s', exc
         )
     else:
         return _EditableInfo(requirement=req, comments=[])
 
-    logger.warning("Could not determine repository location of %s", location)
+    logger.warning('Could not determine repository location of %s', location)
 
     return _EditableInfo(
         requirement=location,
-        comments=["## !! Could not determine repository location"],
+        comments=['## !! Could not determine repository location'],
     )
 
 
-class _URLElement(object):
-
+class _URLElement:
     def __init__(self, name='', url=''):
         self.name = name
         self.url = url
@@ -320,12 +337,10 @@ class _URLElement(object):
 
 
 def _parse_urls_from_html(html, base_url, put):
-
     class _HrefParser(HTMLParser):
-
         def __init__(self):
             self._url_element = None
-            super(_HrefParser, self).__init__()
+            super().__init__()
 
         def handle_starttag(self, tag, attrs):
             self._url_element = None
@@ -345,16 +360,16 @@ def _parse_urls_from_html(html, base_url, put):
 
                 if not self._url_element.name:
                     parsed = urlparse(self._url_element.url)
-                    self._url_element.name = parsed.path.rstrip("/").split(
-                        "/"
-                    )[-1]
+                    self._url_element.name = parsed.path.rstrip('/').split('/')[
+                        -1
+                    ]
                 put(self._url_element)
                 self._url_element = None
 
     _HrefParser().feed(html)
 
 
-class PyPIDistributions(object):
+class PyPIDistributions:
     _ACCEPTABLE_EXT = ('.whl', '.egg', '.tar.gz', '.tar.bz2', '.zip')
     _HTTP_HEADERS = {
         'Accept': '*/*',
@@ -458,7 +473,6 @@ class PyPIDistributions(object):
         name,
         url=None,
         include_prereleases=True,
-        tmp_download_dir=tempfile.gettempdir(),
     ):
         version, url = await self.get_latest_distribution_info(
             name,
@@ -468,7 +482,7 @@ class PyPIDistributions(object):
         if version is None:
             return (None, None, None)
         content = await self._download_raw(
-            url, tmp_download_dir=tmp_download_dir
+            url, tmp_download_dir=tempfile.gettempdir()
         )
         return (version, url, content)
 
@@ -487,17 +501,19 @@ class PyPIDistributions(object):
         url,
         timeout=30,
         read_in_mem_threshold=16777216,
-        tmp_download_dir=tempfile.gettempdir()
     ) -> InMemoryOrDiskFile:
         async with self._session.get(
             url, headers=self._HTTP_HEADERS, timeout=timeout
         ) as resp:
             filename = os.path.basename(urlparse(url).path)
-            if resp.content_length is not None and resp.content_length <= read_in_mem_threshold:
+            if (
+                resp.content_length is not None
+                and resp.content_length <= read_in_mem_threshold
+            ):
                 data = await resp.read()
                 return InMemoryOrDiskFile(filename, data=data, file_path=None)
 
-            path = os.path.join(tmp_download_dir, filename)
+            path = os.path.join(tempfile.gettempdir(), filename)
             with open(path, 'wb') as f:
                 while True:
                     block = await resp.content.readany()
@@ -507,14 +523,15 @@ class PyPIDistributions(object):
             return InMemoryOrDiskFile(filename, data=None, file_path=path)
 
 
-class PyPIDistributionsIndexSynchronizer(object):
-
+class PyPIDistributionsIndexSynchronizer:
     def __init__(
         self, index_url=DEFAULT_PYPI_INDEX_URL, concurrency=100, gc=False
     ):
         self._index_url = index_url
         self._concurrency = concurrency
-        self._gc = gc  # TODO(damnever): delete distributions not existed anymore.
+        self._gc = (
+            gc  # TODO(damnever): delete distributions not existed anymore.
+        )
         self._pypi_distributions = PyPIDistributions()
         self._queue = asyncio.Queue()
         self._process_pool_executor = concurrent.futures.ProcessPoolExecutor()
@@ -553,7 +570,7 @@ class PyPIDistributionsIndexSynchronizer(object):
                 w.cancel()
         await asyncio.gather(*self._workers, return_exceptions=True)
 
-    def _worker_done_callback(self, task, *args, **kwargs):
+    def _worker_done_callback(self, *args, **kwargs):
         self._alive_worker_count -= 1
         if self._alive_worker_count > 0 or self._queue.empty():
             return
@@ -583,7 +600,10 @@ class PyPIDistributionsIndexSynchronizer(object):
             dist = db.query_distribution_with_top_level_modules(project_name)
 
         try:
-            version, project_download_url = await self._pypi_distributions.get_latest_distribution_info(
+            (
+                version,
+                project_download_url,
+            ) = await self._pypi_distributions.get_latest_distribution_info(
                 project_name,
                 project_url,
                 include_prereleases=False,
@@ -596,7 +616,8 @@ class PyPIDistributionsIndexSynchronizer(object):
             if dist is not None and Version(dist.version) >= Version(version):
                 logger.info(
                     'distribution "%s" version is the latest: %s',
-                    project_name, dist.version
+                    project_name,
+                    dist.version,
                 )
                 return
             with tempfile.TemporaryDirectory() as tmp_download_dir:
@@ -634,7 +655,9 @@ class PyPIDistributionsIndexSynchronizer(object):
                 (
                     'maybe distribution "%s" is no longer available'
                     ' or unparsable: %r'
-                ), project_name, e
+                ),
+                project_name,
+                e,
             )
         except Exception as e:
             logger.error(

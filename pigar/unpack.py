@@ -1,14 +1,13 @@
-import tarfile
-import zipfile
+import os.path
 import re
 import string
-import os.path
-from typing import List
+import tarfile
+import zipfile
 
 from .helpers import InMemoryOrDiskFile
 
 
-class Archive(object):
+class Archive:
     """Archive provides a consistent interface for unpacking
     compressed file.
     """
@@ -62,7 +61,7 @@ class Archive(object):
         elif self._filename.endswith(('.zip', '.egg', '.whl')):
             self._prepare_zip()
         else:
-            raise ValueError("unreadable: {0}".format(self._filename))
+            raise ValueError(f'unreadable: {self._filename}')
 
     def _safe_extractall(self, to_path='.'):
         unsafe = []
@@ -70,7 +69,7 @@ class Archive(object):
             if not self.is_safe(name):
                 unsafe.append(name)
         if unsafe:
-            raise ValueError("unsafe to unpack: {}".format(unsafe))
+            raise ValueError(f'unsafe to unpack: {unsafe}')
         self._file.extractall(to_path)
 
     def _prepare_zip(self):
@@ -90,10 +89,13 @@ class Archive(object):
 
     def is_safe(self, filename):
         return not (
-            filename.startswith(("/", "\\")) or (
-                len(filename) > 1 and filename[1] == ":"
+            filename.startswith(('/', '\\'))
+            or (
+                len(filename) > 1
+                and filename[1] == ':'
                 and filename[0] in string.ascii_letters
-            ) or re.search(r"[.][.][/\\]", filename)
+            )
+            or re.search(r'[.][.][/\\]', filename)
         )
 
     def __enter__(self):
@@ -103,30 +105,30 @@ class Archive(object):
         self.close()
 
 
-def parse_top_levels(file: InMemoryOrDiskFile) -> List[str]:
+def parse_top_levels(file: InMemoryOrDiskFile) -> list[str]:
     """Read top level names from compressed file."""
-    assert (not file.opened())
+    assert not file.opened()
 
-    with file as stream:
-        with Archive(file.name, stream) as archive:
-            top_level_file = None
-            top_level_dirs = []
-            for name in archive.names:
-                basename = os.path.basename(name)
-                if basename == 'top_level.txt':
-                    top_level_file = name
-                    break
-                if basename == '__init__.py':
-                    dir = os.path.dirname(name)
-                    if '' == os.path.dirname(dir):  # Root.
-                        top_level_dirs.append(dir)
-            if top_level_file is None:
-                if top_level_dirs:
-                    return top_level_dirs
-                return []
+    with file as stream, Archive(file.name, stream) as archive:
+        top_level_file = None
+        top_level_dirs = []
+        for name in archive.names:
+            basename = os.path.basename(name)
+            if basename == 'top_level.txt':
+                top_level_file = name
+                break
+            if basename == '__init__.py':
+                dir = os.path.dirname(name)
+                if os.path.dirname(dir) == '':  # Root.
+                    top_level_dirs.append(dir)
+        if top_level_file is None:
+            if top_level_dirs:
+                return top_level_dirs
+            return []
 
-            top_level_txt = archive.read(top_level_file).decode('utf-8')
-            return [
-                name.replace('/', '.') for name in top_level_txt.splitlines()
-                if name
-            ]
+        top_level_txt = archive.read(top_level_file).decode('utf-8')
+        return [
+            name.replace('/', '.')
+            for name in top_level_txt.splitlines()
+            if name
+        ]
