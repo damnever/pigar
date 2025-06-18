@@ -7,24 +7,24 @@ jobs:
     runs-on: ubuntu-latest
     name: Build and Publish Python distributions to PyPI
     steps:
-    - uses: actions/checkout@v4
-      with:
-        lfs: true
-    - uses: actions/setup-python@v5
-      with:
-        python-version: 3.11
-        architecture: x64
-    - name: Check if Git LFS is working"
-      run: '[ $(stat -c%s "pigar/.db.sqlite3") -gt $((1024 * 1024)) ] || { echo "File is not larger than 1MiB"; exit 1; }'
-    - name: Install requirements
-      run: pip install build
-    - name: Build distributions
-      run: python -m build
-    - name: Publish distribution to PyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        verbose: true
-        print_hash: true
-        packages_dir: dist
-        user: __token__
-        password: ${{ secrets.PYPI_API_TOKEN }}
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+          architecture: x64
+      - name: Check if Git LFS is working"
+        run: '[ $(stat -c%s "pigar/.db.sqlite3") -gt $((1024 * 1024)) ] || { echo "File is not larger than 1MiB"; exit 1; }'
+      - name: Install requirements
+        run: pip install build
+      - name: Build distributions
+        run: python -m build
+      - name: Publish distribution to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          verbose: true
+          print_hash: true
+          packages_dir: dist
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
