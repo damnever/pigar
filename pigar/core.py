@@ -724,6 +724,9 @@ def check_stdlib(name: str, _sys_lib_paths=determine_python_sys_lib_paths()):
                 return False, None
 
     module_path = spec.origin
+    if sys.version_info[:2] >= (3, 10) and name not in sys.stdlib_module_names:
+        return False, module_path
+
     if module_path is None or not os.path.isabs(module_path):
         return True, None
 
