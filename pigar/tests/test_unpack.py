@@ -1,16 +1,15 @@
-import unittest
-import zipfile
-import tarfile
 import os
 import shutil
+import tarfile
 import tempfile
+import unittest
+import zipfile
 
-from ..helpers import InMemoryOrDiskFile
-from ..unpack import parse_top_levels
+from pigar.helpers import InMemoryOrDiskFile
+from pigar.unpack import parse_top_levels
 
 
 class TopLevelTests(unittest.TestCase):
-
     def setUp(self):
         self._tmp_path = os.path.join(tempfile.gettempdir(), 'pigar/')
         os.mkdir(self._tmp_path)

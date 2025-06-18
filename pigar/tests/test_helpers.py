@@ -1,25 +1,30 @@
-import unittest
 import os
 import random
+import unittest
 
-from .helper import CaptureOutput
-from ..helpers import (
-    print_table, ParsedRequirementParts, parse_requirements, compare_version,
-    cmp_to_key
+from pigar._vendor.pip._vendor.packaging.markers import Marker
+from pigar._vendor.pip._vendor.packaging.requirements import Requirement
+from pigar.helpers import (
+    ParsedRequirementParts,
+    cmp_to_key,
+    compare_version,
+    parse_requirements,
+    print_table,
 )
 
-from .._vendor.pip._vendor.packaging.requirements import Requirement
-from .._vendor.pip._vendor.packaging.markers import Marker
+from .helper import CaptureOutput
 
 
 class PrintTableTests(unittest.TestCase):
-
     def test_default_headers(self):
         rows = [('pigar', '0.5.0', '1.1.1'), ('test', '8.0.0', '2.4.8')]
         target = [
-            ' ============================', '  PACKAGE | CURRENT | LATEST',
-            '  --------+---------+-------', '  pigar   | 0.5.0   | 1.1.1 ',
-            '  test    | 8.0.0   | 2.4.8 ', ' ============================'
+            ' ============================',
+            '  PACKAGE | CURRENT | LATEST',
+            '  --------+---------+-------',
+            '  pigar   | 0.5.0   | 1.1.1 ',
+            '  test    | 8.0.0   | 2.4.8 ',
+            ' ============================',
         ]
         with CaptureOutput() as output:
             print_table(rows, headers=['PACKAGE', 'CURRENT', 'LATEST'])
@@ -29,9 +34,11 @@ class PrintTableTests(unittest.TestCase):
         headers = ['PACKAGE', 'VERSION']
         rows = [('pigar', '1.1.1')]
         target = [
-            ' ===================', '  PACKAGE | VERSION',
-            '  --------+--------', '  pigar   | 1.1.1  ',
-            ' ==================='
+            ' ===================',
+            '  PACKAGE | VERSION',
+            '  --------+--------',
+            '  pigar   | 1.1.1  ',
+            ' ===================',
         ]
         with CaptureOutput() as output:
             print_table(rows, headers)
@@ -39,7 +46,6 @@ class PrintTableTests(unittest.TestCase):
 
 
 class ParseReqsTest(unittest.TestCase):
-
     def test_parse_requirements(self):
         path = os.path.join(os.path.dirname(__file__), 'data/fake_reqs.txt')
         expected = [
@@ -109,7 +115,6 @@ class ParseReqsTest(unittest.TestCase):
 
 
 class CompareVersionTests(unittest.TestCase):
-
     def test_compare_version(self):
         self.assertEqual(compare_version('1.1.1', '1.2.1'), -1)
         self.assertEqual(compare_version('1.10.1', '1.2.1'), 1)
@@ -123,8 +128,13 @@ class CompareVersionTests(unittest.TestCase):
 
     def test_sort_versions(self):
         target = [
-            '1.1.dev1', '1.1.rc1', '1.1.1b1', '1.1.1b2', '1.1.1', '1.2.1',
-            '1.10.1'
+            '1.1.dev1',
+            '1.1.rc1',
+            '1.1.1b1',
+            '1.1.1b2',
+            '1.1.1',
+            '1.2.1',
+            '1.10.1',
         ]
         test = target[:]
         random.shuffle(test)

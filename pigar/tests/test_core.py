@@ -2,15 +2,19 @@ import os
 import os.path
 import unittest
 
-from ..core import RequirementsAnalyzer, check_stdlib, _LocatableRequirements, _Locations
-from ..dist import FrozenRequirement
-from .helper import py_version
+from pigar._vendor.pip._vendor.packaging.version import Version
+from pigar.core import (
+    RequirementsAnalyzer,
+    _LocatableRequirements,
+    _Locations,
+    check_stdlib,
+)
+from pigar.dist import FrozenRequirement
 
-from .._vendor.pip._vendor.packaging.version import Version
+from .helper import py_version
 
 
 class RequirementsAnalyzerTests(unittest.TestCase):
-
     def setUp(self):
         self._installed_dists_by_imports = {
             'foo': [FrozenRequirement('Foo', '0.1.0')],
@@ -21,7 +25,7 @@ class RequirementsAnalyzerTests(unittest.TestCase):
             'name': [FrozenRequirement('Name', '1.0.0')],
             'pkg': [
                 FrozenRequirement('Pkg', '1.0.0'),
-                FrozenRequirement('Pkg-fork', '1.1.0')
+                FrozenRequirement('Pkg-fork', '1.1.0'),
             ],
             'notebook': [FrozenRequirement('Notebook', '0.9.0')],
             'mainfoobar': [FrozenRequirement('min-foo-bar', '0.10.0rc0')],
@@ -87,8 +91,8 @@ class RequirementsAnalyzerTests(unittest.TestCase):
         )
 
         self.assertListEqual(
-            sorted(list(analyzer._requirements.keys())),
-            sorted(list(self._certain_requirements.keys()))
+            sorted(analyzer._requirements.keys()),
+            sorted(self._certain_requirements.keys()),
         )
         for req in analyzer._requirements.values():
             dist = dist_mapping.get(req.req.name, None)
@@ -99,8 +103,8 @@ class RequirementsAnalyzerTests(unittest.TestCase):
             self.assertEqual(req.locations.sorted_items(), expected_locs)
 
         self.assertListEqual(
-            sorted(list(analyzer._uncertain_requirements.keys())),
-            sorted(list(self._uncertain_requirements.keys()))
+            sorted(analyzer._uncertain_requirements.keys()),
+            sorted(self._uncertain_requirements.keys()),
         )
         for name, reqs in analyzer._uncertain_requirements.items():
             uncertain_locs = self._uncertain_requirements[name]
@@ -113,8 +117,8 @@ class RequirementsAnalyzerTests(unittest.TestCase):
                 self.assertEqual(req.locations.sorted_items(), expected_locs)
 
         self.assertListEqual(
-            sorted(list(analyzer._unknown_imports.keys())),
-            sorted(list(self._guess.keys()))
+            sorted(analyzer._unknown_imports.keys()),
+            sorted(self._guess.keys()),
         )
         for name, locs in analyzer._unknown_imports.items():
             expected_locs = self._guess.get(name)
@@ -123,13 +127,27 @@ class RequirementsAnalyzerTests(unittest.TestCase):
 
 
 class StdlibTest(unittest.TestCase):
-
     def test_stdlibs(self):
         for lib in [
-            'os', 'os.path', 'sys', 'io', 're', 'difflib', 'string',
-            'collections', 'contextlib', 'contextvars', 'functools',
-            'urllib.parse', 'urllib.request', 'itertools', 'time', 'typing',
-            'importlib', 'asyncio', 'importlib.util'
+            'os',
+            'os.path',
+            'sys',
+            'io',
+            're',
+            'difflib',
+            'string',
+            'collections',
+            'contextlib',
+            'contextvars',
+            'functools',
+            'urllib.parse',
+            'urllib.request',
+            'itertools',
+            'time',
+            'typing',
+            'importlib',
+            'asyncio',
+            'importlib.util',
         ]:
             self.assertTrue(self._is_stdlib(lib), lib)
 
@@ -159,7 +177,6 @@ class StdlibTest(unittest.TestCase):
 
 
 class LocationsTests(unittest.TestCase):
-
     def setUp(self):
         self._data = {
             'oo/xx.py': 33,
@@ -173,7 +190,7 @@ class LocationsTests(unittest.TestCase):
 
         for file in self._data:
             if file not in loc:
-                self.fail('add "{0}" failed'.format(file))
+                self.fail(f'add "{file}" failed')
             else:
                 self.assertEqual(loc[file], [self._data[file]])
 
@@ -191,7 +208,7 @@ class LocationsTests(unittest.TestCase):
 
         self.assertListEqual(
             sorted(loc1.items()),
-            sorted([(k, [v]) for k, v in self._data.items()])
+            sorted([(k, [v]) for k, v in self._data.items()]),
         )
 
     def test_sorted_items(self):
@@ -199,12 +216,11 @@ class LocationsTests(unittest.TestCase):
         for file, lineno in self._data.items():
             loc.add(file, lineno)
 
-        target = ['{0}: {1}'.format(k, v) for k, v in self._data.items()]
+        target = [f'{k}: {v}' for k, v in self._data.items()]
         self.assertListEqual(loc.sorted_items(), sorted(target))
 
 
 class LocatableRequirementsTest(unittest.TestCase):
-
     def setUp(self):
         loc1 = _Locations()
         loc2 = _Locations()
@@ -222,7 +238,7 @@ class LocatableRequirementsTest(unittest.TestCase):
 
         for pkg in self._data:
             if pkg not in rm:
-                self.fail('add "{0}" failed'.format(pkg))
+                self.fail(f'add "{pkg}" failed')
             else:
                 req = rm[pkg]
                 val = self._data[pkg]
@@ -232,5 +248,5 @@ class LocatableRequirementsTest(unittest.TestCase):
         rm.add(FrozenRequirement('pigar', '9.9.9'), 'foobar.py', 2)
         self.assertListEqual(
             rm['pigar'].locations.sorted_items(),
-            sorted(['oo/xx.py: 33', 'foobar.py: 2'])
+            sorted(['oo/xx.py: 33', 'foobar.py: 2']),
         )
