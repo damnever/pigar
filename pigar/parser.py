@@ -1,4 +1,5 @@
 import os
+import sys
 import re
 import io
 import ast
@@ -29,9 +30,7 @@ class Annotation(NamedTuple):
     lineno: int
 
 
-def _match_exclude_patterns(
-    name: str, patterns: Iterable[str], root: str = ""
-) -> bool:
+def _match_exclude_patterns(name: str, patterns: Iterable[str], root: str = "") -> bool:
     # name = trim_prefix(trim_prefix(name, root), "/")
     for pattern in patterns:
         if fnmatch.fnmatch(name, pattern):
@@ -57,50 +56,44 @@ def parse_imports(
 ) -> Tuple[List[Module], List[Annotation]]:
     """package_root must be a absolute path to package root,
     e.g. /path/to/pigar/pigar."""
-    exclude_pattern_set = set(trim_prefix(p, './') for p in exclude_patterns
-                              ) if exclude_patterns else set()
+    exclude_pattern_set = (
+        set(trim_prefix(p, "./") for p in exclude_patterns)
+        if exclude_patterns
+        else set()
+    )
     exclude_pattern_set |= set(DEFAULT_GLOB_EXCLUDE_PATTERNS)
 
     imported_modules: List[Module] = []
     annotations: List[Annotation] = []
 
-    for dirpath, subdirs, files in os.walk(
-        project_root, followlinks=followlinks
-    ):
+    for dirpath, subdirs, files in os.walk(project_root, followlinks=followlinks):
         if _match_exclude_patterns(dirpath, exclude_pattern_set, project_root):
-            logger.debug('excluded by glob patterns: %s', dirpath)
+            logger.debug("excluded by glob patterns: %s", dirpath)
             subdirs.clear()
             continue
 
         for fn in files:
             fpath = pathlib.join(dirpath, fn)
-            if _match_exclude_patterns(
-                fpath, exclude_pattern_set, project_root
-            ):
-                logger.debug('excluded by glob patterns: %s', fpath)
+            if _match_exclude_patterns(fpath, exclude_pattern_set, project_root):
+                logger.debug("excluded by glob patterns: %s", fpath)
                 continue
-            logger.debug('analyzing file: %s', fpath)
+            logger.debug("analyzing file: %s", fpath)
 
             code = _read_code(fpath)
             if code:
                 imported_modules.extend(
-                    parse_file_imports(
-                        fpath, code, visit_doc_str=visit_doc_str
-                    )
+                    parse_file_imports(fpath, code, visit_doc_str=visit_doc_str)
                 )
                 if parse_requirement_annotations:
-                    annotations.extend(
-                        parse_file_comment_annotations(fpath, code)
-                    )
+                    annotations.extend(parse_file_comment_annotations(fpath, code))
     return imported_modules, annotations
 
 
-def parse_file_comment_annotations(fpath: str,
-                                   code: bytes) -> List[Annotation]:
+def parse_file_comment_annotations(fpath: str, code: bytes) -> List[Annotation]:
     """Parse annotations in comments, the valid format is as follows:
-        import foo # pigar: required-packages=pkg-bar
-        import foo # pigar: required-distributions=pkg-bar # package name
-        import foo # pigar: required-imports=bar # top level import name
+    import foo # pigar: required-packages=pkg-bar
+    import foo # pigar: required-distributions=pkg-bar # package name
+    import foo # pigar: required-imports=bar # top level import name
     """
     annotations: List[Annotation] = []
     try:
@@ -126,7 +119,7 @@ def parse_file_comment_annotations(fpath: str,
                             distribution_name=name,
                             top_level_import_name=None,
                             file=fpath,
-                            lineno=lineno
+                            lineno=lineno,
                         )
                     )
             elif parts[0] == "required-imports":
@@ -136,7 +129,7 @@ def parse_file_comment_annotations(fpath: str,
                             distribution_name=None,
                             top_level_import_name=name,
                             file=fpath,
-                            lineno=lineno
+                            lineno=lineno,
                         )
                     )
     except Exception as e:
@@ -150,9 +143,7 @@ def parse_file_comment_annotations(fpath: str,
 # Ref:
 #  - https://ipython.readthedocs.io/en/stable/interactive/magics.html
 #  - https://ipython.org/ipython-doc/3/interactive/shell.html
-_ipynb_magics_and_commands_regex = re.compile(
-    r"[^#]*\s*(!|%)[{a-zA-Z][a-zA-Z0-9_-]*.*"
-)
+_ipynb_magics_and_commands_regex = re.compile(r"[^#]*\s*(!|%)[{a-zA-Z][a-zA-Z0-9_-]*.*")
 
 
 def _read_code(fpath: str) -> Optional[bytes]:
@@ -169,7 +160,7 @@ def _read_code(fpath: str) -> Optional[bytes]:
                 code += "\n"
         return code.encode(encoding="utf-8")
     elif fpath.endswith(".py"):
-        with open(fpath, 'rb') as f:
+        with open(fpath, "rb") as f:
             return f.read()
     return None
 
@@ -234,7 +225,7 @@ class ImportsParser(object):
         mod_name = node.module
         level = node.level
         if mod_name is not None:
-            name = level*"." + mod_name
+            name = level * "." + mod_name
             lineno = node.lineno + self._lineno
             self._add_module(name, try_, lineno)
             return
@@ -245,7 +236,7 @@ class ImportsParser(object):
         for alias in node.names:
             name = mod_name
             if level > 0 or mod_name == "":
-                name = level*"." + mod_name + "." + alias.name
+                name = level * "." + mod_name + "." + alias.name
             lineno = node.lineno + self._lineno
             self._add_module(name, try_, lineno)
 
@@ -255,31 +246,17 @@ class ImportsParser(object):
         maybe them come from other Python version.
         """
         for ipt in node.body:
-            if ipt.__class__.__name__.startswith('Import'):
-                method = 'visit_' + ipt.__class__.__name__
+            if ipt.__class__.__name__.startswith("Import"):
+                method = "visit_" + ipt.__class__.__name__
                 getattr(self, method)(ipt, True)
         for handler in node.handlers:
             for ipt in handler.body:
-                if ipt.__class__.__name__.startswith('Import'):
-                    method = 'visit_' + ipt.__class__.__name__
+                if ipt.__class__.__name__.startswith("Import"):
+                    method = "visit_" + ipt.__class__.__name__
                     getattr(self, method)(ipt, True)
 
     # For Python 3.3+
     visit_Try = visit_TryExcept
-
-    def visit_Exec(self, node):
-        """
-        Check `expression` of `exec(expression[, globals[, locals]])`.
-        **Just available in python 2.**
-        """
-        if hasattr(node.body, 's'):
-            self._add_rawcode(node.body.s, node.lineno + self._lineno)
-        # PR#13: https://github.com/damnever/pigar/pull/13
-        # Sometimes exec statement may be called with tuple in Py2.7.6
-        elif hasattr(node.body, 'elts') and len(
-            node.body.elts
-        ) >= 1 and hasattr(node.body.elts[0], 's'):
-            self._add_rawcode(node.body.elts[0].s, node.lineno + self._lineno)
 
     def visit_Expr(self, node: ast.Expr):
         """
@@ -293,41 +270,38 @@ class ImportsParser(object):
         """
         # Built-in functions
         value = node.value
-        if isinstance(value, ast.Call):
-            lineno = node.lineno + self._lineno
-            if hasattr(value.func, 'id'):
-                if (
-                    value.func.id == 'eval'
-                    and hasattr(node.value.args[0], 's')
-                ):
-                    self._add_rawcode(node.value.args[0].s, lineno)
-                # **`exec` function in Python 3.**
-                elif (
-                    value.func.id == 'exec'
-                    and hasattr(node.value.args[0], 's')
-                ):
-                    self._add_rawcode(node.value.args[0].s, lineno)
-                # `__import__` function.
-                elif (
-                    value.func.id == '__import__' and len(node.value.args) > 0
-                    and hasattr(node.value.args[0], 's')
-                ):
-                    self._add_module(node.value.args[0].s, False, lineno)
-            # `import_module` function.
-            elif getattr(value.func, 'attr', '') == 'import_module':
-                module = getattr(value.func, 'value', None)
-                if (
-                    module is not None
-                    and getattr(module, 'id', '') == 'importlib'
-                ):
-                    args = node.value.args
-                    arg_len = len(args)
-                    if arg_len > 0 and hasattr(args[0], 's'):
-                        name = args[0].s
-                        if not name.startswith('.'):
-                            self._add_module(name, False, lineno)
-                        elif arg_len == 2 and hasattr(args[1], 's'):
-                            self._add_module(args[1].s, False, lineno)
+        if not isinstance(value, ast.Call):
+            return
+
+        lineno = node.lineno + self._lineno
+        if hasattr(value.func, "id") and len(node.value.args) > 0:
+            arg = self._get_ast_literal_str(node.value.args[0])
+            if arg is None:
+                return
+            if value.func.id == "eval":
+                self._add_rawcode(arg, lineno)
+            # **`exec` function in Python 3.**
+            elif value.func.id == "exec":
+                self._add_rawcode(arg, lineno)
+            # `__import__` function.
+            elif value.func.id == "__import__":
+                self._add_module(arg, False, lineno)
+        # `import_module` function.
+        elif getattr(value.func, "attr", "") == "import_module":
+            module = getattr(value.func, "value", None)
+            if module is not None and getattr(module, "id", "") == "importlib":
+                args = node.value.args
+                arg_len = len(args)
+                if arg_len == 0:
+                    return
+                name = self._get_ast_literal_str(args[0])
+                if name is not None:
+                    if not name.startswith("."):
+                        self._add_module(name, False, lineno)
+                    elif arg_len == 2:
+                        arg = self._get_ast_literal_str(args[1])
+                        if arg is not None:
+                            self._add_module(arg, False, lineno)
 
     def visit_FunctionDef(self, node: ast.FunctionDef):
         """
@@ -354,13 +328,20 @@ class ImportsParser(object):
     def visit(self, node: ast.AST):
         """Visit a node, no recursively."""
         for node in ast.walk(node):
-            method = 'visit_' + node.__class__.__name__
+            method = "visit_" + node.__class__.__name__
             getattr(self, method, lambda x: x)(node)
 
     @staticmethod
+    def _get_ast_literal_str(node):
+        if isinstance(node, ast.Constant) and isinstance(node.value, str):
+            return node.value
+        if sys.version_info < (3, 14) and isinstance(node, ast.Str):  # Attribute s is deprecated and removed in Python 3.14
+            return node.s
+        return None
+
+    @staticmethod
     def _parse_docstring(
-        node: Union[ast.AsyncFunctionDef, ast.FunctionDef, ast.ClassDef,
-                    ast.Module]
+        node: Union[ast.AsyncFunctionDef, ast.FunctionDef, ast.ClassDef, ast.Module],
     ) -> Optional[bytes]:
         """Extract code from docstring."""
         docstring = ast.get_docstring(node)
@@ -373,8 +354,9 @@ class ImportsParser(object):
                 pass
             else:
                 examples = dt.examples
-                return '\n'.join([example.source for example in examples]
-                                 ).encode(encoding="utf-8")
+                return "\n".join([example.source for example in examples]).encode(
+                    encoding="utf-8"
+                )
         return None
 
     @property

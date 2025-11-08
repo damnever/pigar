@@ -1,7 +1,6 @@
 import os
 import os.path as pathlib
 import re
-import codecs
 import tempfile
 from html.parser import HTMLParser
 from urllib.parse import urljoin, quote, urlparse
@@ -23,19 +22,15 @@ from .helpers import (
 from .unpack import parse_top_levels
 from .db import database
 from .version import version
-from ._vendor.pip._internal.vcs.versioncontrol import (
-    RemoteNotFoundError,
-    RemoteNotValidError,
-    vcs,
-)
+from ._vendor.distlib.database import DistributionPath, Distribution, EggInfoDistribution
+from ._vendor.distlib.locators import SimpleScrapingLocator
+from ._vendor.distlib.wheel import Wheel
+from ._vendor.pip._internal.vcs.versioncontrol import RemoteNotFoundError, RemoteNotValidError, vcs
 from ._vendor.pip._internal.exceptions import BadCommand, InstallationError
 from ._vendor.pip._vendor.packaging.version import Version, InvalidVersion
 from ._vendor.pip._vendor.packaging.utils import canonicalize_name, NormalizedName
 
 import aiohttp
-from distlib.database import DistributionPath, Distribution, EggInfoDistribution
-from distlib.locators import SimpleScrapingLocator
-from distlib.wheel import Wheel
 
 DEFAULT_PYPI_INDEX_URL = "https://pypi.org/simple/"
 
@@ -117,7 +112,7 @@ class FrozenRequirement(object):
                     modules = set(f.read().decode("utf-8").splitlines())
             sources_file = os.path.join(dist.path, "SOURCES.txt")
             if os.path.exists(sources_file):
-                with codecs.open(sources_file, mode="r", encoding="utf-8") as f:
+                with open(sources_file, mode="r", encoding="utf-8") as f:
                     installed_files = f.readlines()
         else:
             # read from RECORD file

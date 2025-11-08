@@ -3,8 +3,8 @@ on:
   pull_request:
   push:
     branches:
-    - 'main'
-    - 'release-**'
+      - "main"
+      - "release-**"
   workflow_dispatch:
 jobs:
   build:
@@ -12,22 +12,22 @@ jobs:
     strategy:
       matrix:
         python-version:
-          - "3.8"
-          - "3.9"
           - "3.10"
           - "3.11"
           - "3.12"
+          - "3.13"
+          - "3.14"
     name: Python ${{ matrix.python-version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           lfs: true
       - name: Setup python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
           architecture: x64
-      - name: Check if Git LFS is working"
+      - name: Check pigar/.db.sqlite3 size
         run: '[ $(stat -c%s "pigar/.db.sqlite3") -gt $((1024 * 1024)) ] || { echo "File is not larger than 1MiB"; exit 1; }'
       - name: Upgrade pip
         run: pip install --upgrade pip
