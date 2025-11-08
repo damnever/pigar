@@ -22,7 +22,12 @@ substitute = [
   { match = 'from pip\._vendor import', replace = "from pigar._vendor.pip._vendor import" },
   { match = 'import pip\._vendor', replace = "import pigar._vendor.pip._vendor" },
 ]
-drop = ["bin/"]
+drop = [
+  "bin/",
+  # trim parts of distlib that are related to scripts (reverse of pip's keep patterns)
+  '^distlib/.*\.exe$',
+  '^distlib/(?!__init__|compat|resources|markers|version|metadata|util|database|locators|wheel).*\.py$',
+]
 
 [tool.vendoring.typing-stubs]
 

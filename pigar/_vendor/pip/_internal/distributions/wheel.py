@@ -1,4 +1,6 @@
-from typing import TYPE_CHECKING, Optional
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from pigar._vendor.pip._vendor.packaging.utils import canonicalize_name
 
@@ -10,7 +12,7 @@ from pigar._vendor.pip._internal.metadata import (
 )
 
 if TYPE_CHECKING:
-    from pigar._vendor.pip._internal.index.package_finder import PackageFinder
+    from pigar._vendor.pip._internal.build_env import BuildEnvironmentInstaller
 
 
 class WheelDistribution(AbstractDistribution):
@@ -20,7 +22,7 @@ class WheelDistribution(AbstractDistribution):
     """
 
     @property
-    def build_tracker_id(self) -> Optional[str]:
+    def build_tracker_id(self) -> str | None:
         return None
 
     def get_metadata_distribution(self) -> BaseDistribution:
@@ -35,7 +37,7 @@ class WheelDistribution(AbstractDistribution):
 
     def prepare_distribution_metadata(
         self,
-        finder: "PackageFinder",
+        build_env_installer: BuildEnvironmentInstaller,
         build_isolation: bool,
         check_build_deps: bool,
     ) -> None:

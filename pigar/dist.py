@@ -13,21 +13,31 @@ import concurrent.futures
 import asyncio
 
 from .log import logger
-from .helpers import cmp_to_key, trim_prefix, trim_suffix, InMemoryOrDiskFile, is_commonpath
+from .helpers import (
+    cmp_to_key,
+    trim_prefix,
+    trim_suffix,
+    InMemoryOrDiskFile,
+    is_commonpath,
+)
 from .unpack import parse_top_levels
 from .db import database
 from .version import version
-from ._vendor.pip._internal.vcs.versioncontrol import RemoteNotFoundError, RemoteNotValidError, vcs
+from ._vendor.pip._internal.vcs.versioncontrol import (
+    RemoteNotFoundError,
+    RemoteNotValidError,
+    vcs,
+)
 from ._vendor.pip._internal.exceptions import BadCommand, InstallationError
-from ._vendor.pip._vendor.distlib.database import DistributionPath, Distribution, EggInfoDistribution
 from ._vendor.pip._vendor.packaging.version import Version, InvalidVersion
-from ._vendor.pip._vendor.distlib.locators import SimpleScrapingLocator
-from ._vendor.pip._vendor.distlib.wheel import Wheel
 from ._vendor.pip._vendor.packaging.utils import canonicalize_name, NormalizedName
 
 import aiohttp
+from distlib.database import DistributionPath, Distribution, EggInfoDistribution
+from distlib.locators import SimpleScrapingLocator
+from distlib.wheel import Wheel
 
-DEFAULT_PYPI_INDEX_URL = 'https://pypi.org/simple/'
+DEFAULT_PYPI_INDEX_URL = "https://pypi.org/simple/"
 
 # FIXME: dirty workaround..
 # TODO: use custom configuration rather than hard-code mapping.
@@ -47,21 +57,17 @@ def _all_hardcode_import_names():
 
 
 def _get_hardcode_distributions_import_names(name):
-    return _hardcode_distributions_with_import_names.get(
-        canonicalize_name(name), set()
-    )
+    return _hardcode_distributions_with_import_names.get(canonicalize_name(name), set())
 
 
 def _maybe_include_project_name_as_import_name(
-    top_levels,
-    project_name,
-    _module_name_re=re.compile(r"^[a-zA-Z]+[a-zA-Z0-9_]*$")
+    top_levels, project_name, _module_name_re=re.compile(r"^[a-zA-Z]+[a-zA-Z0-9_]*$")
 ):
     if not top_levels and _module_name_re.fullmatch(project_name) is not None:
         if isinstance(top_levels, set):
             top_levels.add(project_name)
         elif isinstance(top_levels, tuple):
-            top_levels = (project_name, )
+            top_levels = (project_name,)
         else:
             top_levels = [project_name]
     return top_levels
@@ -79,7 +85,7 @@ class FrozenRequirement(object):
         version: str,
         modules: List[str] = [],
         editable: bool = False,
-        url: str = '',
+        url: str = "",
         comments: List[str] = [],
         code_paths: Set[str] = set(),
     ):
@@ -96,7 +102,7 @@ class FrozenRequirement(object):
     def from_dist(cls, dist):
         modules = set()
         editable = isinstance(dist, EggInfoDistribution)
-        url = ''
+        url = ""
         comments = []
         installed_files = []
         if editable:
@@ -104,35 +110,28 @@ class FrozenRequirement(object):
                 req, comments = _get_editable_info(dist)
                 url = req
             except Exception as e:
-                logger.error(
-                    'distribution "%s" may be not editable: %r', dist.name, e
-                )
-            top_level_file = pathlib.join(dist.path, 'top_level.txt')
+                logger.error('distribution "%s" may be not editable: %r', dist.name, e)
+            top_level_file = pathlib.join(dist.path, "top_level.txt")
             if os.path.exists(top_level_file):
-                with open(top_level_file, 'rb') as f:
-                    modules = set(f.read().decode('utf-8').splitlines())
-            sources_file = os.path.join(dist.path, 'SOURCES.txt')
+                with open(top_level_file, "rb") as f:
+                    modules = set(f.read().decode("utf-8").splitlines())
+            sources_file = os.path.join(dist.path, "SOURCES.txt")
             if os.path.exists(sources_file):
-                with codecs.open(
-                    sources_file, mode='r', encoding='utf-8'
-                ) as f:
+                with codecs.open(sources_file, mode="r", encoding="utf-8") as f:
                     installed_files = f.readlines()
         else:
             # read from RECORD file
             try:
-                installed_files = [
-                    finfo[0] for finfo in dist.list_installed_files()
-                ]
+                installed_files = [finfo[0] for finfo in dist.list_installed_files()]
             except Exception as e:
                 logger.error(
                     'distribution "%s" seems does not have a RECORD file: %r',
-                    dist.name, e
+                    dist.name,
+                    e,
                 )
                 installed_files = []
             modules = set(dist.modules)
-            modules = _maybe_include_project_name_as_import_name(
-                modules, dist.name
-            )
+            modules = _maybe_include_project_name_as_import_name(modules, dist.name)
             modules |= _get_hardcode_distributions_import_names(dist.name)
 
         dist_path = trim_suffix(dist.path, os.sep)
@@ -146,12 +145,13 @@ class FrozenRequirement(object):
                 continue
             if not any(
                 [
-                    is_commonpath([code_file_dir, file], code_file_dir
-                                  ),  # Fast path to skip the same path prefix.
+                    is_commonpath(
+                        [code_file_dir, file], code_file_dir
+                    ),  # Fast path to skip the same path prefix.
                     is_commonpath([dist_info_dir, file], dist_info_dir),
                     is_commonpath([os.pardir, file], os.pardir),
                     is_commonpath([os.curdir, file], os.curdir),
-                    file.startswith('__')
+                    file.startswith("__"),
                 ]
             ):
                 code_file_dir = trim_prefix(file, os.sep).split(os.sep)[0]
@@ -181,24 +181,26 @@ class FrozenRequirement(object):
         return False
 
     def as_requirement(
-        self, operator: str = '==', spaces_around_operator: str = ''
+        self, operator: str = "==", spaces_around_operator: str = ""
     ) -> str:
         if self.editable and self.url:
             req = f"-e {self.url}"
         else:
             req = self.name
-            if operator != '-':
-                req += f"{spaces_around_operator}{operator}"\
-                       f"{spaces_around_operator}{self.version}"
+            if operator != "-":
+                req += (
+                    f"{spaces_around_operator}{operator}"
+                    f"{spaces_around_operator}{self.version}"
+                )
         return "\n".join(list(self.comments) + [str(req)])
 
     def __str__(self) -> str:
-        return self.as_requirement('==', '')
+        return self.as_requirement("==", "")
 
     def __repr__(self):
-        modules = ' '.join(self.modules)
-        code_paths = ' '.join(self.code_paths or [])
-        return f'<{self.name} {self.version}  [{modules}]  [{code_paths}]>'
+        modules = " ".join(self.modules)
+        code_paths = " ".join(self.code_paths or [])
+        return f"<{self.name} {self.version}  [{modules}]  [{code_paths}]>"
 
 
 def installed_distributions_by_top_level_import_names(
@@ -219,7 +221,7 @@ def installed_distributions() -> Mapping[NormalizedName, FrozenRequirement]:
     dist_path = DistributionPath(include_egg=True)
     for distribution in dist_path.get_distributions():
         req = FrozenRequirement.from_dist(distribution)
-        logger.debug('found local distribution: %r', req)
+        logger.debug("found local distribution: %r", req)
         mapping[req.canonical_name] = req
     return mapping
 
@@ -244,9 +246,7 @@ def _get_editable_info(dist: EggInfoDistribution) -> _EditableInfo:
     assert editable_project_location
     location = pathlib.normcase(pathlib.abspath(editable_project_location))
     if not pathlib.exists(location):
-        return _EditableInfo(
-            requirement="", comments=[f"# Editable not found: {dist}"]
-        )
+        return _EditableInfo(requirement="", comments=[f"# Editable not found: {dist}"])
 
     vcs_backend = vcs.get_backend_for_dir(location)
 
@@ -259,9 +259,7 @@ def _get_editable_info(dist: EggInfoDistribution) -> _EditableInfo:
         )
         return _EditableInfo(
             requirement=location,
-            comments=[
-                f"# Editable install with no version control ({display})"
-            ],
+            comments=[f"# Editable install with no version control ({display})"],
         )
 
     vcs_name = type(vcs_backend).__name__
@@ -272,9 +270,7 @@ def _get_editable_info(dist: EggInfoDistribution) -> _EditableInfo:
         display = _format_dist_as_name_version(dist)
         return _EditableInfo(
             requirement=location,
-            comments=[
-                f"# Editable {vcs_name} install with no remote ({display})"
-            ],
+            comments=[f"# Editable {vcs_name} install with no remote ({display})"],
         )
     except RemoteNotValidError as ex:
         display = _format_dist_as_name_version(dist)
@@ -295,9 +291,7 @@ def _get_editable_info(dist: EggInfoDistribution) -> _EditableInfo:
         )
         return _EditableInfo(requirement=location, comments=[])
     except InstallationError as exc:
-        logger.warning(
-            "Error when trying to get requirement for VCS system %s", exc
-        )
+        logger.warning("Error when trying to get requirement for VCS system %s", exc)
     else:
         return _EditableInfo(requirement=req, comments=[])
 
@@ -311,12 +305,12 @@ def _get_editable_info(dist: EggInfoDistribution) -> _EditableInfo:
 
 class _URLElement(object):
 
-    def __init__(self, name='', url=''):
+    def __init__(self, name="", url=""):
         self.name = name
         self.url = url
 
     def __str__(self) -> str:
-        return f'[{self.name}]({self.url})'
+        return f"[{self.name}]({self.url})"
 
 
 def _parse_urls_from_html(html, base_url, put):
@@ -330,10 +324,10 @@ def _parse_urls_from_html(html, base_url, put):
         def handle_starttag(self, tag, attrs):
             self._url_element = None
 
-            if tag != 'a':
+            if tag != "a":
                 return
             attrs = dict(attrs)
-            href = attrs.get('href', None)
+            href = attrs.get("href", None)
             if href is not None:
                 url = urljoin(base_url, href)
                 if url:
@@ -345,9 +339,7 @@ def _parse_urls_from_html(html, base_url, put):
 
                 if not self._url_element.name:
                     parsed = urlparse(self._url_element.url)
-                    self._url_element.name = parsed.path.rstrip("/").split(
-                        "/"
-                    )[-1]
+                    self._url_element.name = parsed.path.rstrip("/").split("/")[-1]
                 put(self._url_element)
                 self._url_element = None
 
@@ -355,11 +347,11 @@ def _parse_urls_from_html(html, base_url, put):
 
 
 class PyPIDistributions(object):
-    _ACCEPTABLE_EXT = ('.whl', '.egg', '.tar.gz', '.tar.bz2', '.zip')
+    _ACCEPTABLE_EXT = (".whl", ".egg", ".tar.gz", ".tar.bz2", ".zip")
     _HTTP_HEADERS = {
-        'Accept': '*/*',
-        'Accept-Encoding': 'gzip',
-        'User-Agent': 'pigar/' + version,
+        "Accept": "*/*",
+        "Accept-Encoding": "gzip",
+        "User-Agent": "pigar/" + version,
     }
 
     def __init__(self, index_url=DEFAULT_PYPI_INDEX_URL):
@@ -389,7 +381,7 @@ class PyPIDistributions(object):
         self, name, url=None, include_prereleases=False
     ):
         if url is None:
-            url = urljoin(self._index_url, quote(name) + '/')
+            url = urljoin(self._index_url, quote(name) + "/")
         html = await self._download_text(url)
         download_urls = []
         _parse_urls_from_html(
@@ -404,7 +396,7 @@ class PyPIDistributions(object):
     def _choose_distribution_url_with_latest_version(
         self, name, download_urls, include_prereleases=False
     ):
-        dummy_locator = SimpleScrapingLocator('')
+        dummy_locator = SimpleScrapingLocator("")
         versions = []
         for url in download_urls:
             path = urlparse(url).path
@@ -412,23 +404,23 @@ class PyPIDistributions(object):
                 continue
 
             version_str = None
-            if path.endswith('.whl'):
+            if path.endswith(".whl"):
                 try:
                     wheel = Wheel(path)
                     version_str = wheel.version
                 except Exception as e:
-                    logger.debug('%s ignore: %r', name, e)
+                    logger.debug("%s ignore: %r", name, e)
                     continue
             else:
                 info = dummy_locator.convert_url_to_download_info(url, name)
                 if info:
-                    version_str = info.pop('version')
+                    version_str = info.pop("version")
             if version_str is None:
                 continue
             try:
                 version = Version(version_str)
             except InvalidVersion as e:
-                logger.debug('%s ignore: %r', name, e)
+                logger.debug("%s ignore: %r", name, e)
                 continue
 
             if not include_prereleases and version.is_prerelease:
@@ -442,9 +434,9 @@ class PyPIDistributions(object):
                 return -1
             if x[0] > y[0]:
                 return 1
-            if x[1].endswith('.whl'):
+            if x[1].endswith(".whl"):
                 return 1
-            if y[1].endswith('.whl'):
+            if y[1].endswith(".whl"):
                 return -1
             return 0
 
@@ -467,9 +459,7 @@ class PyPIDistributions(object):
         )
         if version is None:
             return (None, None, None)
-        content = await self._download_raw(
-            url, tmp_download_dir=tmp_download_dir
-        )
+        content = await self._download_raw(url, tmp_download_dir=tmp_download_dir)
         return (version, url, content)
 
     async def iter_all_distribution_urls(self, callback):
@@ -487,18 +477,21 @@ class PyPIDistributions(object):
         url,
         timeout=30,
         read_in_mem_threshold=16777216,
-        tmp_download_dir=tempfile.gettempdir()
+        tmp_download_dir=tempfile.gettempdir(),
     ) -> InMemoryOrDiskFile:
         async with self._session.get(
             url, headers=self._HTTP_HEADERS, timeout=timeout
         ) as resp:
             filename = os.path.basename(urlparse(url).path)
-            if resp.content_length is not None and resp.content_length <= read_in_mem_threshold:
+            if (
+                resp.content_length is not None
+                and resp.content_length <= read_in_mem_threshold
+            ):
                 data = await resp.read()
                 return InMemoryOrDiskFile(filename, data=data, file_path=None)
 
             path = os.path.join(tmp_download_dir, filename)
-            with open(path, 'wb') as f:
+            with open(path, "wb") as f:
                 while True:
                     block = await resp.content.readany()
                     if not block:
@@ -509,9 +502,7 @@ class PyPIDistributions(object):
 
 class PyPIDistributionsIndexSynchronizer(object):
 
-    def __init__(
-        self, index_url=DEFAULT_PYPI_INDEX_URL, concurrency=100, gc=False
-    ):
+    def __init__(self, index_url=DEFAULT_PYPI_INDEX_URL, concurrency=100, gc=False):
         self._index_url = index_url
         self._concurrency = concurrency
         self._gc = gc  # TODO(damnever): delete distributions not existed anymore.
@@ -535,11 +526,11 @@ class PyPIDistributionsIndexSynchronizer(object):
             self._queue.put_nowait
         )
         size = self._queue.qsize()
-        logger.debug(f'{size} distributions are ready in queue ...')
+        logger.debug(f"{size} distributions are ready in queue ...")
 
         self._alive_worker_count = self._concurrency
         for i in range(self._concurrency):
-            worker = asyncio.create_task(self._worker(), name=f'worker-{i}')
+            worker = asyncio.create_task(self._worker(), name=f"worker-{i}")
             worker.add_done_callback(self._worker_done_callback)
             self._workers.append(worker)
 
@@ -558,7 +549,7 @@ class PyPIDistributionsIndexSynchronizer(object):
         if self._alive_worker_count > 0 or self._queue.empty():
             return
 
-        logger.debug('all workers exited, empty the queue to avoid blocking..')
+        logger.debug("all workers exited, empty the queue to avoid blocking..")
         while not self._queue.empty():
             try:
                 self._queue.get_nowait()
@@ -577,26 +568,27 @@ class PyPIDistributionsIndexSynchronizer(object):
     async def _sync_project(self, project: _URLElement):
         project_name = project.name
         project_url = project.url
-        logger.info('processing distribution: %s', project_name)
+        logger.info("processing distribution: %s", project_name)
         dist = None
         with database() as db:
             dist = db.query_distribution_with_top_level_modules(project_name)
 
         try:
-            version, project_download_url = await self._pypi_distributions.get_latest_distribution_info(
-                project_name,
-                project_url,
-                include_prereleases=False,
+            version, project_download_url = (
+                await self._pypi_distributions.get_latest_distribution_info(
+                    project_name,
+                    project_url,
+                    include_prereleases=False,
+                )
             )
             if version is None:
-                logger.warn(
-                    'distribution "%s" has no valid versions', project_name
-                )
+                logger.warn('distribution "%s" has no valid versions', project_name)
                 return
             if dist is not None and Version(dist.version) >= Version(version):
                 logger.info(
                     'distribution "%s" version is the latest: %s',
-                    project_name, dist.version
+                    project_name,
+                    dist.version,
                 )
                 return
             with tempfile.TemporaryDirectory() as tmp_download_dir:
@@ -631,10 +623,9 @@ class PyPIDistributionsIndexSynchronizer(object):
                 )
         except aiohttp.ClientError as e:
             logger.error(
-                (
-                    'maybe distribution "%s" is no longer available'
-                    ' or unparsable: %r'
-                ), project_name, e
+                ('maybe distribution "%s" is no longer available' " or unparsable: %r"),
+                project_name,
+                e,
             )
         except Exception as e:
             logger.error(
@@ -660,7 +651,7 @@ class PyPIDistributionsIndexSynchronizer(object):
             )
         except Exception:
             logger.error(
-                'distribution %s(%s) may has invalid archive format:',
+                "distribution %s(%s) may has invalid archive format:",
                 project_name,
                 filename,
                 exc_info=True,
@@ -673,7 +664,5 @@ class PyPIDistributionsIndexSynchronizer(object):
         x_import_names = _get_hardcode_distributions_import_names(project_name)
         if x_import_names:
             top_levels.extend(list(x_import_names))
-        logger.debug(
-            'distribution %s parsed top levels: %r', project_name, top_levels
-        )
+        logger.debug("distribution %s parsed top levels: %r", project_name, top_levels)
         return top_levels

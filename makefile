@@ -12,8 +12,11 @@ run-tests:
 
 
 generate-requirements:
-	pigar gen --exclude-glob '**/tests/data/*' --exclude-glob '**/_vendor/pip/*' --with-referenced-comments -f ./requirements/py$(shell python -c "import sys; v=sys.version_info; print(f'{v.major}.{v.minor}')").txt pigar
+	pigar gen --exclude-glob '**/tests/data/*' --exclude-glob '**/_vendor/*' --with-referenced-comments -f ./requirements/py$(shell python -c "import sys; v=sys.version_info; print(f'{v.major}.{v.minor}')").txt pigar
 
+
+vendor:
+	pushd pigar/_vendor && vendoring sync . -v && popd
 
 sqlite3-vacuum:
 	sqlite3 pigar/.db.sqlite3 'VACUUM;'
