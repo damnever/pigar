@@ -1,6 +1,11 @@
 ### Change Logs
 
-#### Version 2.1.6 (2024.07.10)
+#### Version 2.2.0
+
+See what’s changed in detail [between v2.1.7 and v2.2.0](https://github.com/damnever/pigar/compare/v2.1.7...v2.2.0).
+
+
+#### Version 2.1.7
 
 See what’s changed in detail [between v2.1.6 and v2.1.7](https://github.com/damnever/pigar/compare/v2.1.6...v2.1.7).
 
