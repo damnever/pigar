@@ -10,7 +10,7 @@
 - Searching ditributions(packages) by the top level import/module names.
 - Checking the latest versions of requirements.
 
-**NOTE**: [Pipenv or other tools](https://packaging.python.org/tutorials/managing-dependencies/#managing-dependencies) is recommended for improving your development flow.
+**NOTE**: [Pipenv or uv or other tools](https://packaging.python.org/tutorials/managing-dependencies/#managing-dependencies) is recommended for improving your development flow.
 
 
 ### Installation
