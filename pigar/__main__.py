@@ -550,7 +550,7 @@ cli.add_command(indexdb)
 
 
 def main():
-    cli()
+    cli.main(windows_expand_args=False)
 
 
 if __name__ == '__main__':
