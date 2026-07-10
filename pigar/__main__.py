@@ -165,6 +165,14 @@ def gohome():
     'Don\'t actually write a requirements file, just print the file content.',
 )
 @click.option(
+    '--freeze',
+    'freeze',
+    default=False,
+    is_flag=True,
+    help=
+    'Output requirements to stdout in a pip-freeze–style format (no file written).',
+)
+@click.option(
     '-i',
     '--index-url',
     'index_url',
@@ -216,7 +224,7 @@ def gohome():
 def generate(
     requirement_file, with_referenced_comments, comparison_specifier,
     show_differences, visit_doc_string, exclude_glob, follow_symbolic_links,
-    dry_run, index_url, include_prereleases, question_answer, auto_select,
+    dry_run, freeze, index_url, include_prereleases, question_answer, auto_select,
     experimental_features, project_path
 ):
     '''Generate requirements.txt for the given Python project.'''
@@ -305,6 +313,19 @@ def generate(
         )
         # buf.close()
         print(Color.GREEN('\nGenerated requirements are as follows:'))
+        print(buf.getvalue(), end='')
+        return
+
+    if freeze:
+        buf = io.StringIO()
+        analyzer.write_requirements(
+            buf,
+            with_ref_comments=with_referenced_comments,
+            comparison_specifier=comparison_specifier,
+            with_banner=False,
+            with_unknown_imports=False
+        )
+        # buf.close()
         print(buf.getvalue(), end='')
         return
 
