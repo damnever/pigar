@@ -64,6 +64,17 @@ class CliTests(unittest.TestCase):
         result = runner.invoke(cli, ["check", "-f", expected_requirements])
         self.assertEqual(result.exit_code, 0, result.output)
 
+    def test_check_missing_requirement_file(self):
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            result = runner.invoke(
+                cli, ["check", "-f", "does-not-exist.txt"]
+            )
+            self.assertEqual(result.exit_code, 1, result.output)
+            self.assertIn(
+                'Could not open requirements file', result.output
+            )
+
     def test_search(self):
         runner = CliRunner()
         result = runner.invoke(cli, ["search", "requests", "mysql"])

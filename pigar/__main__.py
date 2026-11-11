@@ -20,6 +20,7 @@ from .core import (
 )
 from .dist import DEFAULT_PYPI_INDEX_URL
 from ._vendor.pip._vendor.packaging.specifiers import Specifier
+from ._vendor.pip._internal.exceptions import InstallationError
 
 import click
 
@@ -408,13 +409,16 @@ def check(requirement_file, index_url, include_prereleases, format):
         )
         return
 
-    reqs = asyncio.run(
-        check_requirements_latest_versions(
-            files,
-            pypi_index_url=index_url,
-            include_prereleases=include_prereleases
+    try:
+        reqs = asyncio.run(
+            check_requirements_latest_versions(
+                files,
+                pypi_index_url=index_url,
+                include_prereleases=include_prereleases
+            )
         )
-    )
+    except InstallationError as e:
+        raise click.ClickException(str(e))
     if format == 'requirements':
         for req in reqs:
             operator = '=='
